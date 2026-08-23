@@ -10,7 +10,9 @@
 
 * **Zero-Auth Simplicity**: No accounts, passwords, or signup required. Join or create rooms instantly via memorable 6-character codes (e.g. `SWB-42`, `ZBE-55`).
 * **Server-Enforced Reveal Gate**: Votes and AI baseline recommendations are physically masked at the protocol level (`has_voted: bool`) until cards are formally revealed, preventing inspection via browser DevTools.
-* **3D Felt Poker Arena**: Realistic central felt poker table with 3D flip card animations, consensus indicators, and outlier spread detection.
+* **Unified 2-Way Backlog Sync**: Seamlessly import backlogs and write back finalized story point estimates to **Linear**, **GitHub Issues**, **Jira**, or raw Markdown.
+* **SPIDR Story Decomposition**: Breakdown complex or unestimated stories using the SPIDR framework (Spike, Path, Interface, Data, Rules) with automated AI assistance.
+* **3D Felt Poker Arena**: Realistic central felt poker table with 3D flip card animations, consensus indicators, and outlier spread detection in an EXP Light Mode interface.
 * **Non-Voting Facilitator Support**: Scrum Masters and PMs can lead estimation rounds with full facilitator controls without being forced to vote or altering team quorum.
 * **Seamless Session Recovery**: Participants automatically reclaim their seat and voting state on page refresh through client-side `localStorage` caching.
 
@@ -101,15 +103,15 @@ cd client && npm test
 ├── server/               # Rust (Tokio / Axum) server
 │   ├── src/
 │   │   ├── actor/        # In-memory RoomActor state machine & RoomRegistry
-│   │   ├── domain/       # Models, 6-char Room Code generator & Reveal Gate projections
+│   │   ├── domain/       # Models, 6-char Room Code, Reveal Gate, Tracker Adapters & Markdown Parser
 │   │   ├── ws/           # Axum WebSocket connection & broadcast dispatchers
 │   │   ├── routes.rs     # REST endpoints & static frontend asset serving
 │   │   └── main.rs       # Server entrypoint
-│   └── tests/            # Automated unit and integration test suites
+│   └── tests/            # Automated unit, integration, and tracker adapter test suites
 │
-├── client/               # React 18 + TypeScript + Tailwind CSS client
+├── client/               # React 18 + TypeScript + Tailwind CSS client (EXP Light Mode)
 │   ├── src/
-│   │   ├── components/   # Felt Poker Arena, 3D Flip Cards, Deck Selector, Facilitator Bar
+│   │   ├── components/   # Felt Poker Arena, 3D Flip Cards, Backlog Drawer, Connect Modal, SPIDR Slicer
 │   │   ├── hooks/        # useRoomSocket hook with zero-auth session recovery
 │   │   ├── views/        # LobbyView (Home) & RoomView (Live Poker Arena)
 │   │   └── utils/        # localStorage session management

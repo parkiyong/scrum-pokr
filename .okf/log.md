@@ -1,5 +1,12 @@
 # Change Log
 
+## 2026-08-23
+
+- Documented 2-way Issue Tracker Sync & Backlog Ingestion (`issue-tracker-sync`).
+- Added architectural decision record `ADR-005-unified-issue-tracker-sync`.
+- Updated frontend client architecture with EXP Light Mode styling, Backlog Drawer, and SPIDR slicing modals (`react-arena-client`).
+- Documented project rename to Scrum Pokr AI and streamlined container infrastructure.
+
 ## 2026-08-22
 
 - Initialized OKF v0.2 bundle for Scrum Pokr AI.

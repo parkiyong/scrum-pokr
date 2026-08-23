@@ -58,8 +58,10 @@ cargo run --bin server
 cd client && npm run dev
 ```
 
-* **Vite Web UI**: [http://localhost:5173](http://localhost:5173) (proxies API / WS calls to port 3000)
-* **Backend API / WebSocket**: [http://localhost:3000](http://localhost:3000)
+* **Browser Access**: Open **[http://localhost:5173](http://localhost:5173)** in your browser for hot-reloading development.
+* **Backend Port**: `http://localhost:3000` runs headlessly in the background (Vite automatically proxies `/api` and `/ws` calls to port 3000).
+
+> **Note**: You must run **both** terminals simultaneously during development, but you should **only open port 5173** in your browser.
 
 ### Option B: Standalone Mode (Single Binary)
 
@@ -101,6 +103,10 @@ cargo test --test room_actor_tests
 # Run reveal gate projection tests
 cargo test --test reveal_gate_tests
 
+# Run tracker adapter & markdown parser tests
+cargo test --test tracker_adapter_tests
+cargo test --test tracker_room_actor_tests
+
 # Run WebSocket integration tests
 cargo test --test websocket_integration_tests
 ```
@@ -140,16 +146,16 @@ scrum-poke-ai/
 ├── server/                     # Rust backend crate (Tokio / Axum)
 │   ├── src/
 │   │   ├── actor/              # RoomActor, RoomRegistry, and state machine transitions
-│   │   ├── domain/             # Domain entities, Reveal Gate serializers, Room Codes
+│   │   ├── domain/             # Domain entities, Reveal Gate, Tracker Adapters, Markdown Parser
 │   │   ├── ws/                 # Axum WebSocket handlers & broadcast dispatchers
 │   │   ├── routes.rs           # REST route definitions & SPA fallback handler
 │   │   ├── lib.rs              # Library exports for unit/integration testing
 │   │   └── main.rs             # Application entrypoint
-│   └── tests/                  # Integration tests (WebSockets, Reveal Gate, Failover)
+│   └── tests/                  # Integration tests (WebSockets, Reveal Gate, Tracker Adapters)
 │
-├── client/                     # React frontend application
+├── client/                     # React frontend application (EXP Light Mode)
 │   ├── src/
-│   │   ├── components/         # Poker Arena, 3D Flip Card, Deck Picker, Facilitator Bar
+│   │   ├── components/         # Poker Arena, Backlog Drawer, Connect Modal, SPIDR Slicer
 │   │   ├── hooks/              # useRoomSocket, useSessionStorage
 │   │   ├── views/              # LobbyView (Home) and RoomView (Poker Arena)
 │   │   ├── types/              # TypeScript types and WebSocket message contracts
@@ -158,7 +164,7 @@ scrum-poke-ai/
 │
 ├── .okf/                       # Open Knowledge Format (OKF v0.2) canonical knowledge base
 │   ├── architecture/           # Deep architecture concepts (Actors, Client, Docker)
-│   ├── domain/                 # Phases, Roles, Room Codes & Consensus math
+│   ├── domain/                 # Phases, Roles, Room Codes, Tracker Sync & Consensus math
 │   ├── security/               # Server Reveal Gate & Zero-Auth session recovery
 │   ├── protocol/               # Tagged JSON RPC WebSocket schemas
 │   └── decisions/              # Architectural Decision Records (ADRs)
@@ -188,10 +194,16 @@ To eliminate documentation drift, deep system architecture, security invariants,
   * [Multi-Room Registry](.okf/architecture/multi-room-registry.md)
   * [React Felt Arena Client](.okf/architecture/react-arena-client.md)
   * [Local Infrastructure & Docker](.okf/architecture/local-infrastructure-and-docker.md)
+* 🧠 **Domain Models**:
+  * [Estimation Phases](.okf/domain/estimation-phases.md)
+  * [Participant Roles](.okf/domain/participant-roles.md)
+  * [Room Identifiers](.okf/domain/room-identifiers.md)
+  * [Consensus & Spread](.okf/domain/consensus-and-spread.md)
+  * [Issue Tracker Sync & Backlog Ingestion](.okf/domain/issue-tracker-sync.md)
 * 🛡️ **Security Invariants**:
   * [Server-Enforced Reveal Gate](.okf/security/server-enforced-reveal-gate.md)
   * [Zero-Auth Session Recovery](.okf/security/zero-auth-session-recovery.md)
 * 📡 **WebSocket Protocol Specifications**:
   * [Tagged JSON RPC Client Commands & Server Events](.okf/protocol/tagged-json-rpc-events.md)
 * 📋 **Architectural Decision Records**:
-  * [ADR Index](.okf/decisions/index.md)
+  * [ADR Index](.okf/decisions/index.md) (ADR-001 through ADR-005)

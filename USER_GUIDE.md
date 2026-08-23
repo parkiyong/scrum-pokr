@@ -13,8 +13,9 @@
 3. [Room Identifiers & Addressing](#3-room-identifiers--addressing)
 4. [Participant Roles & Permissions](#4-participant-roles--permissions)
 5. [The 4-Step Estimation Flow](#5-the-4-step-estimation-flow)
-6. [Session Recovery & Multi-Device Testing](#6-session-recovery--multi-device-testing)
-7. [Frequently Asked Questions & Troubleshooting](#7-frequently-asked-questions--troubleshooting)
+6. [Issue Tracker Integration & Backlog Management](#6-issue-tracker-integration--backlog-management)
+7. [Session Recovery & Multi-Device Testing](#7-session-recovery--multi-device-testing)
+8. [Frequently Asked Questions & Troubleshooting](#8-frequently-asked-questions--troubleshooting)
 
 ---
 
@@ -93,7 +94,27 @@ Click your user badge in the top-right corner at any time during a live session 
 
 ---
 
-## 6. Session Recovery & Multi-Device Testing
+## 6. Issue Tracker Integration & Backlog Management
+
+Facilitators can connect their project tracker (Linear, GitHub Issues, Jira) or upload a Markdown file to manage estimation backlogs directly within the app:
+
+### Connecting an Issue Tracker
+1. Click **📋 Connect Backlog / Tracker** in the Facilitator toolbar.
+2. Select your provider (**Linear**, **GitHub**, **Jira**, or **Markdown**).
+3. Enter your Personal Access Token / API credentials and click **Connect**. Credentials are confirmed live and stored securely per session.
+
+### SPIDR Story Decomposition
+When a story has complex acceptance criteria or broad scope:
+1. Click **⚡ Slice Story (SPIDR)** in the Backlog Drawer or Story Doctor card.
+2. Review the automated SPIDR decomposition recommendations (Spike, Path, Interface, Data, Rules).
+3. Select desired sub-story slices to convert them into standalone estimable stories.
+
+### 2-Way Estimate Sync
+When the Facilitator clicks **✓ Finalize Estimate**, the consensus story points are automatically synced back to the linked issue in Linear, GitHub, or Jira without manual copy-paste.
+
+---
+
+## 7. Session Recovery & Multi-Device Testing
 
 * **Persistent Identity**: When you join a room, your participant ID (UUIDv4), nickname, and avatar color are saved in browser `localStorage`.
 * **Seamless Reconnect**: If your connection drops or you refresh the page, the application automatically restores your seat and existing vote without resetting the room.
@@ -107,7 +128,7 @@ Click your user badge in the top-right corner at any time during a live session 
 
 ---
 
-## 7. Frequently Asked Questions & Troubleshooting
+## 8. Frequently Asked Questions & Troubleshooting
 
 ### Why can't I see other people's votes while voting?
 This is by design! The platform enforces a **Server Reveal Gate**. Vote values are physically withheld by the server until the facilitator triggers the card reveal, eliminating anchoring bias and groupthink.
