@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Layers, Plus, X } from 'lucide-react';
 import { Story } from '../types/room';
 
 interface BacklogDrawerProps {
@@ -99,18 +100,20 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-[#10233f]/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white border-l border-[#10233f]/12 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-md bg-white border-l border-slate-200/90 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
         {/* Drawer Header */}
-        <div className="p-4 border-b border-[#10233f]/10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">📋</span>
+        <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+              <Layers className="w-4 h-4" />
+            </div>
             <div>
-              <h2 className="text-base font-bold text-[#10233f]">
+              <h2 className="text-base font-bold font-display text-slate-900 leading-none">
                 Backlog Queue ({backlog.length})
               </h2>
               {activeTrackerProvider && (
-                <span className="text-[10px] text-emerald-700 font-semibold">
+                <span className="text-[10px] text-emerald-700 font-semibold mt-0.5 inline-block">
                   Linked to {activeTrackerProvider}
                 </span>
               )}
@@ -118,20 +121,21 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-[#5d6f88] hover:text-[#10233f] p-1 rounded-lg hover:bg-[#edf3fb] transition"
+            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Action Toolbar */}
-        <div className="p-3 bg-[#f9fbff] border-b border-[#10233f]/10 flex flex-wrap items-center justify-between gap-2">
+        <div className="p-3 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
           {isFacilitator && (
             <button
               onClick={onOpenConnectModal}
-              className="px-3 py-1.5 bg-[#2047a8] hover:bg-[#16347d] text-white rounded-full text-xs font-bold shadow transition flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 active:scale-95"
             >
-              ➕ Import Backlog
+              <Plus className="w-3.5 h-3.5" />
+              <span>➕ Import Backlog</span>
             </button>
           )}
 
@@ -139,7 +143,7 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
             <button
               onClick={copyMarkdownSummary}
               disabled={backlog.length === 0}
-              className="px-2.5 py-1.5 bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] rounded-full text-xs font-semibold border border-[#10233f]/12 transition flex items-center gap-1 disabled:opacity-40"
+              className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition flex items-center gap-1 disabled:opacity-40 shadow-2xs active:scale-95"
               title="Copy formatted Markdown summary to clipboard"
             >
               {copied ? '✓ Copied!' : '📋 Copy MD'}
@@ -147,10 +151,10 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
             <button
               onClick={downloadCsv}
               disabled={backlog.length === 0}
-              className="px-2.5 py-1.5 bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] rounded-full text-xs font-semibold border border-[#10233f]/12 transition flex items-center gap-1 disabled:opacity-40"
+              className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition flex items-center gap-1 disabled:opacity-40 shadow-2xs active:scale-95"
               title="Download Backlog CSV"
             >
-              💾 CSV
+              <span>💾 CSV</span>
             </button>
           </div>
         </div>
@@ -158,13 +162,15 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
         {/* Backlog List */}
         <div className="p-3 space-y-2.5 overflow-y-auto flex-1">
           {backlog.length === 0 ? (
-            <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-[#5d6f88] space-y-2">
-              <span className="text-3xl">📭</span>
-              <p className="text-xs font-semibold">No stories in the backlog queue yet.</p>
+            <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl text-slate-400">
+                📭
+              </div>
+              <p className="text-xs font-semibold text-slate-600">No stories in the backlog queue yet.</p>
               {isFacilitator && (
                 <button
                   onClick={onOpenConnectModal}
-                  className="mt-2 px-3 py-1.5 bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#2047a8] rounded-full text-xs font-bold border border-[#2047a8]/20 transition"
+                  className="mt-1 px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold border border-blue-200 transition active:scale-95"
                 >
                   Connect Tracker or Paste Markdown
                 </button>
@@ -176,22 +182,22 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
               return (
                 <div
                   key={story.id}
-                  className={`p-3 rounded-xl border transition flex flex-col gap-2 ${
+                  className={`p-3 rounded-2xl border transition flex flex-col gap-2 ${
                     isActive
-                      ? 'bg-[#2047a8]/10 border-[#2047a8]/40 shadow-sm'
-                      : 'bg-[#f9fbff] border-[#10233f]/12 hover:border-[#2047a8]/30'
+                      ? 'bg-blue-50/80 border-blue-300 shadow-soft'
+                      : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {story.key && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#2047a8]/10 text-[#2047a8] border border-[#2047a8]/20 font-mono">
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
                             {story.key}
                           </span>
                         )}
                         {story.points && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
                             {story.points} pts
                           </span>
                         )}
@@ -200,14 +206,14 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
                             href={story.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[11px] text-[#2047a8] hover:underline transition"
+                            className="text-[11px] text-blue-600 hover:underline transition"
                             title="Open in external issue tracker"
                           >
                             ↗
                           </a>
                         )}
                       </div>
-                      <h3 className="text-xs font-bold text-[#10233f] line-clamp-2">
+                      <h3 className="text-xs font-bold text-slate-900 line-clamp-2">
                         {story.title}
                       </h3>
                     </div>
@@ -215,14 +221,14 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
                     {/* Active story indicator or Select button */}
                     <div className="flex items-center gap-1">
                       {isActive ? (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                           Active
                         </span>
                       ) : (
                         isFacilitator && (
                           <button
                             onClick={() => onSelectStory(story.id)}
-                            className="px-2 py-1 bg-[#2047a8] hover:bg-[#16347d] text-white rounded-lg text-[11px] font-bold transition shadow"
+                            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-bold transition shadow-xs active:scale-95"
                           >
                             🎯 Estimate
                           </button>
@@ -232,19 +238,19 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
                   </div>
 
                   {story.description && (
-                    <p className="text-[11px] text-[#5d6f88] line-clamp-2 font-medium">
+                    <p className="text-[11px] text-slate-600 line-clamp-2 font-normal">
                       {story.description}
                     </p>
                   )}
 
                   {/* Facilitator Item Controls */}
                   {isFacilitator && (
-                    <div className="flex items-center justify-between pt-1 border-t border-[#10233f]/10 text-[10px] text-[#5d6f88]">
+                    <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] text-slate-500">
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleMoveUp(index)}
                           disabled={index === 0}
-                          className="px-1.5 py-0.5 hover:bg-[#edf3fb] hover:text-[#10233f] rounded transition disabled:opacity-20 font-bold"
+                          className="px-1.5 py-0.5 hover:bg-slate-100 hover:text-slate-900 rounded transition disabled:opacity-20 font-bold"
                           title="Move up"
                         >
                           ▲
@@ -252,7 +258,7 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
                         <button
                           onClick={() => handleMoveDown(index)}
                           disabled={index === backlog.length - 1}
-                          className="px-1.5 py-0.5 hover:bg-[#edf3fb] hover:text-[#10233f] rounded transition disabled:opacity-20 font-bold"
+                          className="px-1.5 py-0.5 hover:bg-slate-100 hover:text-slate-900 rounded transition disabled:opacity-20 font-bold"
                           title="Move down"
                         >
                           ▼
@@ -277,3 +283,4 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
     </div>
   );
 };
+
