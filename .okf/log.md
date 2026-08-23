@@ -2,6 +2,7 @@
 
 ## 2026-08-23
 
+- Added architectural decision record `ADR-006-ai-advisory-adapter-and-llm-pipeline` for unified OpenAI-compatible LLM advisory architecture.
 - Documented 2-way Issue Tracker Sync & Backlog Ingestion (`issue-tracker-sync`).
 - Added architectural decision record `ADR-005-unified-issue-tracker-sync`.
 - Updated frontend client architecture with EXP Light Mode styling, Backlog Drawer, and SPIDR slicing modals (`react-arena-client`).

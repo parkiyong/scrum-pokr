@@ -49,11 +49,9 @@ async fn test_websocket_join_vote_and_reveal_flow() {
         avatar: "indigo".to_string(),
         role: None,
     };
-    ws_a.send(Message::Text(
-        serde_json::to_string(&join_cmd_a).unwrap().into(),
-    ))
-    .await
-    .unwrap();
+    ws_a.send(Message::Text(serde_json::to_string(&join_cmd_a).unwrap()))
+        .await
+        .unwrap();
 
     // 2. Client B (Estimator) connects
     let (mut ws_b, _) = connect_async(&ws_url)
@@ -66,16 +64,14 @@ async fn test_websocket_join_vote_and_reveal_flow() {
         avatar: "emerald".to_string(),
         role: None,
     };
-    ws_b.send(Message::Text(
-        serde_json::to_string(&join_cmd_b).unwrap().into(),
-    ))
-    .await
-    .unwrap();
+    ws_b.send(Message::Text(serde_json::to_string(&join_cmd_b).unwrap()))
+        .await
+        .unwrap();
 
     // 3. Client A starts voting
     let start_voting_cmd = ClientCommand::StartVoting;
     ws_a.send(Message::Text(
-        serde_json::to_string(&start_voting_cmd).unwrap().into(),
+        serde_json::to_string(&start_voting_cmd).unwrap(),
     ))
     .await
     .unwrap();
@@ -84,20 +80,16 @@ async fn test_websocket_join_vote_and_reveal_flow() {
     let vote_a = ClientCommand::CastVote {
         value: "5".to_string(),
     };
-    ws_a.send(Message::Text(
-        serde_json::to_string(&vote_a).unwrap().into(),
-    ))
-    .await
-    .unwrap();
+    ws_a.send(Message::Text(serde_json::to_string(&vote_a).unwrap()))
+        .await
+        .unwrap();
 
     let vote_b = ClientCommand::CastVote {
         value: "8".to_string(),
     };
-    ws_b.send(Message::Text(
-        serde_json::to_string(&vote_b).unwrap().into(),
-    ))
-    .await
-    .unwrap();
+    ws_b.send(Message::Text(serde_json::to_string(&vote_b).unwrap()))
+        .await
+        .unwrap();
 
     // 5. Read incoming messages on Client B to ensure Reveal Gate masks Client A's vote value
     let mut got_masked_snapshot = false;
@@ -126,11 +118,9 @@ async fn test_websocket_join_vote_and_reveal_flow() {
 
     // 6. Client A reveals cards
     let reveal_cmd = ClientCommand::RevealCards;
-    ws_a.send(Message::Text(
-        serde_json::to_string(&reveal_cmd).unwrap().into(),
-    ))
-    .await
-    .unwrap();
+    ws_a.send(Message::Text(serde_json::to_string(&reveal_cmd).unwrap()))
+        .await
+        .unwrap();
 
     // 7. Verify Client B receives unmasked reveal
     let mut got_revealed_snapshot = false;

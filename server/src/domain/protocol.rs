@@ -1,5 +1,6 @@
-use crate::domain::models::{ConsensusSummary, Role, Story};
+use crate::domain::models::{ConsensusSummary, PointReference, Role, Story};
 use crate::domain::reveal_gate::RoomSnapshotData;
+use crate::domain::story_doctor::StoryDoctorReport;
 use crate::domain::tracker::{ConnectionPreview, StorySlice, TrackerConfig, TrackerQuery};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -19,6 +20,13 @@ pub enum ClientCommand {
     },
     SelectStoryById {
         story_id: String,
+    },
+    UpdatePointReferences {
+        references: Vec<PointReference>,
+    },
+    ToggleEdgeCaseCheck {
+        edge_case_id: String,
+        checked: bool,
     },
     ConnectTracker {
         config: TrackerConfig,
@@ -105,6 +113,16 @@ pub enum ServerEvent {
     StoryFinalized {
         story_id: Option<String>,
         points: String,
+    },
+    PointReferencesUpdated {
+        references: Vec<PointReference>,
+    },
+    EdgeCaseToggled {
+        edge_case_id: String,
+        checked: bool,
+    },
+    StoryDoctorReportUpdated {
+        report: Option<StoryDoctorReport>,
     },
     TrackerConnected {
         provider: String,

@@ -58,6 +58,105 @@ impl Story {
             status: Some("Ready".to_string()),
         }
     }
+
+    /// Returns the lowercase concatenation of title, description, and acceptance criteria.
+    pub fn combined_text_lowercase(&self) -> String {
+        format!(
+            "{}\n{}\n{}",
+            self.title,
+            self.description,
+            self.acceptance_criteria.join("\n")
+        )
+        .to_lowercase()
+    }
+
+    /// Returns the lowercase concatenation of title and description.
+    pub fn title_and_description_lowercase(&self) -> String {
+        format!("{} {}", self.title, self.description).to_lowercase()
+    }
+
+    /// Finds matching keywords within the story's full text at word/phrase boundaries.
+    pub fn find_matching_keywords<'a>(&self, keywords: &[&'a str]) -> Vec<&'a str> {
+        let combined = self.combined_text_lowercase();
+        keywords
+            .iter()
+            .filter(|&&kw| matches_word_or_phrase(&combined, kw))
+            .copied()
+            .collect()
+    }
+
+    /// Checks if any keyword is present in the story's title or description at word/phrase boundaries.
+    pub fn contains_keyword_in_title_or_desc(&self, kw: &str) -> bool {
+        matches_word_or_phrase(&self.title_and_description_lowercase(), kw)
+    }
+
+    /// Checks if any of the given keywords are contained in the full story text at word/phrase boundaries.
+    pub fn contains_any_keyword(&self, keywords: &[&str]) -> bool {
+        let combined = self.combined_text_lowercase();
+        keywords
+            .iter()
+            .any(|&kw| matches_word_or_phrase(&combined, kw))
+    }
+
+    /// Determines if acceptance criteria or checklist indicators are present.
+    pub fn has_testable_criteria(&self) -> bool {
+        if self
+            .acceptance_criteria
+            .iter()
+            .any(|ac| !ac.trim().is_empty())
+        {
+            return true;
+        }
+        let combined = self.combined_text_lowercase();
+        combined.contains("[ ]")
+            || combined.contains("acceptance criteria")
+            || combined.contains("given ")
+            || combined.contains("when ")
+            || combined.contains("then ")
+    }
+
+    /// Determines if the story scope exceeds recommended single-sprint thresholds.
+    pub fn is_oversized(&self, indicators: &[&str]) -> bool {
+        let combined = self.combined_text_lowercase();
+        indicators
+            .iter()
+            .any(|&kw| matches_word_or_phrase(&combined, kw))
+            || self
+                .acceptance_criteria
+                .iter()
+                .filter(|ac| !ac.trim().is_empty())
+                .count()
+                > 8
+    }
+}
+
+/// Matches a keyword or multi-word phrase against text at non-alphanumeric word boundaries.
+pub fn matches_word_or_phrase(text: &str, pattern: &str) -> bool {
+    let mut search_idx = 0;
+    while let Some(rel_pos) = text[search_idx..].find(pattern) {
+        let start = search_idx + rel_pos;
+        let end = start + pattern.len();
+
+        let left_boundary = start == 0 || {
+            let prev_char = text[..start].chars().next_back().unwrap();
+            !prev_char.is_alphanumeric()
+        };
+
+        let right_boundary = end == text.len() || {
+            let next_char = text[end..].chars().next().unwrap();
+            !next_char.is_alphanumeric()
+        };
+
+        if left_boundary && right_boundary {
+            return true;
+        }
+
+        search_idx = start + 1;
+        if search_idx >= text.len() {
+            break;
+        }
+    }
+    false
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -70,6 +169,97 @@ pub struct Participant {
     pub voted: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub vote: Option<String>,
+}
+
+use crate::domain::story_doctor::StoryDoctorReport;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct StoryPoints(pub u32);
+
+impl StoryPoints {
+    pub const FIBONACCI_SCALE: &'static [u32] = &[1, 2, 3, 5, 8, 13, 21];
+
+    pub const fn new(points: u32) -> Self {
+        Self(points)
+    }
+
+    pub fn value(&self) -> u32 {
+        self.0
+    }
+
+    pub fn is_standard_fibonacci(&self) -> bool {
+        Self::FIBONACCI_SCALE.contains(&self.0)
+    }
+}
+
+impl std::fmt::Display for StoryPoints {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<u32> for StoryPoints {
+    fn from(points: u32) -> Self {
+        Self(points)
+    }
+}
+
+impl From<StoryPoints> for u32 {
+    fn from(sp: StoryPoints) -> Self {
+        sp.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PointReference {
+    pub points: StoryPoints,
+    pub title: String,
+    pub description: String,
+}
+
+impl PointReference {
+    pub fn default_library() -> Vec<Self> {
+        vec![
+            PointReference {
+                points: StoryPoints::new(1),
+                title: "1 Point".to_string(),
+                description: "Text/copy update or minor styling tweak in existing component."
+                    .to_string(),
+            },
+            PointReference {
+                points: StoryPoints::new(2),
+                title: "2 Points".to_string(),
+                description: "New field added to existing form with validation and DB column."
+                    .to_string(),
+            },
+            PointReference {
+                points: StoryPoints::new(3),
+                title: "3 Points".to_string(),
+                description: "Standard CRUD endpoint and simple list view with basic filtering."
+                    .to_string(),
+            },
+            PointReference {
+                points: StoryPoints::new(5),
+                title: "5 Points".to_string(),
+                description: "Webhook receiver with signature verification and retry queue."
+                    .to_string(),
+            },
+            PointReference {
+                points: StoryPoints::new(8),
+                title: "8 Points".to_string(),
+                description:
+                    "Multi-provider authentication flow with token refresh and error states."
+                        .to_string(),
+            },
+            PointReference {
+                points: StoryPoints::new(13),
+                title: "13 Points".to_string(),
+                description: "Live zero-downtime database schema migration across active tables."
+                    .to_string(),
+            },
+        ]
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -99,6 +289,8 @@ pub struct RoomState {
     pub phase: EstimationPhase,
     pub round_number: u32,
     pub active_story: Option<Story>,
+    pub story_doctor_report: Option<StoryDoctorReport>,
+    pub point_references: Vec<PointReference>,
     pub backlog: Vec<Story>,
     pub active_tracker_provider: Option<String>,
     pub participants: HashMap<String, Participant>,
@@ -113,6 +305,8 @@ impl RoomState {
             phase: EstimationPhase::Idle,
             round_number: 1,
             active_story: None,
+            story_doctor_report: None,
+            point_references: PointReference::default_library(),
             backlog: Vec::new(),
             active_tracker_provider: None,
             participants: HashMap::new(),

@@ -59,15 +59,15 @@ fn test_reveal_gate_masks_votes_during_voting_phase() {
         RoomStateProjection::Voting(v) => {
             assert_eq!(v.phase, EstimationPhase::Voting);
             let p1_proj = v.participants.iter().find(|p| p.id == "p1").unwrap();
-            assert_eq!(p1_proj.voted, true);
+            assert!(p1_proj.voted);
             assert_eq!(p1_proj.vote, Some("5".to_string())); // Self vote visible
 
             let p2_proj = v.participants.iter().find(|p| p.id == "p2").unwrap();
-            assert_eq!(p2_proj.voted, true);
+            assert!(p2_proj.voted);
             assert_eq!(p2_proj.vote, None); // Peer vote is masked!
 
             let p3_proj = v.participants.iter().find(|p| p.id == "p3").unwrap();
-            assert_eq!(p3_proj.voted, false);
+            assert!(!p3_proj.voted);
             assert_eq!(p3_proj.vote, None);
         }
         _ => panic!("Expected Voting projection during Voting phase"),
@@ -121,4 +121,42 @@ fn test_reveal_gate_exposes_all_votes_during_revealed_phase() {
         }
         _ => panic!("Expected Revealed projection during Revealed phase"),
     }
+}
+
+#[test]
+fn test_reveal_gate_masks_active_story_points_until_revealed() {
+    let mut story = Story::new(
+        "story-10",
+        "Legacy Feature",
+        "Description",
+        vec!["AC".to_string()],
+    );
+    story.points = Some("8".to_string()); // Story already has points in backlog
+
+    let mut room_state = RoomState::new("swift-badger-42".to_string(), "SWB-42".to_string());
+    room_state.active_story = Some(story);
+
+    // 1. StoryDoctorReview phase -> points MUST be redacted
+    room_state.phase = EstimationPhase::StoryDoctorReview;
+    let proj_review = project_room_state(&room_state, None);
+    assert_eq!(
+        proj_review.inner().active_story.as_ref().unwrap().points,
+        None
+    );
+
+    // 2. Voting phase -> points MUST be redacted
+    room_state.phase = EstimationPhase::Voting;
+    let proj_voting = project_room_state(&room_state, None);
+    assert_eq!(
+        proj_voting.inner().active_story.as_ref().unwrap().points,
+        None
+    );
+
+    // 3. Revealed phase -> points CAN be shown
+    room_state.phase = EstimationPhase::Revealed;
+    let proj_revealed = project_room_state(&room_state, None);
+    assert_eq!(
+        proj_revealed.inner().active_story.as_ref().unwrap().points,
+        Some("8".to_string())
+    );
 }

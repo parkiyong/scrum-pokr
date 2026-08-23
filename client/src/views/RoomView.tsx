@@ -6,8 +6,10 @@ import { DeckSelector } from '../components/DeckSelector';
 import { FacilitatorBar } from '../components/FacilitatorBar';
 import { Header } from '../components/Header';
 import { JoinModal } from '../components/JoinModal';
+import { PointReferenceLibrary } from '../components/PointReferenceLibrary';
 import { PokerTableArena } from '../components/PokerTableArena';
 import { SPIDRSliceModal } from '../components/SPIDRSliceModal';
+import { StoryDoctorPanel } from '../components/StoryDoctorPanel';
 import { useRoomSocket } from '../hooks/useRoomSocket';
 import { Role } from '../types/room';
 
@@ -34,6 +36,8 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
     triggerReVote,
     finalizeStory,
     selectStoryById,
+    updatePointReferences,
+    toggleEdgeCaseCheck,
     connectTracker,
     disconnectTracker,
     testTrackerConnection,
@@ -51,6 +55,8 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
   const [isBacklogOpen, setIsBacklogOpen] = useState(false);
   const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
   const [isSliceModalOpen, setIsSliceModalOpen] = useState(false);
+  const [isDoctorDrawerOpen, setIsDoctorDrawerOpen] = useState(false);
+  const [isRefLibraryDrawerOpen, setIsRefLibraryDrawerOpen] = useState(false);
   const [showAcList, setShowAcList] = useState(false);
 
   const myParticipant = roomState?.participants.find((p) => p.id === currentParticipantId);
@@ -88,6 +94,8 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
   const participants = roomState?.participants || [];
   const consensus = roomState?.consensus;
   const activeStory = roomState?.active_story;
+  const storyDoctorReport = roomState?.story_doctor_report;
+  const pointReferences = roomState?.point_references || [];
   const backlog = roomState?.backlog || [];
   const activeTrackerProvider = roomState?.active_tracker_provider;
   const trackerConnected = roomState?.tracker_connected || false;
@@ -98,6 +106,56 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
     const numericPoints = parseInt(suggested, 10) || 5;
     syncEstimateToTracker(activeStory.id, numericPoints, true);
   };
+
+  const renderDesktopStoryDoctor = () => (
+    <StoryDoctorPanel
+      story={activeStory || null}
+      report={storyDoctorReport}
+      phase={phase}
+      isFacilitator={isFacilitator}
+      onStartVoting={startVoting}
+      onToggleEdgeCase={toggleEdgeCaseCheck}
+    />
+  );
+
+  const renderMobileStoryDoctor = () => (
+    <StoryDoctorPanel
+      story={activeStory || null}
+      report={storyDoctorReport}
+      phase={phase}
+      isFacilitator={isFacilitator}
+      onStartVoting={() => {
+        startVoting();
+        setIsDoctorDrawerOpen(false);
+      }}
+      onToggleEdgeCase={toggleEdgeCaseCheck}
+      onClose={() => setIsDoctorDrawerOpen(false)}
+    />
+  );
+
+  const renderDesktopPointReferenceLibrary = () => (
+    <PointReferenceLibrary
+      references={pointReferences}
+      isFacilitator={isFacilitator}
+      onUpdateReferences={updatePointReferences}
+    />
+  );
+
+  const renderMobilePointReferenceLibrary = () => (
+    <div className="relative">
+      <button
+        onClick={() => setIsRefLibraryDrawerOpen(false)}
+        className="absolute top-4 right-4 text-[#5d6f88] hover:text-[#10233f] z-10 text-sm font-bold"
+      >
+        ✕
+      </button>
+      <PointReferenceLibrary
+        references={pointReferences}
+        isFacilitator={isFacilitator}
+        onUpdateReferences={updatePointReferences}
+      />
+    </div>
+  );
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-transparent text-slate-900 pb-32">
@@ -177,6 +235,23 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
 
             {/* Top Quick Action Buttons */}
             <div className="flex items-center gap-2 self-start sm:self-center flex-wrap flex-shrink-0">
+              {/* Mobile / Tablet Quick Toggles */}
+              <button
+                onClick={() => setIsDoctorDrawerOpen(true)}
+                className="lg:hidden px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-blue-700 border border-blue-200/80 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95"
+              >
+                <span>🩺</span>
+                <span>Story Doctor</span>
+              </button>
+
+              <button
+                onClick={() => setIsRefLibraryDrawerOpen(true)}
+                className="lg:hidden px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95"
+              >
+                <span>📚</span>
+                <span>References</span>
+              </button>
+
               <button
                 onClick={() => setIsBacklogOpen(true)}
                 className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs active:scale-95"
@@ -217,18 +292,49 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
           syncFeedback={syncFeedback}
         />
 
-        {/* Central Felt Poker Table Arena */}
-        <div className="flex-1 flex items-center justify-center">
-          <PokerTableArena
-            participants={participants}
-            currentUserId={currentParticipantId}
-            facilitatorId={roomState?.facilitator_id}
-            phase={phase}
-            roundNumber={roundNumber}
-            consensus={consensus}
-          />
+        {/* 3-Column Responsive Command Center Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-start">
+          {/* Left Column (Desktop): Story Doctor Quality Gate */}
+          <div className="hidden lg:block lg:col-span-4 space-y-4">
+            {renderDesktopStoryDoctor()}
+          </div>
+
+          {/* Center Column: Poker Table Arena */}
+          <div className="col-span-1 lg:col-span-5 flex flex-col items-center justify-center min-h-[420px]">
+            <PokerTableArena
+              participants={participants}
+              currentUserId={currentParticipantId}
+              facilitatorId={roomState?.facilitator_id}
+              phase={phase}
+              roundNumber={roundNumber}
+              consensus={consensus}
+            />
+          </div>
+
+          {/* Right Column: Point Reference Library */}
+          <div className="hidden lg:block lg:col-span-3 space-y-4">
+            {renderDesktopPointReferenceLibrary()}
+          </div>
         </div>
       </main>
+
+      {/* Mobile/Tablet Story Doctor Drawer/Modal */}
+      {isDoctorDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a1220]/60 backdrop-blur-sm lg:hidden animate-fade-in">
+          <div className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            {renderMobileStoryDoctor()}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile/Tablet Point Reference Library Modal */}
+      {isRefLibraryDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a1220]/60 backdrop-blur-sm lg:hidden animate-fade-in">
+          <div className="max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {renderMobilePointReferenceLibrary()}
+          </div>
+        </div>
+      )}
 
       {/* Bottom Fibonacci Card Deck Dock */}
       {myParticipant?.role !== 'Observer' && (

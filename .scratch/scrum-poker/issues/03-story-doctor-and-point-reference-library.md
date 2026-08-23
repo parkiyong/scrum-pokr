@@ -4,15 +4,15 @@
 
 **Blocked by:** 02 (Backlog Ingestion, Story Queue & Clipboard Export)
 
-**Status:** ready-for-agent
+**Status:** closed
 
 ## Acceptance criteria
 
-- [ ] Selecting a story transitions the room to `StoryDoctorReview` state and displays the pre-vote quality panel in the left column.
-- [ ] Story Doctor heuristic/LLM pipeline calculates an INVEST scorecard score (0–100%) and highlights missing acceptance criteria or ambiguous phrasing.
-- [ ] Displays a 3-axis complexity summary outlining technical risks across Data/Schema changes, External API interactions, and Blast Radius.
-- [ ] Generates 4 categorized edge-case check items with interactive checkboxes that estimators can click during discussion.
-- [ ] Facilitator can proceed to `StartVoting` at any time without hard blocking, preserving facilitator flow.
-- [ ] Collapsible Point Reference Library sidebar renders baseline story examples for points 1, 2, 3, 5, 8, and 13.
-- [ ] Facilitator can edit or add reference cards locally during the session to match team-specific conventions.
-- [ ] Automated tests verify Story Doctor prompt generation, INVEST scoring heuristics, and state transition to `Voting`.
+- [x] Selecting a story transitions the room to `StoryDoctorReview` state and displays the pre-vote quality panel in the left column.
+- [x] Story Doctor heuristic/LLM pipeline calculates an INVEST scorecard score (0–100%) and highlights missing acceptance criteria or ambiguous phrasing.
+- [x] Displays a 3-axis complexity summary outlining technical risks across Data/Schema changes, External API interactions, and Blast Radius.
+- [x] Generates 4 categorized edge-case check items with interactive checkboxes that estimators can click during discussion.
+- [x] Facilitator can proceed to `StartVoting` at any time without hard blocking, preserving facilitator flow.
+- [x] Collapsible Point Reference Library sidebar renders baseline story examples for points 1, 2, 3, 5, 8, and 13.
+- [x] Facilitator can edit or add reference cards locally during the session to match team-specific conventions.
+- [x] Automated tests verify Story Doctor prompt generation, INVEST scoring heuristics, and state transition to `Voting`.
