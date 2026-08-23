@@ -6,8 +6,8 @@ A real-time, zero-auth, standalone Scrum Poker estimation platform with a high-p
 
 ## 1. Executive Summary & Design Principles
 
-* **Standalone & Tracker-Agnostic**: Zero runtime dependency on Linear, Jira, or third-party trackers. Ingests backlogs via Markdown paste, CSV, or JSON; exports clean Markdown tables or CSV summaries directly to the clipboard.
-* **Zero-Auth Simplicity**: Facilitators and estimators join in seconds via room URLs (`scrum.app/r/swift-badger-42`) or 6-character short codes (`SWB-42`) without registration, account creation, or password management.
+* **Seamless Issue Tracker Integration**: Direct 2-way system integration with Linear, GitHub Issues, and Jira via a unified `IssueTrackerAdapter` trait. Ingests sprint/cycle backlogs automatically and writes consensus estimates back upon finalization without manual copy-paste.
+* **Zero-Auth Simplicity & Ephemeral Security**: Facilitators and estimators join in seconds via room URLs (`scrum.app/r/swift-badger-42`) or 6-character short codes (`SWB-42`) without registration or accounts. Issue tracker credentials (API tokens) remain strictly in Tokio room memory and are never persisted to disk.
 * **Server-Enforced Reveal Gate**: AI predictions, baseline recommendations, and peer votes are strictly withheld at the protocol level during voting, eliminating anchoring bias and groupthink.
 * **Advisory AI Guardrails**: AI never votes, never ranks developers, and never scores individual accuracy. It assists humans with pre-vote quality checks (Story Doctor), neutral divergence analysis, and vertical slicing (SPIDR).
 
@@ -214,29 +214,49 @@ The database connection string defaults to `DATABASE_URL=postgres://postgres:pos
 
 ---
 
-## 8. Standalone Story Ingestion & Export Protocol
+## 8. Unified Issue Tracker Integration & 2-Way Sync Protocol
 
-### 8.1 Ingestion Formats
-1. **Markdown Paste**:
-   ```markdown
-   ### User Authentication & Session Refresh
-   Implement JWT token refresh handling with local storage fallback.
-   - [ ] Token refresh completes under 50ms
-   - [ ] Seamless reconnect across browser tabs
-   ```
-2. **CSV/TSV Upload**: Columns `Title, Description, Acceptance Criteria, Category`.
-3. **JSON Array**: `[ { "title": "...", "description": "...", "acceptance_criteria": [...] } ]`.
-4. **Visual Staging Table**: Pre-import review modal to edit fields before injecting into the active queue.
+### 8.1 Unified `IssueTrackerAdapter` Trait
+The Rust backend defines a unified asynchronous adapter trait implemented for Linear, GitHub Issues, and Jira Cloud:
 
-### 8.2 Multi-Channel Export Formats
-* **1-Click Markdown Clipboard Summary**:
-  ```markdown
-  | Story | Estimate | Consensus | Discussion Notes |
-  | :--- | :--- | :--- | :--- |
-  | Zero-Downtime Session Store Migration | 5 Points | 75% | Spread between 3 & 13 on DB migration vs in-memory caching |
-  ```
-* **CSV Download**: Spreadsheet dataset with round counts and timestamps.
-* **JSON Telemetry Bundle**: Full session rounds and discussion telemetry.
+```rust
+#[async_trait]
+pub trait IssueTrackerAdapter: Send + Sync {
+    /// Fetch backlog stories matching team, cycle, milestone, or sprint query
+    async fn fetch_backlog(&self, query: &TrackerQuery) -> Result<Vec<ExternalStory>, TrackerError>;
+
+    /// Write back finalized story point estimates directly to the issue
+    async fn sync_estimate(&self, external_id: &str, points: u32) -> Result<(), TrackerError>;
+
+    /// Post discussion and divergence summary comments
+    async fn post_summary_comment(&self, external_id: &str, comment: &str) -> Result<(), TrackerError>;
+
+    /// Push SPIDR vertical child slices as linked sub-issues/tasks
+    async fn push_slices(&self, parent_id: &str, slices: &[StorySlice]) -> Result<Vec<ExternalStory>, TrackerError>;
+}
+```
+
+### 8.2 Provider Integrations
+1. **Linear (`LinearAdapter`)**:
+   - Uses Linear GraphQL API (`https://api.linear.app/graphql`).
+   - Queries issues by Team, Cycle, or Project with title, description, acceptance criteria, and estimate.
+   - 2-way estimate writeback via `issueUpdate(id: $id, input: { estimate: $points })`.
+   - Child slices pushed via `issueCreate(input: { parentId: $parentId, ... })`.
+2. **GitHub Issues (`GitHubAdapter`)**:
+   - Uses GitHub REST/GraphQL API (`/repos/{owner}/{repo}/issues`).
+   - Queries issues filtered by Milestone, Labels, or Projects v2.
+   - 2-way estimate writeback via labels (`points: <N>`) or Projects v2 numeric field.
+   - Child slices pushed as linked sub-issues referencing parent (`Parent: #<id>`).
+3. **Jira Cloud (`JiraAdapter`)**:
+   - Uses Jira Cloud REST API v3 (`https://{domain}.atlassian.net/rest/api/3/`).
+   - Queries active sprints and boards using JQL.
+   - 2-way estimate writeback updates the configured Story Points field (`customfield_10016`).
+   - Child slices pushed as sub-tasks under the parent story.
+
+### 8.3 Zero-Auth Ephemeral Credential Security
+* **Session-Only Tokens**: Facilitators input API keys/PATs in the "Connect Tracker" modal.
+* **In-Memory Confinement**: Tokens reside strictly in Tokio actor session memory (and Facilitator's browser `sessionStorage`) and are never written to disk or the database.
+* **No Peer Leakage**: Tokens are never serialized or sent to Estimators/Observers over WebSockets.
 
 ---
 
@@ -245,9 +265,9 @@ The database connection string defaults to `DATABASE_URL=postgres://postgres:pos
 1. **Phase 1: Tokio Room Actor & WebSocket Engine**
    - In-memory room actor with 7-phase state machine and serializer reveal gate filter.
    - Zero-auth join URL/code resolution and `localStorage` participant reconnects.
-2. **Phase 2: React Frontend & Hybrid Poker Arena**
-   - 3-column layout, 3D card flip animation, docked card selection deck.
-   - Markdown paste / CSV staging table ingestion and clipboard export.
+2. **Phase 2: Unified Issue Tracker Integration & 2-Way Backlog Sync**
+   - `IssueTrackerAdapter` trait in Rust with Linear, GitHub Issues, and Jira Cloud connectors.
+   - "Connect Tracker" Facilitator modal, backlog sprint/cycle fetch, and automated estimate writeback on finalization.
 3. **Phase 3: Pre-Vote Story Doctor & Point Reference Library**
    - INVEST audit heuristics, 3-axis complexity summary, 4-category edge-case generator.
    - Collapsible Point Reference Library sidebar with in-room customization.
@@ -256,6 +276,7 @@ The database connection string defaults to `DATABASE_URL=postgres://postgres:pos
    - Cosine similarity query and similarity-weighted Fibonacci baseline calculator.
 5. **Phase 5: Divergence Analyzer & SPIDR Vertical Slicer**
    - 5-category vote classifier, neutral axis synthesis prompt, supportive outlier spotlight.
-   - SPIDR slice modal and one-click queue insertion.
+   - SPIDR slice modal with 1-click push to external issue tracker sub-issues.
 6. **Phase 6: Team Estimation Profile & Longitudinal Calibration**
    - Team telemetry rollup, velocity band calculation, and rolling 50-story calibration curve.
+

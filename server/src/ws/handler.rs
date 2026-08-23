@@ -73,7 +73,7 @@ async fn handle_socket(socket: WebSocket, room: RoomHandle) {
 
             if let Ok(json_str) = serde_json::to_string(&msg_to_send) {
                 let mut tx = ws_tx_clone.lock().await;
-                if tx.send(Message::Text(json_str.into())).await.is_err() {
+                if tx.send(Message::Text(json_str.clone())).await.is_err() {
                     break;
                 }
             }
@@ -130,7 +130,7 @@ async fn handle_socket(socket: WebSocket, room: RoomHandle) {
                                     let snap_event = ServerEvent::RoomSnapshot { state: snap };
                                     if let Ok(json) = serde_json::to_string(&snap_event) {
                                         let mut tx = ws_tx.lock().await;
-                                        let _ = tx.send(Message::Text(json.into())).await;
+                                        let _ = tx.send(Message::Text(json)).await;
                                     }
                                 }
                             }
@@ -142,7 +142,7 @@ async fn handle_socket(socket: WebSocket, room: RoomHandle) {
                         };
                         if let Ok(json) = serde_json::to_string(&err_event) {
                             let mut tx = ws_tx.lock().await;
-                            let _ = tx.send(Message::Text(json.into())).await;
+                            let _ = tx.send(Message::Text(json)).await;
                         }
                     }
                 }
@@ -150,7 +150,7 @@ async fn handle_socket(socket: WebSocket, room: RoomHandle) {
             Ok(Message::Close(_)) => break,
             Ok(Message::Ping(_)) => {
                 let mut tx = ws_tx.lock().await;
-                let _ = tx.send(Message::Pong(vec![].into())).await;
+                let _ = tx.send(Message::Pong(vec![])).await;
             }
             Err(e) => {
                 debug!("WebSocket read error: {}", e);
@@ -166,6 +166,10 @@ async fn handle_socket(socket: WebSocket, room: RoomHandle) {
     // Notify room actor of disconnect
     let final_pid = participant_id.lock().await.clone();
     if let Some(pid) = final_pid {
-        let _ = room_tx.send(RoomCommand::Disconnect { participant_id: pid }).await;
+        let _ = room_tx
+            .send(RoomCommand::Disconnect {
+                participant_id: pid,
+            })
+            .await;
     }
 }

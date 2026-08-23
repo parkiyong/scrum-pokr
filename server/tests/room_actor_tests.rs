@@ -7,7 +7,11 @@ use tokio::sync::mpsc;
 async fn test_room_lifecycle_and_state_machine() {
     let (tx, rx) = mpsc::channel(32);
     let (event_tx, _event_rx) = tokio::sync::broadcast::channel(32);
-    let actor = RoomActor::new("swift-badger-42".to_string(), "SWB-42".to_string(), event_tx);
+    let actor = RoomActor::new(
+        "swift-badger-42".to_string(),
+        "SWB-42".to_string(),
+        event_tx,
+    );
     tokio::spawn(actor.run(rx));
 
     // 1. First participant joins (Facilitator)
@@ -50,12 +54,12 @@ async fn test_room_lifecycle_and_state_machine() {
     tx.send(RoomCommand::ClientMsg {
         participant_id: "p1".to_string(),
         command: ClientCommand::SelectStory {
-            story: Some(Story {
-                id: "s1".to_string(),
-                title: "Test story".to_string(),
-                description: "Description".to_string(),
-                acceptance_criteria: vec!["AC1".to_string()],
-            }),
+            story: Some(Story::new(
+                "s1",
+                "Test story",
+                "Description",
+                vec!["AC1".to_string()],
+            )),
         },
         reply: None,
     })
@@ -121,7 +125,11 @@ async fn test_room_lifecycle_and_state_machine() {
 async fn test_observer_facilitator_cannot_vote_and_is_excluded_from_consensus() {
     let (tx, rx) = mpsc::channel(32);
     let (event_tx, _event_rx) = tokio::sync::broadcast::channel(32);
-    let actor = RoomActor::new("swift-badger-42".to_string(), "SWB-42".to_string(), event_tx);
+    let actor = RoomActor::new(
+        "swift-badger-42".to_string(),
+        "SWB-42".to_string(),
+        event_tx,
+    );
     tokio::spawn(actor.run(rx));
 
     // Facilitator joins explicitly as Observer
@@ -180,7 +188,10 @@ async fn test_observer_facilitator_cannot_vote_and_is_excluded_from_consensus() 
     .unwrap();
 
     let vote_err = vote_rx.await.unwrap();
-    assert!(vote_err.is_err(), "Observer voting must be rejected by backend");
+    assert!(
+        vote_err.is_err(),
+        "Observer voting must be rejected by backend"
+    );
 
     // Dev 1 votes 8
     tx.send(RoomCommand::ClientMsg {
@@ -222,7 +233,11 @@ async fn test_observer_facilitator_cannot_vote_and_is_excluded_from_consensus() 
 async fn test_reconnect_preserves_vote_and_identity() {
     let (tx, rx) = mpsc::channel(32);
     let (event_tx, _event_rx) = tokio::sync::broadcast::channel(32);
-    let actor = RoomActor::new("swift-badger-42".to_string(), "SWB-42".to_string(), event_tx);
+    let actor = RoomActor::new(
+        "swift-badger-42".to_string(),
+        "SWB-42".to_string(),
+        event_tx,
+    );
     tokio::spawn(actor.run(rx));
 
     // Join & vote
@@ -294,7 +309,11 @@ async fn test_reconnect_preserves_vote_and_identity() {
     .unwrap();
 
     let snap = snap_rx.await.unwrap();
-    let p = snap.participants.iter().find(|p| p.id == "user-123").unwrap();
+    let p = snap
+        .participants
+        .iter()
+        .find(|p| p.id == "user-123")
+        .unwrap();
     assert_eq!(p.voted, true);
     assert_eq!(p.vote, Some("8".to_string())); // Self vote visible
 }
@@ -303,7 +322,11 @@ async fn test_reconnect_preserves_vote_and_identity() {
 async fn test_facilitator_failover_promotion() {
     let (tx, rx) = mpsc::channel(32);
     let (event_tx, _event_rx) = tokio::sync::broadcast::channel(32);
-    let actor = RoomActor::new("swift-badger-42".to_string(), "SWB-42".to_string(), event_tx);
+    let actor = RoomActor::new(
+        "swift-badger-42".to_string(),
+        "SWB-42".to_string(),
+        event_tx,
+    );
     tokio::spawn(actor.run(rx));
 
     // Facilitator joins

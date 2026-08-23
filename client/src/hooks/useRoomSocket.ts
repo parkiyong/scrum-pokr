@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ClientCommand,
+  ConnectionPreview,
   LocalSessionProfile,
   Role,
   RoomSnapshotData,
   ServerEvent,
   Story,
+  StorySlice,
+  TrackerConfig,
+  TrackerQuery,
 } from '../types/room';
 import { getOrCreateParticipantId, getStoredProfile, saveStoredProfile } from '../utils/session';
 
@@ -15,6 +19,9 @@ export interface UseRoomSocketReturn {
   currentParticipantId: string;
   myProfile: LocalSessionProfile | null;
   isFacilitator: boolean;
+  connectionPreview: ConnectionPreview | null;
+  trackerError: string | null;
+  syncFeedback: { storyId: string; success: boolean; message?: string } | null;
   joinRoom: (nickname: string, avatar: string, role?: Role) => void;
   startVoting: () => void;
   castVote: (value: string) => void;
@@ -23,14 +30,30 @@ export interface UseRoomSocketReturn {
   triggerReVote: () => void;
   finalizeStory: (points?: string) => void;
   selectStory: (story: Story | null) => void;
+  selectStoryById: (storyId: string) => void;
+  connectTracker: (config: TrackerConfig) => void;
+  disconnectTracker: () => void;
+  testTrackerConnection: (config: TrackerConfig) => void;
+  fetchBacklog: (query?: TrackerQuery) => void;
+  importBacklog: (stories: Story[]) => void;
+  importMarkdown: (rawMarkdown: string) => void;
+  syncEstimateToTracker: (storyId: string, points: number, postComment?: boolean) => void;
+  pushStorySlices: (parentId: string, slices: StorySlice[]) => void;
+  reorderBacklog: (storyIds: string[]) => void;
+  removeStoryFromBacklog: (storyId: string) => void;
   updateRole: (targetId: string, newRole: Role) => void;
   transferFacilitator: (targetId: string) => void;
+  clearTrackerFeedback: () => void;
 }
 
 export function useRoomSocket(slug: string): UseRoomSocketReturn {
   const [roomState, setRoomState] = useState<RoomSnapshotData | null>(null);
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
   const [myProfile, setMyProfile] = useState<LocalSessionProfile | null>(() => getStoredProfile(slug));
+  const [connectionPreview, setConnectionPreview] = useState<ConnectionPreview | null>(null);
+  const [trackerError, setTrackerError] = useState<string | null>(null);
+  const [syncFeedback, setSyncFeedback] = useState<{ storyId: string; success: boolean; message?: string } | null>(null);
+
   const wsRef = useRef<WebSocket | null>(null);
   const participantIdRef = useRef<string>(myProfile?.participant_id || getOrCreateParticipantId());
 
@@ -113,6 +136,23 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
               ),
             };
           });
+        } else if (msg.type === 'BacklogUpdated') {
+          setRoomState((prev) => (prev ? { ...prev, backlog: msg.payload.backlog } : prev));
+        } else if (msg.type === 'TrackerConnectionTested') {
+          setConnectionPreview(msg.payload.preview);
+          setTrackerError(null);
+        } else if (msg.type === 'TrackerConnected') {
+          setTrackerError(null);
+        } else if (msg.type === 'TrackerDisconnected') {
+          setConnectionPreview(null);
+        } else if (msg.type === 'TrackerError') {
+          setTrackerError(msg.payload.message);
+        } else if (msg.type === 'EstimateSynced') {
+          setSyncFeedback({
+            storyId: msg.payload.story_id,
+            success: msg.payload.success,
+            message: msg.payload.message,
+          });
         }
       } catch (err) {
         console.error('Failed to parse server message:', err);
@@ -162,6 +202,56 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     sendCommand({ type: 'SelectStory', payload: { story } });
   }, [sendCommand]);
 
+  const selectStoryById = useCallback((storyId: string) => {
+    sendCommand({ type: 'SelectStoryById', payload: { story_id: storyId } });
+  }, [sendCommand]);
+
+  const connectTracker = useCallback((config: TrackerConfig) => {
+    sendCommand({ type: 'ConnectTracker', payload: { config } });
+  }, [sendCommand]);
+
+  const disconnectTracker = useCallback(() => {
+    sendCommand({ type: 'DisconnectTracker' });
+  }, [sendCommand]);
+
+  const testTrackerConnection = useCallback((config: TrackerConfig) => {
+    sendCommand({ type: 'TestTrackerConnection', payload: { config } });
+  }, [sendCommand]);
+
+  const fetchBacklog = useCallback((query: TrackerQuery = {}) => {
+    sendCommand({ type: 'FetchBacklog', payload: { query } });
+  }, [sendCommand]);
+
+  const importBacklog = useCallback((stories: Story[]) => {
+    sendCommand({ type: 'ImportBacklog', payload: { stories } });
+  }, [sendCommand]);
+
+  const importMarkdown = useCallback((rawMarkdown: string) => {
+    sendCommand({ type: 'ImportMarkdown', payload: { raw_markdown: rawMarkdown } });
+  }, [sendCommand]);
+
+  const syncEstimateToTracker = useCallback((storyId: string, points: number, postComment: boolean = true) => {
+    sendCommand({
+      type: 'SyncEstimateToTracker',
+      payload: { story_id: storyId, points, post_comment: postComment },
+    });
+  }, [sendCommand]);
+
+  const pushStorySlices = useCallback((parentId: string, slices: StorySlice[]) => {
+    sendCommand({
+      type: 'PushStorySlices',
+      payload: { parent_id: parentId, slices },
+    });
+  }, [sendCommand]);
+
+  const reorderBacklog = useCallback((storyIds: string[]) => {
+    sendCommand({ type: 'ReorderBacklog', payload: { story_ids: storyIds } });
+  }, [sendCommand]);
+
+  const removeStoryFromBacklog = useCallback((storyId: string) => {
+    sendCommand({ type: 'RemoveStoryFromBacklog', payload: { story_id: storyId } });
+  }, [sendCommand]);
+
   const updateRole = useCallback((targetId: string, newRole: Role) => {
     sendCommand({ type: 'UpdateRole', payload: { target_id: targetId, new_role: newRole } });
   }, [sendCommand]);
@@ -169,6 +259,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
   const transferFacilitator = useCallback((targetId: string) => {
     sendCommand({ type: 'TransferFacilitator', payload: { target_id: targetId } });
   }, [sendCommand]);
+
+  const clearTrackerFeedback = useCallback(() => {
+    setTrackerError(null);
+    setSyncFeedback(null);
+  }, []);
 
   const isFacilitator = roomState?.facilitator_id === participantIdRef.current;
 
@@ -178,6 +273,9 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     currentParticipantId: participantIdRef.current,
     myProfile,
     isFacilitator,
+    connectionPreview,
+    trackerError,
+    syncFeedback,
     joinRoom,
     startVoting,
     castVote,
@@ -186,7 +284,20 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     triggerReVote,
     finalizeStory,
     selectStory,
+    selectStoryById,
+    connectTracker,
+    disconnectTracker,
+    testTrackerConnection,
+    fetchBacklog,
+    importBacklog,
+    importMarkdown,
+    syncEstimateToTracker,
+    pushStorySlices,
+    reorderBacklog,
+    removeStoryFromBacklog,
     updateRole,
     transferFacilitator,
+    clearTrackerFeedback,
   };
 }
+

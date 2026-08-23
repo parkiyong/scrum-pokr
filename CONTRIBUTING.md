@@ -49,7 +49,7 @@
 
 ### 3.1 Branching Strategy
 
-- `main`: Production-ready, always passing tests.
+- `main`: Production-ready, always passing tests. Strictly read-only (never commit directly to `main`). Always pull latest `origin/main` before branching out or creating a worktree.
 - Feature branches: `feat/<issue-number>-<short-description>` (e.g. `feat/02-backlog-ingestion`)
 - Fix branches: `fix/<issue-number>-<short-description>` (e.g. `fix/01-reconnect-race`)
 

@@ -143,5 +143,7 @@ cd client && npm test
 ---
 
 ## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
+ 
+Copyright &copy; 2026 **Park Kiyong**.
+ 
+This project is open source and available under the terms of the [MIT License](LICENSE).

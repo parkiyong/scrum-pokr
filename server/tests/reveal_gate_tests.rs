@@ -42,20 +42,17 @@ fn test_reveal_gate_masks_votes_during_voting_phase() {
         },
     );
 
-    let room_state = RoomState {
-        slug: "swift-badger-42".to_string(),
-        short_code: "SWB-42".to_string(),
-        phase: EstimationPhase::Voting,
-        round_number: 1,
-        active_story: Some(Story {
-            id: "story-1".to_string(),
-            title: "Zero-Auth Reconnection".to_string(),
-            description: "Test description".to_string(),
-            acceptance_criteria: vec!["AC 1".to_string()],
-        }),
-        participants,
-        facilitator_id: "p1".to_string(),
-    };
+    let mut room_state = RoomState::new("swift-badger-42".to_string(), "SWB-42".to_string());
+    room_state.phase = EstimationPhase::Voting;
+    room_state.round_number = 1;
+    room_state.active_story = Some(Story::new(
+        "story-1",
+        "Zero-Auth Reconnection",
+        "Test description",
+        vec!["AC 1".to_string()],
+    ));
+    room_state.participants = participants;
+    room_state.facilitator_id = "p1".to_string();
 
     let projection_for_p1 = project_room_state(&room_state, Some("p1"));
     match projection_for_p1 {
@@ -105,15 +102,12 @@ fn test_reveal_gate_exposes_all_votes_during_revealed_phase() {
         },
     );
 
-    let room_state = RoomState {
-        slug: "swift-badger-42".to_string(),
-        short_code: "SWB-42".to_string(),
-        phase: EstimationPhase::Revealed,
-        round_number: 1,
-        active_story: None,
-        participants,
-        facilitator_id: "p1".to_string(),
-    };
+    let mut room_state = RoomState::new("swift-badger-42".to_string(), "SWB-42".to_string());
+    room_state.phase = EstimationPhase::Revealed;
+    room_state.round_number = 1;
+    room_state.active_story = None;
+    room_state.participants = participants;
+    room_state.facilitator_id = "p1".to_string();
 
     let projection = project_room_state(&room_state, Some("p1"));
     match projection {

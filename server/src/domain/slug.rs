@@ -2,9 +2,9 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 
 const PREFIXES: &[&str] = &[
-    "SWB", "FOX", "ZBE", "LNX", "BAD", "OWL", "CAT", "DOG", "ELK", "HAW",
-    "JAG", "PAN", "RHI", "WLF", "EAG", "DOL", "KOA", "TIG", "BEA", "BTO",
-    "VIP", "ZEN", "ACE", "PRO", "DEV", "OPS", "AGI", "SPR", "MAX", "SKY",
+    "SWB", "FOX", "ZBE", "LNX", "BAD", "OWL", "CAT", "DOG", "ELK", "HAW", "JAG", "PAN", "RHI",
+    "WLF", "EAG", "DOL", "KOA", "TIG", "BEA", "BTO", "VIP", "ZEN", "ACE", "PRO", "DEV", "OPS",
+    "AGI", "SPR", "MAX", "SKY",
 ];
 
 pub fn generate_slug() -> String {

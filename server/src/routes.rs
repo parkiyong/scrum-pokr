@@ -75,8 +75,8 @@ pub fn create_router(registry: RoomRegistry) -> Router {
 
     let client_dist = PathBuf::from("client/dist");
     if client_dist.exists() {
-        let serve_dir = ServeDir::new(&client_dist)
-            .fallback(ServeFile::new(client_dist.join("index.html")));
+        let serve_dir =
+            ServeDir::new(&client_dist).fallback(ServeFile::new(client_dist.join("index.html")));
         router = router.fallback_service(serve_dir);
     }
 

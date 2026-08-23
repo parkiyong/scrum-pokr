@@ -21,6 +21,7 @@ A complete, buildable Product & System Specification in `.scratch/scrum-poker/sp
 - [Story Doctor & Point Reference Library Specs](decisions/04-story-doctor-and-reference-library.md): INVEST audit scoring with non-blocking review banner, 3-axis complexity summary (Data/APIs/Blast Radius), 4-category interactive edge-case checklist, and customizable sidebar benchmark cards.
 - [Divergence Analyzer & Vertical Slicer Prompt Contracts](decisions/06-divergence-analyzer-and-vertical-slicer.md): 5-category vote classifier, strictly neutral divergence axis synthesis, supportive outlier spotlight, and SPIDR-based vertical slicing with one-click queue insertion.
 - [Frontend UX State Flows & Wireframe Specifications](decisions/08-frontend-ux-and-wireframes.md): 3-column Hybrid Command Center + Poker Arena layout, 3D card reveal animations, and responsive desktop/tablet/mobile flows.
+- [Unified Issue Tracker Integration & 2-Way Sync](decisions/03-linear-sync-contract.md): Multi-provider adapter architecture (Linear, GitHub, Jira), ephemeral in-memory Facilitator credentials, 2-way estimate writeback, and SPIDR slice sub-issue push.
 - [Standalone Story Management & Ingestion/Export Formats](decisions/10-standalone-story-management.md): Multi-format parser (Markdown/CSV/JSON) with visual staging preview, 1-click Markdown clipboard export, and PostgreSQL historical embedding indexing.
 - [Reference Matcher & Embedding Architecture](decisions/05-reference-matcher-and-embeddings.md): 1536-dim pgvector cosine similarity index, similarity-weighted Fibonacci mapping, Point Reference Library auto-seeding, and background reveal gate confinement.
 - [Team Estimation Profile & Rolling Calibration Model](decisions/07-team-estimation-profile-and-calibration.md): Strict privacy boundary excluding individual metrics, 4 core health metrics (Velocity Band, Consensus Rate, Slicing Rate, Category Bias), and 50-story decaying calibration window.
@@ -38,7 +39,6 @@ A complete, buildable Product & System Specification in `.scratch/scrum-poker/sp
 
 <!-- see "Out of scope": work ruled beyond the destination; closed, never graduates -->
 
-- [Linear Integration & API Key Handling in No-Auth Mode](decisions/03-linear-sync-contract.md): Ruled out of scope; the application is designed to be fully standalone with no dependencies on Linear, Jira, or third-party issue trackers.
 - Individual developer performance metrics / velocity leaderboards (strictly omitted to preserve team psychological safety).
 - Autonomous AI voting (AI casting story points or participating as an estimator).
 - Enterprise SSO / centralized user directory accounts (ruled out by zero-auth requirement).

@@ -25,7 +25,7 @@ An ephemeral or persistent real-time session space identified by a unique slug o
 _Avoid_: Game, lobby, meeting, channel
 
 **Story**:
-An individual backlog work item created manually or imported via structured Markdown/CSV/JSON for estimation during a session.
+An individual backlog work item synced from an external issue tracker (Linear, Jira, GitHub) or created for estimation during a session.
 _Avoid_: Task, issue, work item, ticket
 
 **Deck**:

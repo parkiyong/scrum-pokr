@@ -27,7 +27,7 @@ All WebSocket communication between client and server uses Serde internally tagg
 | Command `type` | Payload Fields | Description |
 | :--- | :--- | :--- |
 | `JoinRoom` | `participant_id`, `nickname`, `avatar`, `role?` | Registers or reconnects a participant session. |
-| `SelectStory` | `story: Story?` | Facilitator selects active backlog item. |
+| `SelectStory` | `story?: Story \| null` | Facilitator selects active backlog item (or null to clear active_story selection). |
 | `StartVoting` | *None* | Facilitator initiates private voting phase. |
 | `CastVote` | `value: string` | Estimator submits a Fibonacci point choice. |
 | `RetractVote` | *None* | Estimator cancels/retracts their pending vote. |

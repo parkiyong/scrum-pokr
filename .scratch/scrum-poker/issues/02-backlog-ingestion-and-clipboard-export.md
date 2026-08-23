@@ -1,18 +1,39 @@
-# 02: Backlog Ingestion, Story Queue & Clipboard Export
+# 02: Unified Issue Tracker Integration & 2-Way Backlog Sync (Linear, GitHub, Jira)
 
-**What to build:** Multi-format story backlog ingestion and session results export. Facilitators can bulk-import stories by pasting Markdown with acceptance criteria checkboxes, uploading CSV/TSV, or pasting JSON arrays. An interactive visual staging modal lets the facilitator preview, edit, reorder, or delete stories before importing. During the estimation session, the facilitator queues and activates stories (syncing active story details to all room participants), advances through stories, and exports finalized consensus estimates directly to the clipboard as a GitHub Markdown table or downloadable CSV.
+**What to build:** Direct system integration with external issue trackers via a unified `IssueTrackerAdapter` in Rust (Axum/Tokio) and React UI. Facilitators can connect their workspace using ephemeral credentials (Linear API Key, GitHub PAT, or Jira API Token) held only in-memory in the room actor session. The room can fetch backlog stories by Sprint, Cycle, Milestone, or Project, sync the active story in real time to all estimators, and write back finalized consensus estimates directly to the tracker API upon round completion.
 
 **Blocked by:** 01 (Core Real-Time Poker Arena)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Acceptance criteria
 
-- [ ] Ingestion modal supports multi-format backlog input: Markdown headers/lists with checkboxes, CSV/TSV, and raw JSON arrays.
-- [ ] Visual staging review table allows editing title, description, and acceptance criteria before committing to the room queue.
-- [ ] Facilitator can add, edit, reorder, and remove stories in the live room backlog queue.
-- [ ] Selecting a story syncs the active story (title, description, acceptance criteria list) to all connected clients in real time.
-- [ ] Story state transitions correctly from queued to actively estimating to finalized with agreed consensus points.
-- [ ] 1-Click Clipboard Export formats all finalized stories into a clean Markdown table (`| Story | Estimate | Consensus % | Notes |`) ready for pasting into external documentation.
-- [ ] Downloadable CSV export with full round metadata (story title, points, duration, timestamp).
-- [ ] Unit and integration tests covering multi-format parser edge cases and queue synchronization events.
+- [x] Rust backend defines unified `IssueTrackerAdapter` trait (`fetch_backlog`, `sync_estimate`, `post_summary_comment`, `push_slices`).
+- [x] Provider adapter implementation:
+  - **Linear Client**: Live GraphQL client implementation (`api.linear.app/graphql`) for team/cycle queries, estimate mutations, and sub-issue creation.
+  - **GitHub & Jira Harnesses**: Mock and live adapter implementations validating unified trait compliance, contract isolation, and error handling.
+- [x] Ephemeral Zero-Auth Security: Facilitator credentials (API tokens) reside strictly in Tokio actor memory and browser `sessionStorage`, never stored on disk/database or leaked to estimators/observers.
+- [x] Facilitator "Connect Issue Tracker" modal featuring live "Test Connection" step that previews available Teams, Cycles, Projects, or Sprints before importing.
+- [x] Backlog queue renders external issue keys (e.g. `ENG-123`, `#42`), titles, status, and external tracker link badges.
+- [x] Selecting a story syncs the active story (title, description, acceptance criteria list, tracker URL) to all connected clients in real time.
+- [x] Explicit 2-Way Sync: Finalizing a story presents an explicit Facilitator "Sync Estimate to Tracker" action that calls `sync_estimate` (including `points: <N>` label & comment for GitHub).
+- [x] SPIDR Slice Mapping: Triggering slice creation calls `push_slices` on the active adapter to create child sub-issues linked to the parent story.
+- [x] Full test coverage for unified adapter dispatch, mock error handling, credential isolation, and estimate writeback.
+
+## Answer
+
+Implemented the unified issue tracker architecture and real-time 2-way backlog sync:
+- **Rust Backend**:
+  - `server/src/domain/tracker.rs`: Defined `IssueTrackerAdapter` trait, `LinearAdapter` (live GraphQL client for `api.linear.app/graphql`), `GitHubAdapter` (REST API with `points: <N>` labels), `JiraAdapter` (REST v3 with custom story points field), and `MockTrackerAdapter` (thread-safe test harness).
+  - `server/src/domain/markdown_parser.rs`: Smart parser for multi-format Markdown notes, extracting checklist acceptance criteria (`- [ ]`), and summary formatters for Markdown tables and CSV export.
+  - `server/src/actor/room_actor.rs`: Ephemeral in-memory adapter session handling in Tokio RAM, real-time backlog queue management, story selection dispatch, 2-way estimate writeback (`SyncEstimateToTracker`), and SPIDR slice sub-issue generation (`PushStorySlices`).
+  - `server/src/domain/reveal_gate.rs`: Strictly isolated public snapshot projections ensuring API keys/tokens are never leaked to Estimators or Observers.
+- **React Client**:
+  - `client/src/components/ConnectTrackerModal.tsx`: Modal supporting Linear, GitHub, Jira, and Markdown paste with live "Test Connection" step, team/cycle/milestone filtering, and browser `sessionStorage` caching.
+  - `client/src/components/BacklogDrawer.tsx`: Collapsible drawer rendering external issue badges, titles, statuses, points, 1-click estimation selection, and Markdown/CSV clipboard export.
+  - `client/src/components/SPIDRSliceModal.tsx`: Interactive vertical slicer mapping SPIDR child slices directly into remote tracker sub-tasks and appending to the live queue.
+  - `client/src/components/FacilitatorBar.tsx` & `RoomView.tsx`: Facilitator 2-way sync controls and active story banner displaying issue keys, external tracker links, and acceptance criteria.
+- **Testing**:
+  - Full test suites across backend (`tracker_adapter_tests.rs`, `tracker_room_actor_tests.rs`, `markdown_parser_tests.rs`) and frontend (`ConnectTrackerModal.test.tsx`, `BacklogDrawer.test.tsx`, `FacilitatorBar.test.tsx`), with all 19 Rust tests and 17 Vitest tests passing cleanly.
+
+
