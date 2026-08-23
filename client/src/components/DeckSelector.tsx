@@ -1,4 +1,5 @@
 import React from 'react';
+import { Layers } from 'lucide-react';
 
 interface DeckSelectorProps {
   selectedCard?: string;
@@ -14,12 +15,14 @@ export const DeckSelector: React.FC<DeckSelectorProps> = ({
   disabled = false,
 }) => {
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 max-w-[95vw] sm:max-w-fit">
-      <div className="bg-white/95 backdrop-blur-md border border-[#10233f]/15 rounded-2xl px-4 pt-4 pb-3 shadow-[0_24px_60px_rgba(18,42,82,0.15)] flex items-center gap-2 max-w-full overflow-x-auto overflow-y-hidden no-scrollbar">
-        <span className="text-xs font-bold text-[#2047a8] uppercase tracking-wider px-2 hidden md:inline select-none whitespace-nowrap">
-          Pick Card:
-        </span>
-        <div className="flex items-center gap-2 pt-1 pb-0.5">
+    <div className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-30 max-w-[96vw] sm:max-w-fit">
+      <div className="bg-white/95 backdrop-blur-2xl border border-slate-200/90 rounded-2xl sm:rounded-3xl px-3 sm:px-5 pt-3 sm:pt-4 pb-2.5 sm:pb-3 shadow-modal flex items-center gap-2.5 max-w-full overflow-x-auto overflow-y-hidden no-scrollbar">
+        <div className="hidden lg:flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-500 px-1 select-none whitespace-nowrap">
+          <Layers className="w-3.5 h-3.5 text-blue-600" />
+          <span>Estimate:</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 sm:gap-2 pt-1 pb-0.5">
           {FIBONACCI_DECK.map((val) => {
             const isSelected = selectedCard === val;
             return (
@@ -27,11 +30,16 @@ export const DeckSelector: React.FC<DeckSelectorProps> = ({
                 key={val}
                 disabled={disabled}
                 onClick={() => onSelectCard(val)}
-                className={`w-11 h-14 sm:w-13 sm:h-16 rounded-xl font-black text-lg sm:text-xl flex items-center justify-center transition-all duration-200 select-none shadow-md flex-shrink-0 ${
+                aria-pressed={isSelected}
+                className={`w-10 h-14 sm:w-12 sm:h-16 rounded-xl sm:rounded-2xl font-display font-black text-base sm:text-lg tabular-nums flex items-center justify-center transition-all duration-200 select-none flex-shrink-0 ${
                   isSelected
-                    ? 'bg-gradient-to-b from-[#2047a8] to-[#16347d] text-white -translate-y-2 shadow-lg shadow-[#2047a8]/40 ring-2 ring-[#2047a8]'
-                    : 'bg-gradient-to-b from-[#ffffff] to-[#f2f7ff] text-[#10233f] border border-[#2047a8]/20 hover:bg-[#edf3fb] hover:border-[#2047a8]/40 hover:-translate-y-1'
-                } ${disabled ? 'opacity-50 cursor-not-allowed hover:translate-y-0' : 'cursor-pointer active:scale-95'}`}
+                    ? 'bg-gradient-to-b from-blue-600 to-indigo-800 text-white -translate-y-2.5 sm:-translate-y-3 shadow-glow ring-2 ring-blue-500 scale-105'
+                    : 'bg-gradient-to-b from-white to-slate-50 text-slate-800 border border-slate-200/90 shadow-soft hover:bg-slate-100 hover:border-blue-300 hover:-translate-y-1.5'
+                } ${
+                  disabled
+                    ? 'opacity-40 cursor-not-allowed hover:translate-y-0'
+                    : 'cursor-pointer active:scale-95'
+                }`}
               >
                 <span>{val}</span>
               </button>
@@ -42,3 +50,4 @@ export const DeckSelector: React.FC<DeckSelectorProps> = ({
     </div>
   );
 };
+
