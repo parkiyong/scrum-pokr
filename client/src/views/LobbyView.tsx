@@ -32,25 +32,25 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
       <div className="max-w-lg w-full text-center space-y-8">
         {/* Brand Heading */}
         <div className="space-y-3">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 shadow-2xl shadow-indigo-500/30 text-3xl font-black mb-2 animate-bounce-slow">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#2047a8] via-[#16347d] to-[#7f1d7a] shadow-xl shadow-[#2047a8]/25 text-3xl font-black mb-2 animate-bounce-slow text-white">
             🃏
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-            Scrum Pokr <span className="text-indigo-400">AI</span>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#10233f]">
+            Scrum Pokr <span className="text-[#2047a8]">AI</span>
           </h1>
-          <p className="text-sm text-slate-400 max-w-sm mx-auto">
+          <p className="text-sm text-[#5d6f88] max-w-sm mx-auto font-medium">
             Zero-auth, real-time Planning Poker with server-enforced reveal gates and AI estimation advisory.
           </p>
         </div>
 
         {/* Action Cards */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-left">
+        <div className="bg-white/95 backdrop-blur-md border border-[#10233f]/12 rounded-3xl p-6 sm:p-8 shadow-[0_24px_60px_rgba(18,42,82,0.12)] space-y-6 text-left">
           {/* Quick Create Room */}
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#2047a8] mb-1.5">
               Create New Room
             </h2>
-            <p className="text-xs text-slate-400 mb-4">
+            <p className="text-xs text-[#5d6f88] mb-4">
               Instantly spin up an ephemeral room with a 6-character room code (e.g. SWB-42).
             </p>
 
@@ -62,13 +62,13 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
                     placeholder="e.g. SPRINT-42"
                     value={customSlug}
                     onChange={(e) => setCustomSlug(e.target.value.toUpperCase())}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 outline-none font-mono uppercase"
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 rounded-xl px-3.5 py-2.5 text-sm text-[#10233f] placeholder-[#5d6f88]/60 outline-none font-mono uppercase font-semibold"
                   />
                   <div className="flex items-center justify-between">
                     <button
                       type="button"
                       onClick={() => setShowCustom(false)}
-                      className="text-xs text-slate-500 hover:text-slate-400"
+                      className="text-xs text-[#5d6f88] hover:text-[#10233f] font-medium"
                     >
                       ← Back to Auto Code
                     </button>
@@ -78,7 +78,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowCustom(true)}
-                  className="text-[11px] text-indigo-400 hover:text-indigo-300 font-medium"
+                  className="text-xs text-[#2047a8] hover:text-[#16347d] font-bold"
                 >
                   + Custom room code override
                 </button>
@@ -87,7 +87,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-full bg-gradient-to-r from-[#2047a8] to-[#16347d] hover:from-[#16347d] hover:to-[#10233f] text-white font-bold text-sm shadow-lg shadow-[#2047a8]/25 transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? 'Creating Room...' : '⚡ Create Room Instantly'}
               </button>
@@ -95,15 +95,15 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
           </div>
 
           <div className="relative flex items-center justify-center">
-            <div className="border-t border-slate-800 w-full" />
-            <span className="bg-slate-900 px-3 text-[11px] font-bold uppercase tracking-widest text-slate-500 absolute">
+            <div className="border-t border-[#10233f]/10 w-full" />
+            <span className="bg-[#edf3fb] px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-[#5d6f88] absolute border border-[#10233f]/10">
               or
             </span>
           </div>
 
           {/* Join Existing Room */}
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#7f1d7a] mb-1.5">
               Join Existing Room
             </h2>
             <form onSubmit={handleJoin} className="space-y-3">
@@ -112,12 +112,12 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
                 placeholder="Enter room code (e.g. SWB-42)"
                 value={joinInput}
                 onChange={(e) => setJoinInput(e.target.value.toUpperCase())}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 outline-none font-mono uppercase"
+                className="w-full bg-[#f9fbff] border border-[#10233f]/15 focus:border-[#7f1d7a] focus:ring-2 focus:ring-[#7f1d7a]/20 rounded-xl px-3.5 py-2.5 text-sm text-[#10233f] placeholder-[#5d6f88]/60 outline-none font-mono uppercase font-semibold"
               />
               <button
                 type="submit"
                 disabled={!joinInput.trim()}
-                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-bold text-sm transition active:scale-98 disabled:opacity-50"
+                className="w-full py-2.5 rounded-full bg-gradient-to-r from-[#7f1d7a] to-[#9c2768] hover:opacity-95 text-white font-bold text-sm shadow-md shadow-[#7f1d7a]/20 transition active:scale-98 disabled:opacity-50"
               >
                 Enter Room →
               </button>
@@ -126,21 +126,21 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
         </div>
 
         {/* Feature Pills */}
-        <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400 font-medium">
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-[#5d6f88] font-semibold">
+          <span className="flex items-center gap-1.5 bg-white/80 border border-[#10233f]/10 px-3 py-1 rounded-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
             Zero-Auth
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+          <span className="flex items-center gap-1.5 bg-white/80 border border-[#10233f]/10 px-3 py-1 rounded-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-[#2047a8]" />
             Server Reveal Gate
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+          <span className="flex items-center gap-1.5 bg-white/80 border border-[#10233f]/10 px-3 py-1 rounded-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-[#7f1d7a]" />
             3D Card Reveal
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <span className="flex items-center gap-1.5 bg-white/80 border border-[#10233f]/10 px-3 py-1 rounded-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
             Tokio Real-Time
           </span>
         </div>

@@ -70,11 +70,11 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
 
   if (!roomState && status === 'connecting') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-950 text-slate-100">
-        <div className="w-12 h-12 rounded-2xl bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center text-2xl font-bold animate-pulse">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-[#10233f]">
+        <div className="w-12 h-12 rounded-2xl bg-[#2047a8]/10 border border-[#2047a8]/30 flex items-center justify-center text-2xl font-bold text-[#2047a8] animate-pulse">
           🃏
         </div>
-        <p className="text-sm font-medium text-slate-400">Connecting to room {slug}...</p>
+        <p className="text-sm font-semibold text-[#5d6f88]">Connecting to room {slug}...</p>
       </div>
     );
   }
@@ -96,7 +96,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 pb-28">
+    <div className="min-h-screen flex flex-col bg-transparent text-[#10233f] pb-28">
       {/* Header */}
       <Header
         slug={roomState?.slug || slug}
@@ -110,16 +110,16 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
       {/* Main Room Arena Container */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 flex flex-col">
         {/* Story Info Banner */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 mb-4 flex flex-col gap-3 shadow-md">
+        <div className="bg-white/95 backdrop-blur-md border border-[#10233f]/12 rounded-2xl p-4 mb-4 flex flex-col gap-3 shadow-[0_14px_34px_rgba(18,42,82,0.08)]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1.5 max-w-3xl">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-[#2047a8]/10 text-[#2047a8] border border-[#2047a8]/20 px-2 py-0.5 rounded-full">
                   Active Story
                 </span>
 
                 {activeStory?.key && (
-                  <span className="text-[11px] font-mono font-bold bg-slate-800 text-indigo-300 border border-slate-700 px-2 py-0.5 rounded-md">
+                  <span className="text-[11px] font-mono font-bold bg-[#edf3fb] text-[#2047a8] border border-[#10233f]/12 px-2 py-0.5 rounded-md">
                     {activeStory.key}
                   </span>
                 )}
@@ -129,19 +129,19 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
                     href={activeStory.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[11px] font-semibold text-slate-400 hover:text-indigo-300 underline flex items-center gap-1 transition"
+                    className="text-[11px] font-semibold text-[#5d6f88] hover:text-[#2047a8] underline flex items-center gap-1 transition"
                   >
                     View in {activeStory.tracker_provider || 'Tracker'} ↗
                   </a>
                 )}
 
-                <h2 className="text-sm sm:text-base font-bold text-white">
+                <h2 className="text-sm sm:text-base font-bold text-[#10233f]">
                   {activeStory?.title || 'General Estimation Round'}
                 </h2>
               </div>
 
               {activeStory?.description && (
-                <p className="text-xs text-slate-400 line-clamp-2">
+                <p className="text-xs text-[#5d6f88] line-clamp-2 font-medium">
                   {activeStory.description}
                 </p>
               )}
@@ -150,16 +150,16 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
                 <div>
                   <button
                     onClick={() => setShowAcList(!showAcList)}
-                    className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 transition flex items-center gap-1"
+                    className="text-[11px] font-bold text-[#2047a8] hover:text-[#16347d] transition flex items-center gap-1"
                   >
                     <span>{showAcList ? '▼ Hide' : '▶ Show'} Acceptance Criteria ({activeStory.acceptance_criteria.length})</span>
                   </button>
 
                   {showAcList && (
-                    <ul className="mt-2 space-y-1 bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-xs text-slate-300">
+                    <ul className="mt-2 space-y-1 bg-[#f9fbff] border border-[#10233f]/12 rounded-xl p-3 text-xs text-[#10233f] font-medium">
                       {activeStory.acceptance_criteria.map((ac, idx) => (
                         <li key={idx} className="flex items-start gap-2">
-                          <span className="text-indigo-400 font-bold">•</span>
+                          <span className="text-[#2047a8] font-bold">•</span>
                           <span>{ac}</span>
                         </li>
                       ))}
@@ -173,7 +173,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
             <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
               <button
                 onClick={() => setIsBacklogOpen(true)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow"
+                className="px-3.5 py-1.5 bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] border border-[#10233f]/12 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
               >
                 📋 Backlog ({backlog.length})
               </button>
@@ -181,10 +181,10 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
               {isFacilitator && (
                 <button
                   onClick={() => setIsTrackerModalOpen(true)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm ${
                     trackerConnected
-                      ? 'bg-emerald-950/60 border border-emerald-500/40 text-emerald-300'
-                      : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                      ? 'bg-emerald-50 border border-emerald-300 text-emerald-800'
+                      : 'bg-gradient-to-r from-[#7f1d7a] to-[#9c2768] hover:opacity-95 text-white'
                   }`}
                 >
                   ⚡ {activeTrackerProvider ? `${activeTrackerProvider} Connected` : 'Connect Tracker'}
