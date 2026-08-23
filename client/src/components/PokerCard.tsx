@@ -74,7 +74,7 @@ export const PokerCard: React.FC<PokerCardProps> = ({
 
           {/* CARD BACK (Revealed face-up state) */}
           <div
-            className={`absolute inset-0 w-full h-full backface-hidden rotate-y-180 rounded-xl border flex flex-col items-center justify-between p-2 select-none ${
+            className={`absolute inset-0 w-full h-full backface-hidden rotate-y-180 rounded-xl border flex items-center justify-center p-2 select-none ${
               isConsensus
                 ? 'bg-gradient-to-b from-emerald-500 to-emerald-700 border-emerald-400 ring-2 ring-emerald-400/40 shadow-emerald-500/30 shadow-lg text-white'
                 : isOutlier
@@ -82,13 +82,7 @@ export const PokerCard: React.FC<PokerCardProps> = ({
                 : 'bg-gradient-to-b from-[#2047a8] to-[#16347d] border-[#2047a8] text-white shadow-md'
             }`}
           >
-            <span className="text-[10px] font-mono font-bold self-start opacity-80">
-              {participant.vote}
-            </span>
-            <span className="text-2xl sm:text-3xl font-black tracking-tighter">
-              {participant.vote}
-            </span>
-            <span className="text-[10px] font-mono font-bold self-end opacity-80">
+            <span className="text-3xl sm:text-4xl font-black tracking-tight">
               {participant.vote}
             </span>
           </div>
