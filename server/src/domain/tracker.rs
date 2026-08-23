@@ -13,7 +13,7 @@ pub enum TrackerProvider {
     Jira,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "provider", content = "config")]
 pub enum TrackerConfig {
     Linear {
@@ -34,6 +34,46 @@ pub enum TrackerConfig {
         endpoint: Option<String>,
         points_field: Option<String>,
     },
+}
+
+impl std::fmt::Debug for TrackerConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TrackerConfig::Linear { endpoint, .. } => f
+                .debug_struct("Linear")
+                .field("api_key", &"[REDACTED]")
+                .field("endpoint", endpoint)
+                .finish(),
+            TrackerConfig::GitHub {
+                owner,
+                repo,
+                endpoint,
+                ..
+            } => f
+                .debug_struct("GitHub")
+                .field("personal_access_token", &"[REDACTED]")
+                .field("owner", owner)
+                .field("repo", repo)
+                .field("endpoint", endpoint)
+                .finish(),
+            TrackerConfig::Jira {
+                domain,
+                email,
+                project_key,
+                endpoint,
+                points_field,
+                ..
+            } => f
+                .debug_struct("Jira")
+                .field("domain", domain)
+                .field("email", email)
+                .field("api_token", &"[REDACTED]")
+                .field("project_key", project_key)
+                .field("endpoint", endpoint)
+                .field("points_field", points_field)
+                .finish(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -632,6 +672,21 @@ impl IssueTrackerAdapter for LinearAdapter {
             )));
         }
 
+        let json: serde_json::Value = res
+            .json()
+            .await
+            .map_err(|e| TrackerError::ProviderError(e.to_string()))?;
+
+        if let Some(errors) = json.get("errors").and_then(|e| e.as_array()) {
+            if !errors.is_empty() {
+                let msg = errors[0]
+                    .get("message")
+                    .and_then(|m| m.as_str())
+                    .unwrap_or("Linear GraphQL error");
+                return Err(TrackerError::ProviderError(msg.to_string()));
+            }
+        }
+
         Ok(())
     }
 
@@ -656,7 +711,7 @@ impl IssueTrackerAdapter for LinearAdapter {
             }
         });
 
-        let _ = self
+        let res = self
             .http_client
             .post(&self.endpoint)
             .header("Authorization", &self.api_key)
@@ -664,6 +719,28 @@ impl IssueTrackerAdapter for LinearAdapter {
             .send()
             .await
             .map_err(|e| TrackerError::NetworkError(e.to_string()))?;
+
+        if !res.status().is_success() {
+            return Err(TrackerError::ProviderError(format!(
+                "Linear error status: {}",
+                res.status()
+            )));
+        }
+
+        let json: serde_json::Value = res
+            .json()
+            .await
+            .map_err(|e| TrackerError::ProviderError(e.to_string()))?;
+
+        if let Some(errors) = json.get("errors").and_then(|e| e.as_array()) {
+            if !errors.is_empty() {
+                let msg = errors[0]
+                    .get("message")
+                    .and_then(|m| m.as_str())
+                    .unwrap_or("Linear GraphQL error");
+                return Err(TrackerError::ProviderError(msg.to_string()));
+            }
+        }
 
         Ok(())
     }
@@ -674,7 +751,7 @@ impl IssueTrackerAdapter for LinearAdapter {
         slices: &[StorySlice],
     ) -> Result<Vec<ExternalStory>, TrackerError> {
         let mut created = Vec::new();
-        for (i, slice) in slices.iter().enumerate() {
+        for (_i, slice) in slices.iter().enumerate() {
             let mutation = r#"
                 mutation CreateSubIssue($parentId: String!, $title: String!, $description: String, $estimate: Float) {
                     issueCreate(input: { parentId: $parentId, title: $title, description: $description, estimate: $estimate }) {
@@ -707,7 +784,28 @@ impl IssueTrackerAdapter for LinearAdapter {
                 .await
                 .map_err(|e| TrackerError::NetworkError(e.to_string()))?;
 
-            let json: serde_json::Value = res.json().await.unwrap_or_default();
+            if !res.status().is_success() {
+                return Err(TrackerError::ProviderError(format!(
+                    "Linear error status: {}",
+                    res.status()
+                )));
+            }
+
+            let json: serde_json::Value = res
+                .json()
+                .await
+                .map_err(|e| TrackerError::ProviderError(e.to_string()))?;
+
+            if let Some(errors) = json.get("errors").and_then(|e| e.as_array()) {
+                if !errors.is_empty() {
+                    let msg = errors[0]
+                        .get("message")
+                        .and_then(|m| m.as_str())
+                        .unwrap_or("Linear GraphQL error");
+                    return Err(TrackerError::ProviderError(msg.to_string()));
+                }
+            }
+
             let issue_node = json
                 .get("data")
                 .and_then(|d| d.get("issueCreate"))
@@ -726,11 +824,9 @@ impl IssueTrackerAdapter for LinearAdapter {
                     n.get("url").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 )
             } else {
-                (
-                    format!("{}-slice-{}", parent_id, i + 1),
-                    format!("{}-S{}", parent_id, i + 1),
-                    None,
-                )
+                return Err(TrackerError::ProviderError(
+                    "Linear issueCreate returned no issue data".to_string(),
+                ));
             };
 
             created.push(ExternalStory {
@@ -852,7 +948,7 @@ impl IssueTrackerAdapter for GitHubAdapter {
             self.base_url, self.owner, self.repo
         );
         if let Some(ref m) = query.milestone {
-            url.push_str(&format!("&milestone={}", m));
+            url.push_str(&format!("&milestone={}", urlencoding::encode(m)));
         }
 
         let res = self
@@ -864,7 +960,35 @@ impl IssueTrackerAdapter for GitHubAdapter {
             .await
             .map_err(|e| TrackerError::NetworkError(e.to_string()))?;
 
-        let issues: Vec<serde_json::Value> = res.json().await.unwrap_or_default();
+        if res.status() == reqwest::StatusCode::UNAUTHORIZED
+            || res.status() == reqwest::StatusCode::FORBIDDEN
+        {
+            return Err(TrackerError::AuthError(
+                "GitHub Personal Access Token is invalid or unauthorized".to_string(),
+            ));
+        }
+        if res.status() == reqwest::StatusCode::NOT_FOUND {
+            return Err(TrackerError::NotFound(format!(
+                "GitHub repo {}/{} not found",
+                self.owner, self.repo
+            )));
+        }
+        if res.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            return Err(TrackerError::RateLimited(
+                "GitHub rate limit exceeded".to_string(),
+            ));
+        }
+        if !res.status().is_success() {
+            return Err(TrackerError::ProviderError(format!(
+                "GitHub API error status: {}",
+                res.status()
+            )));
+        }
+
+        let issues: Vec<serde_json::Value> = res
+            .json()
+            .await
+            .map_err(|e| TrackerError::ProviderError(e.to_string()))?;
         let mut stories = Vec::new();
 
         for issue in issues {
@@ -932,7 +1056,7 @@ impl IssueTrackerAdapter for GitHubAdapter {
             "labels": [format!("points:{}", points)]
         });
 
-        let _ = self
+        let res = self
             .http_client
             .post(&label_url)
             .header("Authorization", format!("Bearer {}", self.pat))
@@ -941,6 +1065,26 @@ impl IssueTrackerAdapter for GitHubAdapter {
             .send()
             .await
             .map_err(|e| TrackerError::NetworkError(e.to_string()))?;
+
+        if res.status() == reqwest::StatusCode::UNAUTHORIZED
+            || res.status() == reqwest::StatusCode::FORBIDDEN
+        {
+            return Err(TrackerError::AuthError(
+                "GitHub Personal Access Token is invalid or unauthorized".to_string(),
+            ));
+        }
+        if res.status() == reqwest::StatusCode::NOT_FOUND {
+            return Err(TrackerError::NotFound(format!(
+                "GitHub issue #{} not found",
+                issue_num
+            )));
+        }
+        if !res.status().is_success() {
+            return Err(TrackerError::ProviderError(format!(
+                "GitHub API error status: {}",
+                res.status()
+            )));
+        }
 
         Ok(())
     }
@@ -960,7 +1104,7 @@ impl IssueTrackerAdapter for GitHubAdapter {
             "body": comment
         });
 
-        let _ = self
+        let res = self
             .http_client
             .post(&comment_url)
             .header("Authorization", format!("Bearer {}", self.pat))
@@ -969,6 +1113,13 @@ impl IssueTrackerAdapter for GitHubAdapter {
             .send()
             .await
             .map_err(|e| TrackerError::NetworkError(e.to_string()))?;
+
+        if !res.status().is_success() {
+            return Err(TrackerError::ProviderError(format!(
+                "GitHub API error status: {}",
+                res.status()
+            )));
+        }
 
         Ok(())
     }
@@ -1092,6 +1243,37 @@ impl JiraAdapter {
         let creds = format!("{}:{}", self.email, self.api_token);
         format!("Basic {}", BASE64_STANDARD.encode(creds.as_bytes()))
     }
+
+    fn adf_to_text(node: &serde_json::Value) -> String {
+        match node {
+            serde_json::Value::String(s) => s.clone(),
+            serde_json::Value::Object(map) => {
+                if map.get("type").and_then(|t| t.as_str()) == Some("text") {
+                    return map
+                        .get("text")
+                        .and_then(|t| t.as_str())
+                        .unwrap_or_default()
+                        .to_string();
+                }
+                let inner = map
+                    .get("content")
+                    .map(Self::adf_to_text)
+                    .unwrap_or_default();
+                match map.get("type").and_then(|t| t.as_str()) {
+                    Some("paragraph") | Some("listItem") | Some("heading") => {
+                        format!("{}\n", inner)
+                    }
+                    _ => inner,
+                }
+            }
+            serde_json::Value::Array(items) => items
+                .iter()
+                .map(Self::adf_to_text)
+                .collect::<Vec<_>>()
+                .join(""),
+            _ => String::new(),
+        }
+    }
 }
 
 #[async_trait]
@@ -1151,7 +1333,13 @@ impl IssueTrackerAdapter for JiraAdapter {
             )
         });
 
-        let url = format!("{}/search", self.base_url);
+        let search_endpoint =
+            if self.base_url.ends_with("/search") || self.base_url.ends_with("/search/jql") {
+                self.base_url.clone()
+            } else {
+                format!("{}/search/jql", self.base_url)
+            };
+
         let payload = serde_json::json!({
             "jql": jql,
             "fields": ["summary", "description", "status", &self.points_field],
@@ -1160,14 +1348,43 @@ impl IssueTrackerAdapter for JiraAdapter {
 
         let res = self
             .http_client
-            .post(&url)
+            .post(&search_endpoint)
             .header("Authorization", self.auth_header())
             .json(&payload)
             .send()
             .await
             .map_err(|e| TrackerError::NetworkError(e.to_string()))?;
 
-        let json: serde_json::Value = res.json().await.unwrap_or_default();
+        if res.status() == reqwest::StatusCode::UNAUTHORIZED
+            || res.status() == reqwest::StatusCode::FORBIDDEN
+        {
+            return Err(TrackerError::AuthError(
+                "Jira API Token or email is invalid".to_string(),
+            ));
+        }
+        if res.status() == reqwest::StatusCode::NOT_FOUND {
+            return Err(TrackerError::NotFound(format!(
+                "Jira project {} not found",
+                self.project_key
+            )));
+        }
+        if res.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            return Err(TrackerError::RateLimited(
+                "Jira API rate limit exceeded".to_string(),
+            ));
+        }
+        if !res.status().is_success() {
+            return Err(TrackerError::ProviderError(format!(
+                "Jira API error status: {}",
+                res.status()
+            )));
+        }
+
+        let json: serde_json::Value = res
+            .json()
+            .await
+            .map_err(|e| TrackerError::ProviderError(e.to_string()))?;
+
         let issues = json
             .get("issues")
             .and_then(|i| i.as_array())
@@ -1192,6 +1409,11 @@ impl IssueTrackerAdapter for JiraAdapter {
                 .and_then(|s| s.as_str())
                 .unwrap_or("")
                 .to_string();
+            let description = fields
+                .and_then(|f| f.get("description"))
+                .map(Self::adf_to_text)
+                .unwrap_or_default();
+            let acceptance_criteria = extract_acceptance_criteria(&description);
             let status = fields
                 .and_then(|f| f.get("status"))
                 .and_then(|s| s.get("name"))
@@ -1210,8 +1432,8 @@ impl IssueTrackerAdapter for JiraAdapter {
                 id,
                 key,
                 title,
-                description: String::new(),
-                acceptance_criteria: vec![],
+                description,
+                acceptance_criteria,
                 url,
                 current_estimate,
                 status,
@@ -1229,7 +1451,7 @@ impl IssueTrackerAdapter for JiraAdapter {
             }
         });
 
-        let _ = self
+        let res = self
             .http_client
             .put(&url)
             .header("Authorization", self.auth_header())
@@ -1237,6 +1459,31 @@ impl IssueTrackerAdapter for JiraAdapter {
             .send()
             .await
             .map_err(|e| TrackerError::NetworkError(e.to_string()))?;
+
+        if res.status() == reqwest::StatusCode::UNAUTHORIZED
+            || res.status() == reqwest::StatusCode::FORBIDDEN
+        {
+            return Err(TrackerError::AuthError(
+                "Jira API Token or email is invalid".to_string(),
+            ));
+        }
+        if res.status() == reqwest::StatusCode::NOT_FOUND {
+            return Err(TrackerError::NotFound(format!(
+                "Jira issue {} not found",
+                external_id
+            )));
+        }
+        if res.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            return Err(TrackerError::RateLimited(
+                "Jira API rate limit exceeded".to_string(),
+            ));
+        }
+        if !res.status().is_success() {
+            return Err(TrackerError::ProviderError(format!(
+                "Jira error status: {}",
+                res.status()
+            )));
+        }
 
         Ok(())
     }
@@ -1265,7 +1512,7 @@ impl IssueTrackerAdapter for JiraAdapter {
             }
         });
 
-        let _ = self
+        let res = self
             .http_client
             .post(&url)
             .header("Authorization", self.auth_header())
@@ -1273,6 +1520,31 @@ impl IssueTrackerAdapter for JiraAdapter {
             .send()
             .await
             .map_err(|e| TrackerError::NetworkError(e.to_string()))?;
+
+        if res.status() == reqwest::StatusCode::UNAUTHORIZED
+            || res.status() == reqwest::StatusCode::FORBIDDEN
+        {
+            return Err(TrackerError::AuthError(
+                "Jira API Token or email is invalid".to_string(),
+            ));
+        }
+        if res.status() == reqwest::StatusCode::NOT_FOUND {
+            return Err(TrackerError::NotFound(format!(
+                "Jira issue {} not found",
+                external_id
+            )));
+        }
+        if res.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            return Err(TrackerError::RateLimited(
+                "Jira API rate limit exceeded".to_string(),
+            ));
+        }
+        if !res.status().is_success() {
+            return Err(TrackerError::ProviderError(format!(
+                "Jira error status: {}",
+                res.status()
+            )));
+        }
 
         Ok(())
     }

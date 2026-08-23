@@ -1,3 +1,10 @@
+---
+title: Agent Instructions
+description: Operational rules, governance policies, and workflows for AI agents.
+type: governance
+status: stable
+---
+
 # Agent Instructions
 
 ## Branch Policy

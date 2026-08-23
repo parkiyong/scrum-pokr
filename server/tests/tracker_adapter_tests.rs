@@ -138,3 +138,55 @@ async fn test_jira_adapter_construction() {
     let adapter = create_adapter(config);
     assert_eq!(adapter.provider_name(), "Jira");
 }
+
+#[test]
+fn test_tracker_config_debug_redaction() {
+    let linear_config = TrackerConfig::Linear {
+        api_key: "secret_linear_key_12345".to_string(),
+        endpoint: None,
+    };
+    let debug_str = format!("{:?}", linear_config);
+    assert!(!debug_str.contains("secret_linear_key_12345"));
+    assert!(debug_str.contains("[REDACTED]"));
+
+    let github_config = TrackerConfig::GitHub {
+        personal_access_token: "ghp_secret_pat_999".to_string(),
+        owner: "acme".to_string(),
+        repo: "poker".to_string(),
+        endpoint: None,
+    };
+    let gh_debug = format!("{:?}", github_config);
+    assert!(!gh_debug.contains("ghp_secret_pat_999"));
+    assert!(gh_debug.contains("[REDACTED]"));
+}
+
+#[test]
+fn test_csv_formula_sanitization() {
+    use server::domain::markdown_parser::{export_csv_summary, sanitize_csv_cell};
+    use server::domain::models::Story;
+
+    assert_eq!(sanitize_csv_cell("=1+2"), "'=1+2");
+    assert_eq!(sanitize_csv_cell("+cmd"), "'+cmd");
+    assert_eq!(sanitize_csv_cell("-100"), "'-100");
+    assert_eq!(sanitize_csv_cell("@SUM(A1:A5)"), "'@SUM(A1:A5)");
+    assert_eq!(sanitize_csv_cell("Normal Title"), "Normal Title");
+
+    let stories = vec![Story {
+        id: "s1".to_string(),
+        title: "=SUM(A1:A10)".to_string(),
+        description: "".to_string(),
+        acceptance_criteria: vec![],
+        key: Some("+KEY-1".to_string()),
+        url: None,
+        tracker_provider: None,
+        external_id: None,
+        points: Some("-5".to_string()),
+        status: Some("@Ready".to_string()),
+    }];
+
+    let csv = export_csv_summary(&stories);
+    assert!(csv.contains("'+KEY-1"));
+    assert!(csv.contains("'=SUM(A1:A10)"));
+    assert!(csv.contains("'-5"));
+    assert!(csv.contains("'@Ready"));
+}

@@ -143,6 +143,9 @@ impl RoomActor {
             }
 
             ClientCommand::SelectStory { story } => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
                 self.state.active_story = story;
                 self.reset_votes();
                 self.state.phase = EstimationPhase::Idle;
@@ -151,6 +154,9 @@ impl RoomActor {
             }
 
             ClientCommand::SelectStoryById { story_id } => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
                 if let Some(story) = self
                     .state
                     .backlog
@@ -167,9 +173,20 @@ impl RoomActor {
             }
 
             ClientCommand::ConnectTracker { config } => {
+                if !self.is_facilitator(sender_id) {
+                    let _ = self.event_tx.send(ServerEvent::TrackerError {
+                        message: "Only the Facilitator can manage tracker connections".to_string(),
+                    });
+                    return self.get_participant(sender_id);
+                }
                 let adapter = create_adapter(config);
-                match adapter.test_connection().await {
-                    Ok(preview) => {
+                match tokio::time::timeout(
+                    std::time::Duration::from_secs(10),
+                    adapter.test_connection(),
+                )
+                .await
+                {
+                    Ok(Ok(preview)) => {
                         let prov_name = adapter.provider_name().to_string();
                         self.state.active_tracker_provider = Some(prov_name.clone());
                         self.tracker_adapter = Some(adapter);
@@ -181,9 +198,14 @@ impl RoomActor {
                             .send(ServerEvent::TrackerConnectionTested { preview });
                         self.broadcast_snapshot();
                     }
-                    Err(err) => {
+                    Ok(Err(err)) => {
                         let _ = self.event_tx.send(ServerEvent::TrackerError {
                             message: err.to_string(),
+                        });
+                    }
+                    Err(_) => {
+                        let _ = self.event_tx.send(ServerEvent::TrackerError {
+                            message: "Tracker test connection timed out".to_string(),
                         });
                     }
                 }
@@ -191,6 +213,9 @@ impl RoomActor {
             }
 
             ClientCommand::DisconnectTracker => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
                 self.tracker_adapter = None;
                 self.state.active_tracker_provider = None;
                 let _ = self.event_tx.send(ServerEvent::TrackerDisconnected);
@@ -199,16 +224,32 @@ impl RoomActor {
             }
 
             ClientCommand::TestTrackerConnection { config } => {
+                if !self.is_facilitator(sender_id) {
+                    let _ = self.event_tx.send(ServerEvent::TrackerError {
+                        message: "Only the Facilitator can test tracker connections".to_string(),
+                    });
+                    return self.get_participant(sender_id);
+                }
                 let adapter = create_adapter(config);
-                match adapter.test_connection().await {
-                    Ok(preview) => {
+                match tokio::time::timeout(
+                    std::time::Duration::from_secs(10),
+                    adapter.test_connection(),
+                )
+                .await
+                {
+                    Ok(Ok(preview)) => {
                         let _ = self
                             .event_tx
                             .send(ServerEvent::TrackerConnectionTested { preview });
                     }
-                    Err(err) => {
+                    Ok(Err(err)) => {
                         let _ = self.event_tx.send(ServerEvent::TrackerError {
                             message: err.to_string(),
+                        });
+                    }
+                    Err(_) => {
+                        let _ = self.event_tx.send(ServerEvent::TrackerError {
+                            message: "Tracker test connection timed out".to_string(),
                         });
                     }
                 }
@@ -216,9 +257,20 @@ impl RoomActor {
             }
 
             ClientCommand::FetchBacklog { query } => {
+                if !self.is_facilitator(sender_id) {
+                    let _ = self.event_tx.send(ServerEvent::TrackerError {
+                        message: "Only the Facilitator can fetch tracker backlogs".to_string(),
+                    });
+                    return self.get_participant(sender_id);
+                }
                 if let Some(ref adapter) = self.tracker_adapter {
-                    match adapter.fetch_backlog(&query).await {
-                        Ok(ext_stories) => {
+                    match tokio::time::timeout(
+                        std::time::Duration::from_secs(10),
+                        adapter.fetch_backlog(&query),
+                    )
+                    .await
+                    {
+                        Ok(Ok(ext_stories)) => {
                             let prov_name = adapter.provider_name().to_string();
                             for ext in ext_stories {
                                 if !self.state.backlog.iter().any(|s| {
@@ -245,9 +297,14 @@ impl RoomActor {
                             });
                             self.broadcast_snapshot();
                         }
-                        Err(err) => {
+                        Ok(Err(err)) => {
                             let _ = self.event_tx.send(ServerEvent::TrackerError {
                                 message: err.to_string(),
+                            });
+                        }
+                        Err(_) => {
+                            let _ = self.event_tx.send(ServerEvent::TrackerError {
+                                message: "Fetch backlog timed out".to_string(),
                             });
                         }
                     }
@@ -260,6 +317,9 @@ impl RoomActor {
             }
 
             ClientCommand::ImportBacklog { stories } => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
                 self.state.backlog.extend(stories);
                 let _ = self.event_tx.send(ServerEvent::BacklogUpdated {
                     backlog: self.state.backlog.clone(),
@@ -269,6 +329,9 @@ impl RoomActor {
             }
 
             ClientCommand::ImportMarkdown { raw_markdown } => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
                 let parsed = parse_markdown_backlog(&raw_markdown);
                 self.state.backlog.extend(parsed);
                 let _ = self.event_tx.send(ServerEvent::BacklogUpdated {
@@ -283,6 +346,12 @@ impl RoomActor {
                 points,
                 post_comment,
             } => {
+                if !self.is_facilitator(sender_id) {
+                    let _ = self.event_tx.send(ServerEvent::TrackerError {
+                        message: "Only the Facilitator can sync estimates to tracker".to_string(),
+                    });
+                    return self.get_participant(sender_id);
+                }
                 let mut target_ext_id = None;
                 let mut target_story_id = story_id.clone();
 
@@ -310,8 +379,14 @@ impl RoomActor {
                 if let (Some(ref adapter), Some(ext_id)) =
                     (&self.tracker_adapter, target_ext_id.as_deref())
                 {
-                    match adapter.sync_estimate(ext_id, points).await {
-                        Ok(()) => {
+                    let sync_res = tokio::time::timeout(
+                        std::time::Duration::from_secs(10),
+                        adapter.sync_estimate(ext_id, points),
+                    )
+                    .await;
+
+                    match sync_res {
+                        Ok(Ok(())) => {
                             if post_comment {
                                 let comment =
                                     format!("⚡ Scrum Poker Consensus: {} story points.", points);
@@ -326,13 +401,22 @@ impl RoomActor {
                                 message: None,
                             });
                         }
-                        Err(err) => {
+                        Ok(Err(err)) => {
                             let _ = self.event_tx.send(ServerEvent::EstimateSynced {
                                 story_id: target_story_id.clone(),
                                 external_id: ext_id.to_string(),
                                 points,
                                 success: false,
                                 message: Some(err.to_string()),
+                            });
+                        }
+                        Err(_) => {
+                            let _ = self.event_tx.send(ServerEvent::EstimateSynced {
+                                story_id: target_story_id.clone(),
+                                external_id: ext_id.to_string(),
+                                points,
+                                success: false,
+                                message: Some("Sync estimate request timed out".to_string()),
                             });
                         }
                     }
@@ -354,10 +438,21 @@ impl RoomActor {
             }
 
             ClientCommand::PushStorySlices { parent_id, slices } => {
+                if !self.is_facilitator(sender_id) {
+                    let _ = self.event_tx.send(ServerEvent::TrackerError {
+                        message: "Only the Facilitator can push story slices".to_string(),
+                    });
+                    return self.get_participant(sender_id);
+                }
                 let mut created_stories = Vec::new();
                 if let Some(ref adapter) = self.tracker_adapter {
-                    match adapter.push_slices(&parent_id, &slices).await {
-                        Ok(ext_slices) => {
+                    match tokio::time::timeout(
+                        std::time::Duration::from_secs(10),
+                        adapter.push_slices(&parent_id, &slices),
+                    )
+                    .await
+                    {
+                        Ok(Ok(ext_slices)) => {
                             let prov_name = adapter.provider_name().to_string();
                             for ext in ext_slices {
                                 let s = Story {
@@ -376,9 +471,14 @@ impl RoomActor {
                                 created_stories.push(s);
                             }
                         }
-                        Err(err) => {
+                        Ok(Err(err)) => {
                             let _ = self.event_tx.send(ServerEvent::TrackerError {
                                 message: err.to_string(),
+                            });
+                        }
+                        Err(_) => {
+                            let _ = self.event_tx.send(ServerEvent::TrackerError {
+                                message: "Push slices timed out".to_string(),
                             });
                         }
                     }
@@ -413,10 +513,16 @@ impl RoomActor {
             }
 
             ClientCommand::ReorderBacklog { story_ids } => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
+                let mut seen = std::collections::HashSet::new();
                 let mut reordered = Vec::new();
                 for id in &story_ids {
-                    if let Some(pos) = self.state.backlog.iter().position(|s| &s.id == id) {
-                        reordered.push(self.state.backlog.remove(pos));
+                    if seen.insert(id) {
+                        if let Some(pos) = self.state.backlog.iter().position(|s| &s.id == id) {
+                            reordered.push(self.state.backlog.remove(pos));
+                        }
                     }
                 }
                 // Append remaining items that weren't specified
@@ -431,9 +537,17 @@ impl RoomActor {
             }
 
             ClientCommand::RemoveStoryFromBacklog { story_id } => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
                 self.state
                     .backlog
                     .retain(|s| s.id != story_id && s.key.as_deref() != Some(&story_id));
+                if let Some(ref active) = self.state.active_story {
+                    if active.id == story_id || active.key.as_deref() == Some(&story_id) {
+                        self.state.active_story = None;
+                    }
+                }
                 let _ = self.event_tx.send(ServerEvent::BacklogUpdated {
                     backlog: self.state.backlog.clone(),
                 });
@@ -442,6 +556,9 @@ impl RoomActor {
             }
 
             ClientCommand::StartVoting => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
                 self.reset_votes();
                 self.state.phase = EstimationPhase::Voting;
                 self.broadcast_snapshot();
@@ -492,6 +609,9 @@ impl RoomActor {
             }
 
             ClientCommand::RevealCards => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
                 self.state.phase = EstimationPhase::Revealed;
                 let votes: HashMap<String, String> = self
                     .state
@@ -512,6 +632,9 @@ impl RoomActor {
             }
 
             ClientCommand::TriggerReVote => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
                 self.state.round_number += 1;
                 self.reset_votes();
                 self.state.phase = EstimationPhase::Voting;
@@ -525,6 +648,9 @@ impl RoomActor {
             }
 
             ClientCommand::FinalizeStory { points } => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
                 self.state.phase = EstimationPhase::Finalized;
                 let pts = points.unwrap_or_else(|| {
                     self.state
@@ -548,6 +674,9 @@ impl RoomActor {
                 target_id,
                 new_role,
             } => {
+                if !self.is_facilitator(sender_id) && sender_id != target_id {
+                    return Err("Only the Facilitator can update participant roles".to_string());
+                }
                 if let Some(target) = self.state.participants.get_mut(&target_id) {
                     target.role = new_role;
                     if new_role == Role::Observer {
@@ -566,6 +695,11 @@ impl RoomActor {
             }
 
             ClientCommand::TransferFacilitator { target_id } => {
+                if !self.is_facilitator(sender_id) {
+                    return Err(
+                        "Only the Facilitator can transfer facilitator privileges".to_string()
+                    );
+                }
                 if self.state.participants.contains_key(&target_id) {
                     self.state.facilitator_id = target_id.clone();
                     let _ = self.event_tx.send(ServerEvent::FacilitatorChanged {
@@ -626,6 +760,10 @@ impl RoomActor {
         let _ = self.event_tx.send(ServerEvent::RoomSnapshot {
             state: proj.inner().clone(),
         });
+    }
+
+    fn is_facilitator(&self, sender_id: &str) -> bool {
+        self.state.facilitator_id == sender_id
     }
 
     fn get_participant(&self, participant_id: &str) -> Result<Participant, String> {

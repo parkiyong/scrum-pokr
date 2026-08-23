@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Story, StorySlice } from '../types/room';
 
 interface SPIDRSliceModalProps {
@@ -14,20 +14,38 @@ export const SPIDRSliceModal: React.FC<SPIDRSliceModalProps> = ({
   activeStory,
   onPushSlices,
 }) => {
-  const [slices, setSlices] = useState<StorySlice[]>([
-    {
-      title: `${activeStory?.title || 'Story'} - Slice 1`,
-      description: 'First vertical slice focusing on core happy path',
-      acceptance_criteria: ['Core functionality works end-to-end'],
-      estimated_points: 3,
-    },
-    {
-      title: `${activeStory?.title || 'Story'} - Slice 2`,
-      description: 'Second vertical slice handling edge cases & error paths',
-      acceptance_criteria: ['Error states handled gracefully'],
-      estimated_points: 3,
-    },
-  ]);
+  const [slices, setSlices] = useState<StorySlice[]>([]);
+
+  useEffect(() => {
+    if (isOpen && activeStory) {
+      setSlices([
+        {
+          title: `${activeStory.title} - Slice 1`,
+          description: 'First vertical slice focusing on core happy path',
+          acceptance_criteria: ['Core functionality works end-to-end'],
+          estimated_points: 3,
+        },
+        {
+          title: `${activeStory.title} - Slice 2`,
+          description: 'Second vertical slice handling edge cases & error paths',
+          acceptance_criteria: ['Error states handled gracefully'],
+          estimated_points: 3,
+        },
+      ]);
+    }
+  }, [isOpen, activeStory?.id]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, onClose]);
 
   if (!isOpen || !activeStory) return null;
 
@@ -67,13 +85,20 @@ export const SPIDRSliceModal: React.FC<SPIDRSliceModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="spidr-slice-modal-title"
+        className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+      >
         {/* Header */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-xl">✂</span>
             <div>
-              <h2 className="text-lg font-bold text-white">SPIDR Vertical Slicing</h2>
+              <h2 id="spidr-slice-modal-title" className="text-lg font-bold text-white">
+                SPIDR Vertical Slicing
+              </h2>
               <p className="text-xs text-slate-400">
                 Decompose &ldquo;{activeStory.title}&rdquo; into independently deliverable slices
               </p>

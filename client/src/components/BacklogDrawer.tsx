@@ -14,6 +14,15 @@ interface BacklogDrawerProps {
   onOpenConnectModal: () => void;
 }
 
+function sanitizeCsvCell(cell: string): string {
+  if (!cell) return '';
+  const trimmed = cell.trimStart();
+  if (/^[=+\-@\t\r]/.test(trimmed)) {
+    return `'${cell}`;
+  }
+  return cell;
+}
+
 export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
   isOpen,
   onClose,
@@ -70,11 +79,12 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
   const downloadCsv = () => {
     let csv = 'Key,Title,Points,Status,URL\n';
     for (const story of backlog) {
-      const key = story.key || '';
-      const pts = story.points || '';
-      const status = story.status || '';
-      const url = story.url || '';
-      const titleEscaped = story.title.replace(/"/g, '""');
+      const key = sanitizeCsvCell(story.key || '');
+      const pts = sanitizeCsvCell(story.points || '');
+      const status = sanitizeCsvCell(story.status || '');
+      const url = sanitizeCsvCell(story.url || '');
+      const titleClean = sanitizeCsvCell(story.title);
+      const titleEscaped = titleClean.replace(/"/g, '""');
       csv += `${key},"${titleEscaped}",${pts},${status},${url}\n`;
     }
 
