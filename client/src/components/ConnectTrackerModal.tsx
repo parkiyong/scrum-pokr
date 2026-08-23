@@ -18,6 +18,27 @@ interface ConnectTrackerModalProps {
   onClearFeedback: () => void;
 }
 
+export interface LinearState {
+  apiKey: string;
+  selectedTeam: string;
+  selectedProject: string;
+}
+
+export interface GitHubState {
+  pat: string;
+  owner: string;
+  repo: string;
+  selectedMilestone: string;
+}
+
+export interface JiraState {
+  domain: string;
+  email: string;
+  apiToken: string;
+  projectKey: string;
+  pointsField: string;
+}
+
 export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
   isOpen,
   slug,
@@ -35,25 +56,27 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
 }) => {
   const [tab, setTab] = useState<TrackerProvider | 'Markdown'>('Linear');
 
-  // Linear fields
-  const [linearApiKey, setLinearApiKey] = useState('');
-  const [selectedLinearTeam, setSelectedLinearTeam] = useState('');
-  const [selectedLinearProject, setSelectedLinearProject] = useState('');
+  const [linear, setLinear] = useState<LinearState>({
+    apiKey: '',
+    selectedTeam: '',
+    selectedProject: '',
+  });
 
-  // GitHub fields
-  const [githubPat, setGithubPat] = useState('');
-  const [githubOwner, setGithubOwner] = useState('');
-  const [githubRepo, setGithubRepo] = useState('');
-  const [selectedGithubMilestone, setSelectedGithubMilestone] = useState('');
+  const [github, setGithub] = useState<GitHubState>({
+    pat: '',
+    owner: '',
+    repo: '',
+    selectedMilestone: '',
+  });
 
-  // Jira fields
-  const [jiraDomain, setJiraDomain] = useState('');
-  const [jiraEmail, setJiraEmail] = useState('');
-  const [jiraApiToken, setJiraApiToken] = useState('');
-  const [jiraProjectKey, setJiraProjectKey] = useState('');
-  const [jiraPointsField, setJiraPointsField] = useState('customfield_10016');
+  const [jira, setJira] = useState<JiraState>({
+    domain: '',
+    email: '',
+    apiToken: '',
+    projectKey: '',
+    pointsField: 'customfield_10016',
+  });
 
-  // Markdown paste
   const [rawMarkdown, setRawMarkdown] = useState('');
 
   // Load ephemeral credentials from sessionStorage
@@ -62,14 +85,26 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
       const saved = sessionStorage.getItem(`scrum_poker:creds:${slug}`);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.linearApiKey) setLinearApiKey(parsed.linearApiKey);
-        if (parsed.githubPat) setGithubPat(parsed.githubPat);
-        if (parsed.githubOwner) setGithubOwner(parsed.githubOwner);
-        if (parsed.githubRepo) setGithubRepo(parsed.githubRepo);
-        if (parsed.jiraDomain) setJiraDomain(parsed.jiraDomain);
-        if (parsed.jiraEmail) setJiraEmail(parsed.jiraEmail);
-        if (parsed.jiraApiToken) setJiraApiToken(parsed.jiraApiToken);
-        if (parsed.jiraProjectKey) setJiraProjectKey(parsed.jiraProjectKey);
+        if (parsed.linearApiKey) {
+          setLinear((prev) => ({ ...prev, apiKey: parsed.linearApiKey }));
+        }
+        if (parsed.githubPat || parsed.githubOwner || parsed.githubRepo) {
+          setGithub((prev) => ({
+            ...prev,
+            pat: parsed.githubPat || prev.pat,
+            owner: parsed.githubOwner || prev.owner,
+            repo: parsed.githubRepo || prev.repo,
+          }));
+        }
+        if (parsed.jiraDomain || parsed.jiraEmail || parsed.jiraApiToken || parsed.jiraProjectKey) {
+          setJira((prev) => ({
+            ...prev,
+            domain: parsed.jiraDomain || prev.domain,
+            email: parsed.jiraEmail || prev.email,
+            apiToken: parsed.jiraApiToken || prev.apiToken,
+            projectKey: parsed.jiraProjectKey || prev.projectKey,
+          }));
+        }
       }
     } catch {
       // Ignore sessionStorage parsing errors
@@ -82,14 +117,14 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
       sessionStorage.setItem(
         `scrum_poker:creds:${slug}`,
         JSON.stringify({
-          linearApiKey,
-          githubPat,
-          githubOwner,
-          githubRepo,
-          jiraDomain,
-          jiraEmail,
-          jiraApiToken,
-          jiraProjectKey,
+          linearApiKey: linear.apiKey,
+          githubPat: github.pat,
+          githubOwner: github.owner,
+          githubRepo: github.repo,
+          jiraDomain: jira.domain,
+          jiraEmail: jira.email,
+          jiraApiToken: jira.apiToken,
+          jiraProjectKey: jira.projectKey,
         })
       );
     } catch {
@@ -120,34 +155,34 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
 
   const getCurrentConfig = (): TrackerConfig | null => {
     if (tab === 'Linear') {
-      if (!linearApiKey.trim()) return null;
+      if (!linear.apiKey.trim()) return null;
       return {
         provider: 'Linear',
-        config: { api_key: linearApiKey.trim() },
+        config: { api_key: linear.apiKey.trim() },
       };
     }
     if (tab === 'GitHub') {
-      if (!githubPat.trim() || !githubOwner.trim() || !githubRepo.trim()) return null;
+      if (!github.pat.trim() || !github.owner.trim() || !github.repo.trim()) return null;
       return {
         provider: 'GitHub',
         config: {
-          personal_access_token: githubPat.trim(),
-          owner: githubOwner.trim(),
-          repo: githubRepo.trim(),
+          personal_access_token: github.pat.trim(),
+          owner: github.owner.trim(),
+          repo: github.repo.trim(),
         },
       };
     }
     if (tab === 'Jira') {
-      if (!jiraDomain.trim() || !jiraEmail.trim() || !jiraApiToken.trim() || !jiraProjectKey.trim())
+      if (!jira.domain.trim() || !jira.email.trim() || !jira.apiToken.trim() || !jira.projectKey.trim())
         return null;
       return {
         provider: 'Jira',
         config: {
-          domain: jiraDomain.trim(),
-          email: jiraEmail.trim(),
-          api_token: jiraApiToken.trim(),
-          project_key: jiraProjectKey.trim(),
-          points_field: jiraPointsField.trim() || undefined,
+          domain: jira.domain.trim(),
+          email: jira.email.trim(),
+          api_token: jira.apiToken.trim(),
+          project_key: jira.projectKey.trim(),
+          points_field: jira.pointsField.trim() || undefined,
         },
       };
     }
@@ -158,16 +193,7 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
     onClearFeedback();
     const config = getCurrentConfig();
     if (config) {
-      // Do NOT save credentials here — only save after a confirmed live connection.
       onTestConnection(config);
-    }
-  };
-
-  const handleConnect = () => {
-    onClearFeedback();
-    const config = getCurrentConfig();
-    if (config) {
-      onConnect(config);
     }
   };
 
@@ -179,30 +205,14 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
 
       const query: TrackerQuery = {};
       if (tab === 'Linear') {
-        if (selectedLinearTeam) query.team_id = selectedLinearTeam;
-        if (selectedLinearProject) query.project_id = selectedLinearProject;
+        if (linear.selectedTeam) query.team_id = linear.selectedTeam;
+        if (linear.selectedProject) query.project_id = linear.selectedProject;
       } else if (tab === 'GitHub') {
-        if (selectedGithubMilestone) query.milestone = selectedGithubMilestone;
+        if (github.selectedMilestone) query.milestone = github.selectedMilestone;
       }
       onFetchBacklog(query);
       onClose();
     }
-  };
-
-  const handleFetchBacklog = () => {
-    if (tab === 'Linear') {
-      onFetchBacklog({
-        team_id: selectedLinearTeam || undefined,
-        project_id: selectedLinearProject || undefined,
-      });
-    } else if (tab === 'GitHub') {
-      onFetchBacklog({
-        milestone: selectedGithubMilestone || undefined,
-      });
-    } else if (tab === 'Jira') {
-      onFetchBacklog({});
-    }
-    onClose();
   };
 
   const handleImportMarkdown = () => {
@@ -213,36 +223,36 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#10233f]/55 backdrop-blur-md animate-in fade-in duration-200">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="connect-tracker-modal-title"
-        className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+        className="bg-white border border-[#10233f]/12 rounded-2xl w-full max-w-xl overflow-hidden shadow-[0_30px_60px_rgba(12,28,55,0.25)] flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-5 border-b border-[#10233f]/10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-xl">⚡</span>
             <div>
-              <h2 id="connect-tracker-modal-title" className="text-lg font-bold text-white">
+              <h2 id="connect-tracker-modal-title" className="text-lg font-bold text-[#10233f]">
                 Backlog Ingestion & Tracker Sync
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#5d6f88] font-medium">
                 Zero-Auth ephemeral credentials stored in browser session memory
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-lg p-1 rounded-lg hover:bg-slate-800 transition"
+            className="text-[#5d6f88] hover:text-[#10233f] text-lg p-1 rounded-lg hover:bg-[#edf3fb] transition"
           >
             ✕
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-slate-800 bg-slate-950/50 p-1.5 gap-1 text-xs font-semibold">
+        <div className="flex border-b border-[#10233f]/10 bg-[#edf3fb] p-1.5 gap-1 text-xs font-bold">
           {(['Linear', 'GitHub', 'Jira', 'Markdown'] as const).map((t) => (
             <button
               key={t}
@@ -252,8 +262,8 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
               }}
               className={`flex-1 py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${
                 tab === t
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  ? 'bg-[#2047a8] text-white shadow-sm'
+                  : 'text-[#5d6f88] hover:text-[#10233f] hover:bg-white/60'
               }`}
             >
               {t === 'Linear' && '📐 Linear'}
@@ -267,22 +277,22 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
         {/* Body Content */}
         <div className="p-5 space-y-4 overflow-y-auto flex-1 text-xs sm:text-sm">
           {trackerError && (
-            <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 text-rose-300 text-xs flex items-start gap-2">
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-rose-800 text-xs flex items-start gap-2 font-medium">
               <span className="text-sm">⚠️</span>
               <p className="flex-1">{trackerError}</p>
             </div>
           )}
 
           {activeProvider && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-emerald-300 text-xs flex items-center justify-between">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-emerald-800 text-xs flex items-center justify-between font-medium">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Connected Provider: <strong>{activeProvider}</strong></span>
               </div>
               {isFacilitator && (
                 <button
                   onClick={onDisconnect}
-                  className="px-2 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-[11px] font-semibold transition"
+                  className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-full text-[11px] font-bold transition border border-rose-300"
                 >
                   Disconnect
                 </button>
@@ -294,17 +304,17 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
           {tab === 'Linear' && (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Linear Personal API Key <span className="text-indigo-400">*</span>
+                <label className="block text-xs font-bold text-[#10233f] mb-1">
+                  Linear Personal API Key <span className="text-[#2047a8]">*</span>
                 </label>
                 <input
                   type="password"
-                  value={linearApiKey}
-                  onChange={(e) => setLinearApiKey(e.target.value)}
+                  value={linear.apiKey}
+                  onChange={(e) => setLinear((prev) => ({ ...prev, apiKey: e.target.value }))}
                   placeholder="lin_api_..."
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
+                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-mono"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-[#5d6f88] mt-1 font-medium">
                   Created in Linear Settings &gt; API &gt; Personal API Keys.
                 </p>
               </div>
@@ -312,13 +322,13 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
               {connectionPreview?.provider === 'Linear' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    <label className="block text-xs font-bold text-[#10233f] mb-1">
                       Filter Team (Optional)
                     </label>
                     <select
-                      value={selectedLinearTeam}
-                      onChange={(e) => setSelectedLinearTeam(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                      value={linear.selectedTeam}
+                      onChange={(e) => setLinear((prev) => ({ ...prev, selectedTeam: e.target.value }))}
+                      className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] text-xs font-medium"
                     >
                       <option value="">All Teams</option>
                       {connectionPreview.teams.map((t) => (
@@ -330,13 +340,13 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    <label className="block text-xs font-bold text-[#10233f] mb-1">
                       Filter Project (Optional)
                     </label>
                     <select
-                      value={selectedLinearProject}
-                      onChange={(e) => setSelectedLinearProject(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                      value={linear.selectedProject}
+                      onChange={(e) => setLinear((prev) => ({ ...prev, selectedProject: e.target.value }))}
+                      className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] text-xs font-medium"
                     >
                       <option value="">All Projects</option>
                       {connectionPreview.projects.map((p) => (
@@ -355,54 +365,54 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
           {tab === 'GitHub' && (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  GitHub Personal Access Token (PAT) <span className="text-indigo-400">*</span>
+                <label className="block text-xs font-bold text-[#10233f] mb-1">
+                  GitHub Personal Access Token (PAT) <span className="text-[#2047a8]">*</span>
                 </label>
                 <input
                   type="password"
-                  value={githubPat}
-                  onChange={(e) => setGithubPat(e.target.value)}
+                  value={github.pat}
+                  onChange={(e) => setGithub((prev) => ({ ...prev, pat: e.target.value }))}
                   placeholder="ghp_..."
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
+                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-mono"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Repo Owner <span className="text-indigo-400">*</span>
+                  <label className="block text-xs font-bold text-[#10233f] mb-1">
+                    Repo Owner <span className="text-[#2047a8]">*</span>
                   </label>
                   <input
                     type="text"
-                    value={githubOwner}
-                    onChange={(e) => setGithubOwner(e.target.value)}
+                    value={github.owner}
+                    onChange={(e) => setGithub((prev) => ({ ...prev, owner: e.target.value }))}
                     placeholder="e.g. facebook"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Repository <span className="text-indigo-400">*</span>
+                  <label className="block text-xs font-bold text-[#10233f] mb-1">
+                    Repository <span className="text-[#2047a8]">*</span>
                   </label>
                   <input
                     type="text"
-                    value={githubRepo}
-                    onChange={(e) => setGithubRepo(e.target.value)}
+                    value={github.repo}
+                    onChange={(e) => setGithub((prev) => ({ ...prev, repo: e.target.value }))}
                     placeholder="e.g. react"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-medium"
                   />
                 </div>
               </div>
 
               {connectionPreview?.provider === 'GitHub' && connectionPreview.milestones.length > 0 && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-[#10233f] mb-1">
                     Filter Milestone (Optional)
                   </label>
                   <select
-                    value={selectedGithubMilestone}
-                    onChange={(e) => setSelectedGithubMilestone(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    value={github.selectedMilestone}
+                    onChange={(e) => setGithub((prev) => ({ ...prev, selectedMilestone: e.target.value }))}
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] text-xs font-medium"
                   >
                     <option value="">All Milestones</option>
                     {connectionPreview.milestones.map((m) => (
@@ -421,73 +431,73 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Jira Domain <span className="text-indigo-400">*</span>
+                  <label className="block text-xs font-bold text-[#10233f] mb-1">
+                    Jira Domain <span className="text-[#2047a8]">*</span>
                   </label>
                   <div className="flex items-center">
                     <input
                       type="text"
-                      value={jiraDomain}
-                      onChange={(e) => setJiraDomain(e.target.value)}
+                      value={jira.domain}
+                      onChange={(e) => setJira((prev) => ({ ...prev, domain: e.target.value }))}
                       placeholder="my-company"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-l-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
+                      className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-l-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-medium"
                     />
-                    <span className="bg-slate-800 border border-l-0 border-slate-700 rounded-r-xl px-2 py-2 text-slate-400 text-xs">
+                    <span className="bg-[#edf3fb] border border-l-0 border-[#10233f]/15 rounded-r-xl px-2 py-2 text-[#5d6f88] text-xs font-semibold">
                       .atlassian.net
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Project Key <span className="text-indigo-400">*</span>
+                  <label className="block text-xs font-bold text-[#10233f] mb-1">
+                    Project Key <span className="text-[#2047a8]">*</span>
                   </label>
                   <input
                     type="text"
-                    value={jiraProjectKey}
-                    onChange={(e) => setJiraProjectKey(e.target.value)}
+                    value={jira.projectKey}
+                    onChange={(e) => setJira((prev) => ({ ...prev, projectKey: e.target.value }))}
                     placeholder="e.g. PROJ"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs uppercase"
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs uppercase font-semibold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Atlassian Account Email <span className="text-indigo-400">*</span>
+                <label className="block text-xs font-bold text-[#10233f] mb-1">
+                  Atlassian Account Email <span className="text-[#2047a8]">*</span>
                 </label>
                 <input
                   type="email"
-                  value={jiraEmail}
-                  onChange={(e) => setJiraEmail(e.target.value)}
+                  value={jira.email}
+                  onChange={(e) => setJira((prev) => ({ ...prev, email: e.target.value }))}
                   placeholder="name@company.com"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
+                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Jira API Token <span className="text-indigo-400">*</span>
+                <label className="block text-xs font-bold text-[#10233f] mb-1">
+                  Jira API Token <span className="text-[#2047a8]">*</span>
                 </label>
                 <input
                   type="password"
-                  value={jiraApiToken}
-                  onChange={(e) => setJiraApiToken(e.target.value)}
+                  value={jira.apiToken}
+                  onChange={(e) => setJira((prev) => ({ ...prev, apiToken: e.target.value }))}
                   placeholder="Generated from id.atlassian.com/manage-profile/security/api-tokens"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
+                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-[#10233f] mb-1">
                   Story Points Custom Field (Optional)
                 </label>
                 <input
                   type="text"
-                  value={jiraPointsField}
-                  onChange={(e) => setJiraPointsField(e.target.value)}
+                  value={jira.pointsField}
+                  onChange={(e) => setJira((prev) => ({ ...prev, pointsField: e.target.value }))}
                   placeholder="customfield_10016"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-xs"
+                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-mono"
                 />
               </div>
             </div>
@@ -497,7 +507,7 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
           {tab === 'Markdown' && (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-[#10233f] mb-1">
                   Paste Markdown Stories / Backlog
                 </label>
                 <textarea
@@ -505,9 +515,9 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                   value={rawMarkdown}
                   onChange={(e) => setRawMarkdown(e.target.value)}
                   placeholder={`# Story 1: User Profile Settings\nAllow users to edit profile and upload avatar.\n\n### Acceptance Criteria\n- [ ] Upload avatar image\n- [ ] Persist bio across sessions\n\n# Story 2: Billing & Checkout\nImplement Stripe checkout session.\n- [ ] Support credit card and Apple Pay`}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs font-mono resize-none"
+                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl p-3 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-mono resize-none"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-[#5d6f88] mt-1 font-medium">
                   Automatically parses titles (`#`), descriptions, and acceptance criteria checklists (`- [ ]`).
                 </p>
               </div>
@@ -516,10 +526,10 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between gap-3">
+        <div className="p-4 border-t border-[#10233f]/10 bg-[#f9fbff] flex items-center justify-between gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="px-4 py-2 rounded-full text-xs font-bold text-[#5d6f88] hover:text-[#10233f] hover:bg-[#edf3fb] transition"
           >
             Cancel
           </button>
@@ -530,14 +540,14 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                 <button
                   onClick={handleTestConnection}
                   disabled={!getCurrentConfig()}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3.5 py-2 rounded-full text-xs font-bold bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] border border-[#10233f]/12 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   🔍 Test Connection
                 </button>
                 <button
                   onClick={handleConnectAndFetch}
                   disabled={!getCurrentConfig()}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-[#2047a8] to-[#16347d] hover:from-[#16347d] hover:to-[#10233f] text-white shadow-md shadow-[#2047a8]/25 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   ⚡ Connect &amp; Import
                 </button>
@@ -546,7 +556,7 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
               <button
                 onClick={handleImportMarkdown}
                 disabled={!rawMarkdown.trim()}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/25 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 📥 Import Stories
               </button>
