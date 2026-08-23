@@ -667,7 +667,7 @@ impl IssueTrackerAdapter for LinearAdapter {
 
     async fn sync_estimate(&self, external_id: &str, points: u32) -> Result<(), TrackerError> {
         let mutation = r#"
-            mutation UpdateIssueEstimate($id: String!, $estimate: Float) {
+            mutation UpdateIssueEstimate($id: String!, $estimate: Int) {
                 issueUpdate(id: $id, input: { estimate: $estimate }) {
                     success
                 }
@@ -777,9 +777,9 @@ impl IssueTrackerAdapter for LinearAdapter {
         slices: &[StorySlice],
     ) -> Result<Vec<ExternalStory>, TrackerError> {
         let mut created = Vec::new();
-        for (_i, slice) in slices.iter().enumerate() {
+        for slice in slices {
             let mutation = r#"
-                mutation CreateSubIssue($parentId: String!, $title: String!, $description: String, $estimate: Float) {
+                mutation CreateSubIssue($parentId: String!, $title: String!, $description: String, $estimate: Int) {
                     issueCreate(input: { parentId: $parentId, title: $title, description: $description, estimate: $estimate }) {
                         success
                         issue {
