@@ -187,10 +187,17 @@ fn test_4_category_edge_case_generation() {
 
     let categories: Vec<EdgeCaseCategoryType> =
         report.edge_cases.iter().map(|ec| ec.category).collect();
-    assert!(categories.contains(&EdgeCaseCategoryType::ErrorFailure));
+    assert!(categories.contains(&EdgeCaseCategoryType::NetworkTimeouts));
     assert!(categories.contains(&EdgeCaseCategoryType::EmptyBoundary));
     assert!(categories.contains(&EdgeCaseCategoryType::ConcurrencyRaces));
     assert!(categories.contains(&EdgeCaseCategoryType::PermissionsAccess));
+
+    let net_ec = report
+        .edge_cases
+        .iter()
+        .find(|ec| ec.category == EdgeCaseCategoryType::NetworkTimeouts)
+        .unwrap();
+    assert_eq!(net_ec.category_name, "Network & Timeouts");
 
     for ec in &report.edge_cases {
         assert!(!ec.title.is_empty());
@@ -253,11 +260,26 @@ fn test_point_reference_library_defaults() {
         ]
     );
 
-    let one_pt = defaults.iter().find(|r| r.points == StoryPoints::new(1)).unwrap();
-    assert!(one_pt.description.to_lowercase().contains("copy") || one_pt.description.to_lowercase().contains("styling"));
+    let one_pt = defaults
+        .iter()
+        .find(|r| r.points == StoryPoints::new(1))
+        .unwrap();
+    assert!(
+        one_pt.description.to_lowercase().contains("copy")
+            || one_pt.description.to_lowercase().contains("styling")
+    );
 
-    let thirteen_pt = defaults.iter().find(|r| r.points == StoryPoints::new(13)).unwrap();
-    assert!(thirteen_pt.description.to_lowercase().contains("migration") || thirteen_pt.description.to_lowercase().contains("zero-downtime"));
+    let thirteen_pt = defaults
+        .iter()
+        .find(|r| r.points == StoryPoints::new(13))
+        .unwrap();
+    assert!(
+        thirteen_pt.description.to_lowercase().contains("migration")
+            || thirteen_pt
+                .description
+                .to_lowercase()
+                .contains("zero-downtime")
+    );
 }
 
 #[tokio::test]
@@ -351,7 +373,38 @@ async fn test_room_actor_story_doctor_review_state_transitions() {
         "Quick copy update in landing page footer"
     );
 
-    // 4. Facilitator clicks StartVoting -> transitions to Voting without blocking
+    // 4. Estimator checks an edge-case item in the interactive checklist
+    let first_ec_id = report.edge_cases[0].id.clone();
+    tx.send(RoomCommand::ClientMsg {
+        participant_id: "fac-1".to_string(),
+        command: ClientCommand::ToggleEdgeCaseCheck {
+            edge_case_id: first_ec_id.clone(),
+            checked: true,
+        },
+        reply: None,
+    })
+    .await
+    .unwrap();
+
+    let (snap_tx_ec, snap_rx_ec) = tokio::sync::oneshot::channel();
+    tx.send(RoomCommand::GetSnapshot {
+        participant_id: "fac-1".to_string(),
+        reply: snap_tx_ec,
+    })
+    .await
+    .unwrap();
+
+    let snap_ec = snap_rx_ec.await.unwrap();
+    let updated_ec = snap_ec
+        .story_doctor_report
+        .unwrap()
+        .edge_cases
+        .into_iter()
+        .find(|e| e.id == first_ec_id)
+        .unwrap();
+    assert!(updated_ec.checked);
+
+    // 5. Facilitator clicks StartVoting -> transitions to Voting without blocking
     tx.send(RoomCommand::ClientMsg {
         participant_id: "fac-1".to_string(),
         command: ClientCommand::StartVoting,

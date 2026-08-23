@@ -181,32 +181,39 @@ impl PointReference {
             PointReference {
                 points: StoryPoints::new(1),
                 title: "1 Point".to_string(),
-                description: "Text/copy update or minor styling tweak in existing component.".to_string(),
+                description: "Text/copy update or minor styling tweak in existing component."
+                    .to_string(),
             },
             PointReference {
                 points: StoryPoints::new(2),
                 title: "2 Points".to_string(),
-                description: "New field added to existing form with validation and DB column.".to_string(),
+                description: "New field added to existing form with validation and DB column."
+                    .to_string(),
             },
             PointReference {
                 points: StoryPoints::new(3),
                 title: "3 Points".to_string(),
-                description: "Standard CRUD endpoint and simple list view with basic filtering.".to_string(),
+                description: "Standard CRUD endpoint and simple list view with basic filtering."
+                    .to_string(),
             },
             PointReference {
                 points: StoryPoints::new(5),
                 title: "5 Points".to_string(),
-                description: "Webhook receiver with signature verification and retry queue.".to_string(),
+                description: "Webhook receiver with signature verification and retry queue."
+                    .to_string(),
             },
             PointReference {
                 points: StoryPoints::new(8),
                 title: "8 Points".to_string(),
-                description: "Multi-provider authentication flow with token refresh and error states.".to_string(),
+                description:
+                    "Multi-provider authentication flow with token refresh and error states."
+                        .to_string(),
             },
             PointReference {
                 points: StoryPoints::new(13),
                 title: "13 Points".to_string(),
-                description: "Live zero-downtime database schema migration across active tables.".to_string(),
+                description: "Live zero-downtime database schema migration across active tables."
+                    .to_string(),
             },
         ]
     }

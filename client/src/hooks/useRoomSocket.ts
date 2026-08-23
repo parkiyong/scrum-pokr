@@ -33,6 +33,7 @@ export interface UseRoomSocketReturn {
   selectStory: (story: Story | null) => void;
   selectStoryById: (storyId: string) => void;
   updatePointReferences: (references: PointReference[]) => void;
+  toggleEdgeCaseCheck: (edgeCaseId: string, checked: boolean) => void;
   connectTracker: (config: TrackerConfig) => void;
   disconnectTracker: () => void;
   testTrackerConnection: (config: TrackerConfig) => void;
@@ -142,6 +143,19 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           setRoomState((prev) => (prev ? { ...prev, backlog: msg.payload.backlog } : prev));
         } else if (msg.type === 'PointReferencesUpdated') {
           setRoomState((prev) => (prev ? { ...prev, point_references: msg.payload.references } : prev));
+        } else if (msg.type === 'EdgeCaseToggled') {
+          setRoomState((prev) => {
+            if (!prev || !prev.story_doctor_report) return prev;
+            return {
+              ...prev,
+              story_doctor_report: {
+                ...prev.story_doctor_report,
+                edge_cases: prev.story_doctor_report.edge_cases.map((ec) =>
+                  ec.id === msg.payload.edge_case_id ? { ...ec, checked: msg.payload.checked } : ec
+                ),
+              },
+            };
+          });
         } else if (msg.type === 'StoryDoctorReportUpdated') {
           setRoomState((prev) => (prev ? { ...prev, story_doctor_report: msg.payload.report } : prev));
         } else if (msg.type === 'TrackerConnectionTested') {
@@ -214,6 +228,13 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const updatePointReferences = useCallback((references: PointReference[]) => {
     sendCommand({ type: 'UpdatePointReferences', payload: { references } });
+  }, [sendCommand]);
+
+  const toggleEdgeCaseCheck = useCallback((edgeCaseId: string, checked: boolean) => {
+    sendCommand({
+      type: 'ToggleEdgeCaseCheck',
+      payload: { edge_case_id: edgeCaseId, checked },
+    });
   }, [sendCommand]);
 
   const connectTracker = useCallback((config: TrackerConfig) => {
@@ -296,6 +317,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     selectStory,
     selectStoryById,
     updatePointReferences,
+    toggleEdgeCaseCheck,
     connectTracker,
     disconnectTracker,
     testTrackerConnection,

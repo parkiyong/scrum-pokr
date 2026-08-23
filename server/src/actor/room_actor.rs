@@ -193,6 +193,23 @@ impl RoomActor {
                 self.get_participant(sender_id)
             }
 
+            ClientCommand::ToggleEdgeCaseCheck {
+                edge_case_id,
+                checked,
+            } => {
+                if let Some(ref mut report) = self.state.story_doctor_report {
+                    if let Some(ec) = report.edge_cases.iter_mut().find(|e| e.id == edge_case_id) {
+                        ec.checked = checked;
+                        let _ = self.event_tx.send(ServerEvent::EdgeCaseToggled {
+                            edge_case_id: edge_case_id.clone(),
+                            checked,
+                        });
+                        self.broadcast_snapshot();
+                    }
+                }
+                self.get_participant(sender_id)
+            }
+
             ClientCommand::ConnectTracker { config } => {
                 if !self.is_facilitator(sender_id) {
                     let _ = self.event_tx.send(ServerEvent::TrackerError {

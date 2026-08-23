@@ -1,4 +1,6 @@
-use crate::domain::models::{ConsensusSummary, EstimationPhase, PointReference, Role, RoomState, Story};
+use crate::domain::models::{
+    ConsensusSummary, EstimationPhase, PointReference, Role, RoomState, Story,
+};
 use crate::domain::story_doctor::StoryDoctorReport;
 use serde::{Deserialize, Serialize};
 

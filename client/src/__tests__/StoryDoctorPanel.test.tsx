@@ -70,8 +70,8 @@ const mockReport: StoryDoctorReport = {
   edge_cases: [
     {
       id: 'ec-1',
-      category: 'ErrorFailure',
-      category_name: 'Error & Failure States',
+      category: 'NetworkTimeouts',
+      category_name: 'Network & Timeouts',
       title: 'Browser blocks automatic file download',
       description: 'Popup blocker prevents triggering file download.',
       checked: false,
@@ -128,7 +128,8 @@ describe('StoryDoctorPanel component', () => {
     expect(screen.getByText('Valuable')).toBeInTheDocument();
   });
 
-  it('allows clicking interactive edge-case checkboxes', () => {
+  it('allows clicking interactive edge-case checkboxes and triggers onToggleEdgeCase', () => {
+    const handleToggle = vi.fn();
     render(
       <StoryDoctorPanel
         story={mockStory}
@@ -136,6 +137,7 @@ describe('StoryDoctorPanel component', () => {
         phase="StoryDoctorReview"
         isFacilitator={true}
         onStartVoting={vi.fn()}
+        onToggleEdgeCase={handleToggle}
       />
     );
 
@@ -145,6 +147,7 @@ describe('StoryDoctorPanel component', () => {
 
     fireEvent.click(checkbox);
     expect(checkbox).toBeChecked();
+    expect(handleToggle).toHaveBeenCalledWith('ec-1', true);
   });
 
   it('allows facilitator to start voting round', () => {

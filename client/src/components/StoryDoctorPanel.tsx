@@ -7,6 +7,7 @@ interface StoryDoctorPanelProps {
   phase: EstimationPhase;
   isFacilitator: boolean;
   onStartVoting: () => void;
+  onToggleEdgeCase?: (id: string, checked: boolean) => void;
   onClose?: () => void;
 }
 
@@ -16,6 +17,7 @@ export const StoryDoctorPanel: React.FC<StoryDoctorPanelProps> = ({
   phase,
   isFacilitator,
   onStartVoting,
+  onToggleEdgeCase,
   onClose,
 }) => {
   const [expandedCriteria, setExpandedCriteria] = useState(false);
@@ -49,13 +51,19 @@ export const StoryDoctorPanel: React.FC<StoryDoctorPanelProps> = ({
   };
 
   const toggleEdgeCase = (id: string) => {
+    const current = edgeCases.find((e) => e.id === id)?.checked ?? !!checkedEdgeCases[id];
+    const next = !current;
     setCheckedEdgeCases((prev) => ({
       ...prev,
-      [id]: !prev[id],
+      [id]: next,
     }));
+    onToggleEdgeCase?.(id, next);
   };
 
-  const checkedCount = edgeCases.filter((ec) => checkedEdgeCases[ec.id]).length;
+  const isChecked = (ec: (typeof edgeCases)[0]) =>
+    ec.checked || !!checkedEdgeCases[ec.id];
+
+  const checkedCount = edgeCases.filter(isChecked).length;
 
   return (
     <div className="bg-white/95 backdrop-blur-md border border-[#10233f]/12 rounded-2xl p-5 shadow-[0_14px_34px_rgba(18,42,82,0.08)] flex flex-col gap-4 text-[#10233f]">
@@ -254,20 +262,20 @@ export const StoryDoctorPanel: React.FC<StoryDoctorPanelProps> = ({
 
           <div className="space-y-2">
             {edgeCases.map((ec) => {
-              const isChecked = !!checkedEdgeCases[ec.id];
+              const itemChecked = isChecked(ec);
               return (
                 <div
                   key={ec.id}
                   onClick={() => toggleEdgeCase(ec.id)}
                   className={`p-2.5 rounded-xl border transition cursor-pointer flex items-start gap-2.5 ${
-                    isChecked
+                    itemChecked
                       ? 'bg-emerald-50/70 border-emerald-300 shadow-sm'
                       : 'bg-[#f9fbff] hover:bg-[#edf3fb] border-[#10233f]/10'
                   }`}
                 >
                   <input
                     type="checkbox"
-                    checked={isChecked}
+                    checked={itemChecked}
                     onChange={() => {}} // Handled by parent container click
                     className="mt-0.5 rounded text-[#2047a8] focus:ring-[#2047a8] cursor-pointer"
                   />
@@ -275,7 +283,7 @@ export const StoryDoctorPanel: React.FC<StoryDoctorPanelProps> = ({
                     <div className="flex items-center justify-between gap-1">
                       <span
                         className={`text-xs font-bold truncate ${
-                          isChecked ? 'line-through text-emerald-800' : 'text-[#10233f]'
+                          itemChecked ? 'line-through text-emerald-800' : 'text-[#10233f]'
                         }`}
                       >
                         {ec.title}

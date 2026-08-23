@@ -135,7 +135,7 @@ export interface ComplexitySummary {
 }
 
 export type EdgeCaseCategoryType =
-  | 'ErrorFailure'
+  | 'NetworkTimeouts'
   | 'EmptyBoundary'
   | 'ConcurrencyRaces'
   | 'PermissionsAccess';
@@ -204,6 +204,10 @@ export type ClientCommand =
       type: 'UpdatePointReferences';
       payload: { references: PointReference[] };
     }
+  | {
+      type: 'ToggleEdgeCaseCheck';
+      payload: { edge_case_id: string; checked: boolean };
+    }
   | { type: 'ConnectTracker'; payload: { config: TrackerConfig } }
   | { type: 'DisconnectTracker' }
   | { type: 'TestTrackerConnection'; payload: { config: TrackerConfig } }
@@ -256,6 +260,10 @@ export type ServerEvent =
   | {
       type: 'PointReferencesUpdated';
       payload: { references: PointReference[] };
+    }
+  | {
+      type: 'EdgeCaseToggled';
+      payload: { edge_case_id: string; checked: boolean };
     }
   | {
       type: 'StoryDoctorReportUpdated';

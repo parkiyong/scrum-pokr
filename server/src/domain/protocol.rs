@@ -24,6 +24,10 @@ pub enum ClientCommand {
     UpdatePointReferences {
         references: Vec<PointReference>,
     },
+    ToggleEdgeCaseCheck {
+        edge_case_id: String,
+        checked: bool,
+    },
     ConnectTracker {
         config: TrackerConfig,
     },
@@ -112,6 +116,10 @@ pub enum ServerEvent {
     },
     PointReferencesUpdated {
         references: Vec<PointReference>,
+    },
+    EdgeCaseToggled {
+        edge_case_id: String,
+        checked: bool,
     },
     StoryDoctorReportUpdated {
         report: Option<StoryDoctorReport>,
