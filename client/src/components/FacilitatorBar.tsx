@@ -42,13 +42,18 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
 
         {syncFeedback && (
           <span
-            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+            title={syncFeedback.message || (syncFeedback.success ? 'Successfully synced to tracker' : 'Sync failed')}
+            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
               syncFeedback.success
                 ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30'
                 : 'bg-rose-500/10 text-rose-700 border border-rose-500/30'
             }`}
           >
-            {syncFeedback.success ? '✓ Synced to Tracker' : 'Sync failed'}
+            {syncFeedback.success
+              ? '✓ Synced to Tracker'
+              : syncFeedback.message
+              ? `Sync failed: ${syncFeedback.message}`
+              : 'Sync failed'}
           </span>
         )}
       </div>

@@ -190,3 +190,114 @@ fn test_csv_formula_sanitization() {
     assert!(csv.contains("'-5"));
     assert!(csv.contains("'@Ready"));
 }
+
+#[tokio::test]
+async fn test_linear_adapter_graphql_mutations_and_type_contracts() {
+    use axum::{routing::post, Json, Router};
+
+    let app = Router::new().route(
+        "/graphql",
+        post(|Json(payload): Json<serde_json::Value>| async move {
+            let query = payload.get("query").and_then(|q| q.as_str()).unwrap_or("");
+            let variables = payload.get("variables").cloned().unwrap_or_default();
+
+            if query.contains("mutation UpdateIssueEstimate") {
+                // Ensure $estimate is typed as Int in GraphQL definition
+                assert!(query.contains("$estimate: Int"));
+                assert_eq!(
+                    variables.get("id").and_then(|v| v.as_str()),
+                    Some("lin-101")
+                );
+                assert_eq!(variables.get("estimate").and_then(|v| v.as_u64()), Some(5));
+
+                Json(serde_json::json!({
+                    "data": {
+                        "issueUpdate": {
+                            "success": true
+                        }
+                    }
+                }))
+            } else if query.contains("mutation CreateComment") {
+                assert_eq!(
+                    variables.get("issueId").and_then(|v| v.as_str()),
+                    Some("lin-101")
+                );
+                assert!(variables
+                    .get("body")
+                    .and_then(|v| v.as_str())
+                    .unwrap()
+                    .contains("Consensus: 5"));
+
+                Json(serde_json::json!({
+                    "data": {
+                        "commentCreate": {
+                            "success": true
+                        }
+                    }
+                }))
+            } else if query.contains("mutation CreateSubIssue") {
+                assert!(query.contains("$estimate: Int"));
+                assert_eq!(
+                    variables.get("parentId").and_then(|v| v.as_str()),
+                    Some("lin-101")
+                );
+                assert_eq!(variables.get("estimate").and_then(|v| v.as_u64()), Some(2));
+
+                Json(serde_json::json!({
+                    "data": {
+                        "issueCreate": {
+                            "success": true,
+                            "issue": {
+                                "id": "sub-1",
+                                "identifier": "ENG-101-S1",
+                                "url": "https://linear.app/issue/ENG-101-S1"
+                            }
+                        }
+                    }
+                }))
+            } else {
+                Json(serde_json::json!({
+                    "errors": [{"message": "Unknown query"}]
+                }))
+            }
+        }),
+    );
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
+
+    let config = TrackerConfig::Linear {
+        api_key: "lin_api_valid_token".to_string(),
+        endpoint: Some(format!("http://127.0.0.1:{}/graphql", addr.port())),
+    };
+    let adapter = create_adapter(config);
+
+    // 1. Sync estimate
+    adapter
+        .sync_estimate("lin-101", 5)
+        .await
+        .expect("sync estimate should succeed");
+
+    // 2. Post comment
+    adapter
+        .post_summary_comment("lin-101", "⚡ Consensus: 5 story points")
+        .await
+        .expect("post comment should succeed");
+
+    // 3. Push sub-issue slices
+    let slices = vec![StorySlice {
+        title: "Slice 1".to_string(),
+        description: "Subtask".to_string(),
+        acceptance_criteria: vec![],
+        estimated_points: Some(2),
+    }];
+    let created = adapter
+        .push_slices("lin-101", &slices)
+        .await
+        .expect("push slices should succeed");
+    assert_eq!(created.len(), 1);
+    assert_eq!(created[0].key, "ENG-101-S1");
+}
