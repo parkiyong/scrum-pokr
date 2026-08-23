@@ -1,5 +1,4 @@
 import React from 'react';
-import { CheckCircle2, Users, Zap } from 'lucide-react';
 import { ConsensusSummary, EstimationPhase, Participant } from '../types/room';
 import { PokerCard } from './PokerCard';
 
@@ -23,82 +22,67 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
   const isRevealed = phase === 'Revealed' || phase === 'Finalized' || phase === 'Discussing' || phase === 'Slicing';
   const votedCount = participants.filter((p) => p.role === 'Estimator' && p.voted).length;
   const totalEstimators = participants.filter((p) => p.role === 'Estimator').length;
-  const voteProgressPercent = totalEstimators > 0 ? (votedCount / totalEstimators) * 100 : 0;
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto flex flex-col items-center py-4 sm:py-6">
-      {/* POKER TABLE FELT ARENA */}
-      <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] max-h-[480px] min-h-[360px] rounded-[50px] sm:rounded-[90px] bg-gradient-to-b from-white via-slate-50 to-blue-50/20 border-4 sm:border-[6px] border-slate-200/90 shadow-card-lift flex items-center justify-center p-4 sm:p-8 overflow-hidden">
-        {/* Table Inner Stitched Ring Glow */}
-        <div className="absolute inset-3 sm:inset-5 rounded-[40px] sm:rounded-[76px] border border-blue-500/10 pointer-events-none ring-1 ring-slate-900/[0.03] shadow-inner" />
+    <div className="relative w-full max-w-4xl mx-auto flex flex-col items-center py-6">
+      {/* LIGHT FELT POKER TABLE */}
+      <div className="relative w-full aspect-[16/9] max-h-[460px] min-h-[340px] rounded-[60px] sm:rounded-[100px] bg-gradient-to-b from-[#ffffff] via-[#edf3fb] to-[#e2ebf7] border-4 border-[#2047a8]/25 shadow-[0_24px_60px_rgba(18,42,82,0.12)] flex items-center justify-center p-6">
+        {/* Inner Table Felt Border & Glow */}
+        <div className="absolute inset-4 rounded-[45px] sm:rounded-[80px] border border-[#2047a8]/15 pointer-events-none shadow-inner" />
 
         {/* Center Table Status & Results Hub */}
         <div className="z-10 flex flex-col items-center text-center max-w-sm px-4">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100/90 border border-slate-200/80 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-700 mb-2 shadow-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-            <span>Round {roundNumber} • {phase}</span>
-          </div>
+          <span className="text-[11px] font-bold uppercase tracking-widest text-[#2047a8] mb-1">
+            Round {roundNumber} • {phase}
+          </span>
 
           {phase === 'Idle' && (
-            <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl px-6 py-4 shadow-soft">
-              <p className="text-xs text-slate-600 font-semibold">
-                Waiting for facilitator to start voting round...
+            <div className="bg-white/95 backdrop-blur-md border border-[#10233f]/12 rounded-xl px-5 py-3 shadow-md">
+              <p className="text-xs text-[#5d6f88] font-semibold">
+                Waiting for Facilitator to start voting...
               </p>
             </div>
           )}
 
           {phase === 'Voting' && (
-            <div className="bg-white/95 backdrop-blur-xl border border-blue-200/80 rounded-2xl px-6 py-4 shadow-elevated flex flex-col items-center gap-2 max-w-xs">
-              <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                <Users className="w-4 h-4 text-blue-600" />
-                <span>
+            <div className="bg-white/95 backdrop-blur-md border border-[#2047a8]/30 rounded-xl px-6 py-3.5 shadow-lg flex flex-col items-center gap-1.5">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#2047a8] animate-ping" />
+                <span className="text-sm font-bold text-[#10233f]">
                   {votedCount} of {totalEstimators} Voted
                 </span>
               </div>
-
-              {/* Progress Bar */}
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-blue-600 rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${voteProgressPercent}%` }}
-                />
-              </div>
-
-              <p className="text-[11px] text-slate-500 font-medium">
-                Votes masked by Reveal Gate until facilitator reveals cards.
+              <p className="text-[11px] text-[#5d6f88] font-medium">
+                Votes masked by Reveal Gate until facilitator triggers Reveal.
               </p>
             </div>
           )}
 
           {isRevealed && consensus && (
-            <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-4 shadow-elevated flex flex-col items-center gap-2 min-w-[220px]">
+            <div className="bg-white/95 backdrop-blur-md border border-[#10233f]/15 rounded-2xl p-4 shadow-xl flex flex-col items-center gap-2">
               <div className="flex items-center gap-2">
                 {consensus.category === 'Consensus' ? (
-                  <span className="inline-flex items-center gap-1 px-3 py-0.5 text-xs rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Consensus ({Math.round(consensus.consensus_pct)}%)</span>
+                  <span className="px-2.5 py-0.5 text-xs rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/30 font-bold">
+                    ✓ Consensus ({Math.round(consensus.consensus_pct)}%)
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-3 py-0.5 text-xs rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold">
-                    <Zap className="w-3.5 h-3.5" />
-                    <span>{consensus.category} ({Math.round(consensus.consensus_pct)}% agree)</span>
+                  <span className="px-2.5 py-0.5 text-xs rounded-full bg-amber-500/10 text-amber-700 border border-amber-500/30 font-bold">
+                    ⚡ {consensus.category} ({Math.round(consensus.consensus_pct)}% agree)
                   </span>
                 )}
               </div>
 
               {consensus.suggested_points && (
-                <div className="flex items-baseline gap-2 my-0.5">
-                  <span className="text-4xl sm:text-5xl font-black font-display tracking-tight text-slate-900 tabular-nums">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black text-[#10233f]">
                     {consensus.suggested_points}
                   </span>
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Points
-                  </span>
+                  <span className="text-xs font-bold text-[#5d6f88]">Story Points</span>
                 </div>
               )}
 
               {consensus.min_vote && consensus.max_vote && consensus.min_vote !== consensus.max_vote && (
-                <span className="text-[11px] font-mono font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+                <span className="text-[11px] font-mono font-semibold text-[#5d6f88]">
                   Spread: {consensus.min_vote} ↔ {consensus.max_vote} pts
                 </span>
               )}
@@ -106,14 +90,14 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
           )}
 
           {isRevealed && !consensus && (
-            <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl px-5 py-3.5 shadow-soft">
-              <p className="text-xs text-slate-600 font-semibold">Cards revealed! No votes cast.</p>
+            <div className="bg-white/95 backdrop-blur-md border border-[#10233f]/12 rounded-xl px-5 py-3 shadow-md">
+              <p className="text-xs text-[#5d6f88] font-semibold">Cards revealed! No votes cast.</p>
             </div>
           )}
         </div>
 
         {/* Participant Seats around the Table */}
-        <div className="absolute inset-0 p-3 sm:p-6 flex flex-wrap items-center justify-around pointer-events-none">
+        <div className="absolute inset-0 p-4 sm:p-6 flex flex-wrap items-center justify-around pointer-events-none">
           {participants.map((p) => {
             const isSelf = p.id === currentUserId;
             const isFacilitator = p.id === facilitatorId;
@@ -129,7 +113,7 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
               p.vote !== '?';
 
             return (
-              <div key={p.id} className="pointer-events-auto m-1.5 sm:m-2">
+              <div key={p.id} className="pointer-events-auto m-2">
                 <PokerCard
                   participant={p}
                   isSelf={isSelf}
@@ -146,4 +130,3 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
     </div>
   );
 };
-

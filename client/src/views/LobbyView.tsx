@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { ArrowRight, Lock, Radio, Scissors, ShieldCheck, Sparkles, Zap } from 'lucide-react';
 
 interface LobbyViewProps {
   onJoinRoom: (slugOrCode: string) => void;
@@ -29,193 +28,123 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col justify-between p-4 sm:p-6 md:p-10 selection:bg-blue-600 selection:text-white">
-      {/* Top Brand Bar */}
-      <header className="max-w-6xl w-full mx-auto flex items-center justify-between py-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center text-xl text-white shadow-md shadow-blue-500/20 ring-1 ring-white/40">
+    <div className="min-h-[85vh] flex flex-col items-center justify-center p-4">
+      <div className="max-w-lg w-full text-center space-y-8">
+        {/* Brand Heading */}
+        <div className="space-y-3">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#2047a8] via-[#16347d] to-[#7f1d7a] shadow-xl shadow-[#2047a8]/25 text-3xl font-black mb-2 animate-bounce-slow text-white">
             🃏
           </div>
-          <div className="flex flex-col">
-            <span className="font-display font-black text-base text-slate-900 tracking-tight leading-none">
-              Scrum Pokr <span className="text-blue-600">AI</span>
-            </span>
-            <span className="text-[11px] font-mono text-slate-500 font-semibold tracking-wider">v0.1.0</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-[11px] font-semibold text-blue-700 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-            <span>Zero-Auth Standalone</span>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Center Content */}
-      <main className="max-w-4xl w-full mx-auto my-auto py-8 sm:py-12 flex flex-col items-center">
-        {/* Hero Section */}
-        <div className="text-center space-y-4 max-w-2xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-slate-200/80 shadow-soft text-xs font-semibold text-slate-700 backdrop-blur-sm">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>Server-Enforced Reveal Gate &amp; SPIDR AI Slicing</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.08] font-display">
-            Real-time planning poker for <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">high-velocity</span> teams.
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#10233f]">
+            Scrum Pokr <span className="text-[#2047a8]">AI</span>
           </h1>
-
-          <p className="text-sm sm:text-base text-slate-600 max-w-lg mx-auto font-normal leading-relaxed">
-            Zero signups, instant ephemeral rooms, anti-bias voting gates, and one-click sync to Linear, GitHub, and Jira.
+          <p className="text-sm text-[#5d6f88] max-w-sm mx-auto font-medium">
+            Zero-auth, real-time Planning Poker with server-enforced reveal gates and AI estimation advisory.
           </p>
         </div>
 
-        {/* Action Panel Grid */}
-        <div className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Card 1: Create Room */}
-          <section className="glass-panel-elevated rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden group hover:border-blue-500/30 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-blue-500/10 transition-colors" />
+        {/* Action Cards */}
+        <div className="bg-white/95 backdrop-blur-md border border-[#10233f]/12 rounded-3xl p-6 sm:p-8 shadow-[0_24px_60px_rgba(18,42,82,0.12)] space-y-6 text-left">
+          {/* Quick Create Room */}
+          <div>
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#2047a8] mb-1.5">
+              Create New Room
+            </h2>
+            <p className="text-xs text-[#5d6f88] mb-4">
+              Instantly spin up an ephemeral room with a 6-character room code (e.g. SWB-42).
+            </p>
 
-            <div className="space-y-3 mb-6 relative">
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 font-bold shadow-sm">
-                <Zap className="w-5 h-5" />
-              </div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 font-display">
-                Create New Room
-              </h2>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                Spin up a clean session instantly. Share the generated room link with your engineering team.
-              </p>
-            </div>
-
-            <form onSubmit={handleCreate} className="space-y-3 relative">
+            <form onSubmit={handleCreate} className="space-y-3">
               {showCustom ? (
                 <div className="space-y-2">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="e.g. SPRINT-42"
-                      value={customSlug}
-                      onChange={(e) => setCustomSlug(e.target.value.toUpperCase())}
-                      className="w-full bg-slate-50/80 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl px-4 py-2.5 text-xs font-mono font-bold text-slate-900 placeholder:text-slate-400 outline-none uppercase tracking-wider transition"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="flex justify-between items-center px-1">
+                  <input
+                    type="text"
+                    placeholder="e.g. SPRINT-42"
+                    value={customSlug}
+                    onChange={(e) => setCustomSlug(e.target.value.toUpperCase())}
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 rounded-xl px-3.5 py-2.5 text-sm text-[#10233f] placeholder-[#5d6f88]/60 outline-none font-mono uppercase font-semibold"
+                  />
+                  <div className="flex items-center justify-between">
                     <button
                       type="button"
-                      onClick={() => {
-                        setShowCustom(false);
-                        setCustomSlug('');
-                      }}
-                      className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition"
+                      onClick={() => setShowCustom(false)}
+                      className="text-xs text-[#5d6f88] hover:text-[#10233f] font-medium"
                     >
-                      ← Use auto-generated code
+                      ← Back to Auto Code
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setShowCustom(true)}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 transition"
-                  >
-                    + Custom room code override
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCustom(true)}
+                  className="text-xs text-[#2047a8] hover:text-[#16347d] font-bold"
+                >
+                  + Custom room code override
+                </button>
               )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 group/btn"
+                className="w-full py-3 rounded-full bg-gradient-to-r from-[#2047a8] to-[#16347d] hover:from-[#16347d] hover:to-[#10233f] text-white font-bold text-sm shadow-lg shadow-[#2047a8]/25 transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loading ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Spinning up room...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Create Room Instantly</span>
-                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" />
-                  </>
-                )}
+                {loading ? 'Creating Room...' : '⚡ Create Room Instantly'}
               </button>
             </form>
-          </section>
+          </div>
 
-          {/* Card 2: Join Room */}
-          <section className="glass-panel-elevated rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden group hover:border-indigo-500/30 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-indigo-500/10 transition-colors" />
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-[#10233f]/10 w-full" />
+            <span className="bg-[#edf3fb] px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-[#5d6f88] absolute border border-[#10233f]/10">
+              or
+            </span>
+          </div>
 
-            <div className="space-y-3 mb-6 relative">
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 font-bold shadow-sm">
-                <Radio className="w-5 h-5" />
-              </div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 font-display">
-                Join Existing Room
-              </h2>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                Enter an existing room code or short slug (e.g. <span className="font-mono text-slate-700 font-semibold">SWB-42</span>) to join live.
-              </p>
-            </div>
-
-            <form onSubmit={handleJoin} className="space-y-3 relative">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Enter room code..."
-                  value={joinInput}
-                  onChange={(e) => setJoinInput(e.target.value.toUpperCase())}
-                  className="w-full bg-slate-50/80 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl px-4 py-2.5 text-xs font-mono font-bold text-slate-900 placeholder:text-slate-400 outline-none uppercase tracking-wider transition"
-                />
-              </div>
-
+          {/* Join Existing Room */}
+          <div>
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#7f1d7a] mb-1.5">
+              Join Existing Room
+            </h2>
+            <form onSubmit={handleJoin} className="space-y-3">
+              <input
+                type="text"
+                placeholder="Enter room code (e.g. SWB-42)"
+                value={joinInput}
+                onChange={(e) => setJoinInput(e.target.value.toUpperCase())}
+                className="w-full bg-[#f9fbff] border border-[#10233f]/15 focus:border-[#7f1d7a] focus:ring-2 focus:ring-[#7f1d7a]/20 rounded-xl px-3.5 py-2.5 text-sm text-[#10233f] placeholder-[#5d6f88]/60 outline-none font-mono uppercase font-semibold"
+              />
               <button
                 type="submit"
                 disabled={!joinInput.trim()}
-                className="w-full py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-slate-900/20 transition-all duration-200 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 group/btn"
+                className="w-full py-2.5 rounded-full bg-gradient-to-r from-[#7f1d7a] to-[#9c2768] hover:opacity-95 text-white font-bold text-sm shadow-md shadow-[#7f1d7a]/20 transition active:scale-98 disabled:opacity-50"
               >
-                <span>Enter Room</span>
-                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" />
+                Enter Room →
               </button>
             </form>
-          </section>
+          </div>
         </div>
 
-        {/* Feature Highlights Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl mt-8">
-          <div className="flex items-center gap-2 p-3 rounded-2xl bg-white/70 border border-slate-200/70 shadow-soft text-xs text-slate-700 font-semibold backdrop-blur-sm">
-            <Lock className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <span className="truncate">Zero-Auth Ephemeral</span>
-          </div>
-          <div className="flex items-center gap-2 p-3 rounded-2xl bg-white/70 border border-slate-200/70 shadow-soft text-xs text-slate-700 font-semibold backdrop-blur-sm">
-            <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0" />
-            <span className="truncate">Server Reveal Gate</span>
-          </div>
-          <div className="flex items-center gap-2 p-3 rounded-2xl bg-white/70 border border-slate-200/70 shadow-soft text-xs text-slate-700 font-semibold backdrop-blur-sm">
-            <Scissors className="w-4 h-4 text-violet-600 flex-shrink-0" />
-            <span className="truncate">SPIDR Story Slicing</span>
-          </div>
-          <div className="flex items-center gap-2 p-3 rounded-2xl bg-white/70 border border-slate-200/70 shadow-soft text-xs text-slate-700 font-semibold backdrop-blur-sm">
-            <Radio className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            <span className="truncate">Tokio WebSockets</span>
-          </div>
+        {/* Feature Pills */}
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-[#5d6f88] font-semibold">
+          <span className="flex items-center gap-1.5 bg-white/80 border border-[#10233f]/10 px-3 py-1 rounded-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            Zero-Auth
+          </span>
+          <span className="flex items-center gap-1.5 bg-white/80 border border-[#10233f]/10 px-3 py-1 rounded-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-[#2047a8]" />
+            Server Reveal Gate
+          </span>
+          <span className="flex items-center gap-1.5 bg-white/80 border border-[#10233f]/10 px-3 py-1 rounded-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-[#7f1d7a]" />
+            3D Card Reveal
+          </span>
+          <span className="flex items-center gap-1.5 bg-white/80 border border-[#10233f]/10 px-3 py-1 rounded-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            Tokio Real-Time
+          </span>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="max-w-6xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-medium pt-6 border-t border-slate-200/60">
-        <p className="flex items-center gap-1.5">
-          <span>Scrum Pokr AI — MIT Licensed open source planning suite.</span>
-        </p>
-        <div className="flex items-center gap-4 text-slate-600 font-semibold">
-          <span className="text-[11px] text-slate-400">No cookies • No tracking • Memory-only state</span>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 };
-

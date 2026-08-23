@@ -237,38 +237,36 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#10233f]/55 backdrop-blur-md animate-in fade-in duration-200">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="connect-tracker-modal-title"
-        className="bg-white border border-slate-200/90 rounded-3xl w-full max-w-xl overflow-hidden shadow-modal flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+        className="bg-white border border-[#10233f]/12 rounded-2xl w-full max-w-xl overflow-hidden shadow-[0_30px_60px_rgba(12,28,55,0.25)] flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold shadow-xs">
-              ⚡
-            </div>
+        <div className="p-5 border-b border-[#10233f]/10 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">⚡</span>
             <div>
-              <h2 id="connect-tracker-modal-title" className="text-base sm:text-lg font-bold font-display text-slate-900 leading-none">
-                Backlog Ingestion &amp; Tracker Sync
+              <h2 id="connect-tracker-modal-title" className="text-lg font-bold text-[#10233f]">
+                Backlog Ingestion & Tracker Sync
               </h2>
-              <p className="text-xs text-slate-500 font-medium mt-1">
+              <p className="text-xs text-[#5d6f88] font-medium">
                 Zero-Auth ephemeral credentials stored in browser session memory
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 transition"
+            className="text-[#5d6f88] hover:text-[#10233f] text-lg p-1 rounded-lg hover:bg-[#edf3fb] transition"
           >
             ✕
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-slate-200 bg-slate-50/80 p-1.5 gap-1 text-xs font-bold">
+        <div className="flex border-b border-[#10233f]/10 bg-[#edf3fb] p-1.5 gap-1 text-xs font-bold">
           {(['Linear', 'GitHub', 'Jira', 'Markdown'] as const).map((t) => (
             <button
               key={t}
@@ -276,10 +274,10 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                 setTab(t);
                 onClearFeedback();
               }}
-              className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${
                 tab === t
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                  ? 'bg-[#2047a8] text-white shadow-sm'
+                  : 'text-[#5d6f88] hover:text-[#10233f] hover:bg-white/60'
               }`}
             >
               {t === 'Linear' && '📐 Linear'}
@@ -291,16 +289,16 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
         </div>
 
         {/* Body Content */}
-        <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 text-xs sm:text-sm">
+        <div className="p-5 space-y-4 overflow-y-auto flex-1 text-xs sm:text-sm">
           {trackerError && (
-            <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 text-rose-800 text-xs flex items-start gap-2.5 font-medium">
-              <span className="text-base">⚠️</span>
-              <p className="flex-1 leading-relaxed">{trackerError}</p>
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-rose-800 text-xs flex items-start gap-2 font-medium">
+              <span className="text-sm">⚠️</span>
+              <p className="flex-1">{trackerError}</p>
             </div>
           )}
 
           {activeProvider && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 text-emerald-900 text-xs flex items-center justify-between font-medium">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-emerald-800 text-xs flex items-center justify-between font-medium">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Connected Provider: <strong>{activeProvider}</strong></span>
@@ -308,7 +306,7 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
               {isFacilitator && (
                 <button
                   onClick={onDisconnect}
-                  className="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-full text-[11px] font-bold transition border border-rose-300 active:scale-95"
+                  className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-full text-[11px] font-bold transition border border-rose-300"
                 >
                   Disconnect
                 </button>
@@ -318,16 +316,16 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
 
           {/* Linear Tab */}
           {tab === 'Linear' && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-slate-900">
-                    Linear Personal API Key <span className="text-blue-600">*</span>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-[#10233f]">
+                    Linear Personal API Key <span className="text-[#2047a8]">*</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => pasteFromClipboard((text) => setLinear((prev) => ({ ...prev, apiKey: text })))}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg transition flex items-center gap-1 border border-blue-200"
+                    className="text-[11px] font-bold text-[#2047a8] hover:text-[#16347d] bg-[#edf3fb] hover:bg-[#dfeaf8] px-2 py-0.5 rounded-md transition flex items-center gap-1 border border-[#2047a8]/20"
                   >
                     📋 Paste
                   </button>
@@ -347,19 +345,19 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                     placeholder="lin_api_..."
                     autoComplete="off"
                     spellCheck={false}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3.5 pr-10 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-xs font-mono transition"
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl pl-3 pr-9 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-mono"
                   />
                   <button
                     type="button"
                     onClick={() => setShowLinearKey((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-700 p-1"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#5d6f88] hover:text-[#10233f] p-1"
                     title={showLinearKey ? 'Hide key' : 'Show key'}
                     aria-label={showLinearKey ? 'Hide key' : 'Show key'}
                   >
                     {showLinearKey ? '🙈' : '👁️'}
                   </button>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1.5 font-medium">
+                <p className="text-[11px] text-[#5d6f88] mt-1 font-medium">
                   Created in Linear Settings &gt; API &gt; Personal API Keys.
                 </p>
               </div>
@@ -367,13 +365,13 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
               {connectionPreview?.provider === 'Linear' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                    <label className="block text-xs font-bold text-[#10233f] mb-1">
                       Filter Team (Optional)
                     </label>
                     <select
                       value={linear.selectedTeam}
                       onChange={(e) => setLinear((prev) => ({ ...prev, selectedTeam: e.target.value }))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                      className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] text-xs font-medium"
                     >
                       <option value="">All Teams</option>
                       {connectionPreview.teams.map((t) => (
@@ -385,13 +383,13 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                    <label className="block text-xs font-bold text-[#10233f] mb-1">
                       Filter Project (Optional)
                     </label>
                     <select
                       value={linear.selectedProject}
                       onChange={(e) => setLinear((prev) => ({ ...prev, selectedProject: e.target.value }))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                      className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] text-xs font-medium"
                     >
                       <option value="">All Projects</option>
                       {connectionPreview.projects.map((p) => (
@@ -408,16 +406,16 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
 
           {/* GitHub Tab */}
           {tab === 'GitHub' && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-slate-900">
-                    GitHub Personal Access Token (PAT) <span className="text-blue-600">*</span>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-[#10233f]">
+                    GitHub Personal Access Token (PAT) <span className="text-[#2047a8]">*</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => pasteFromClipboard((text) => setGithub((prev) => ({ ...prev, pat: text })))}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg transition flex items-center gap-1 border border-blue-200"
+                    className="text-[11px] font-bold text-[#2047a8] hover:text-[#16347d] bg-[#edf3fb] hover:bg-[#dfeaf8] px-2 py-0.5 rounded-md transition flex items-center gap-1 border border-[#2047a8]/20"
                   >
                     📋 Paste
                   </button>
@@ -437,12 +435,12 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                     placeholder="ghp_..."
                     autoComplete="off"
                     spellCheck={false}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3.5 pr-10 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-xs font-mono transition"
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl pl-3 pr-9 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-mono"
                   />
                   <button
                     type="button"
                     onClick={() => setShowGithubPat((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-700 p-1"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#5d6f88] hover:text-[#10233f] p-1"
                     title={showGithubPat ? 'Hide token' : 'Show token'}
                     aria-label={showGithubPat ? 'Hide token' : 'Show token'}
                   >
@@ -453,8 +451,8 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                    Repo Owner <span className="text-blue-600">*</span>
+                  <label className="block text-xs font-bold text-[#10233f] mb-1">
+                    Repo Owner <span className="text-[#2047a8]">*</span>
                   </label>
                   <input
                     type="text"
@@ -468,12 +466,12 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                       }
                     }}
                     placeholder="e.g. facebook"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-xs font-medium transition"
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                    Repository <span className="text-blue-600">*</span>
+                  <label className="block text-xs font-bold text-[#10233f] mb-1">
+                    Repository <span className="text-[#2047a8]">*</span>
                   </label>
                   <input
                     type="text"
@@ -487,20 +485,20 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                       }
                     }}
                     placeholder="e.g. react"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-xs font-medium transition"
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-medium"
                   />
                 </div>
               </div>
 
               {connectionPreview?.provider === 'GitHub' && connectionPreview.milestones.length > 0 && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                  <label className="block text-xs font-bold text-[#10233f] mb-1">
                     Filter Milestone (Optional)
                   </label>
                   <select
                     value={github.selectedMilestone}
                     onChange={(e) => setGithub((prev) => ({ ...prev, selectedMilestone: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] text-xs font-medium"
                   >
                     <option value="">All Milestones</option>
                     {connectionPreview.milestones.map((m) => (
@@ -516,11 +514,11 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
 
           {/* Jira Tab */}
           {tab === 'Jira' && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                    Jira Domain <span className="text-blue-600">*</span>
+                  <label className="block text-xs font-bold text-[#10233f] mb-1">
+                    Jira Domain <span className="text-[#2047a8]">*</span>
                   </label>
                   <div className="flex items-center">
                     <input
@@ -531,22 +529,23 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                         const text = e.clipboardData.getData('text');
                         if (text) {
                           e.preventDefault();
+                          // Support full URL or subdomain paste
                           const cleaned = text.trim().replace(/^https?:\/\//, '').replace(/\.atlassian\.net.*$/, '');
                           setJira((prev) => ({ ...prev, domain: cleaned }));
                         }
                       }}
                       placeholder="my-company"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-l-xl px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 text-xs font-medium"
+                      className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-l-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-medium"
                     />
-                    <span className="bg-slate-100 border border-l-0 border-slate-200 rounded-r-xl px-3 py-2.5 text-slate-500 text-xs font-semibold">
+                    <span className="bg-[#edf3fb] border border-l-0 border-[#10233f]/15 rounded-r-xl px-2 py-2 text-[#5d6f88] text-xs font-semibold">
                       .atlassian.net
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                    Project Key <span className="text-blue-600">*</span>
+                  <label className="block text-xs font-bold text-[#10233f] mb-1">
+                    Project Key <span className="text-[#2047a8]">*</span>
                   </label>
                   <input
                     type="text"
@@ -560,14 +559,14 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                       }
                     }}
                     placeholder="e.g. PROJ"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-xs uppercase font-semibold"
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs uppercase font-semibold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                  Atlassian Account Email <span className="text-blue-600">*</span>
+                <label className="block text-xs font-bold text-[#10233f] mb-1">
+                  Atlassian Account Email <span className="text-[#2047a8]">*</span>
                 </label>
                 <input
                   type="email"
@@ -581,19 +580,19 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                     }
                   }}
                   placeholder="name@company.com"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-xs font-medium"
+                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-medium"
                 />
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-slate-900">
-                    Jira API Token <span className="text-blue-600">*</span>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-[#10233f]">
+                    Jira API Token <span className="text-[#2047a8]">*</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => pasteFromClipboard((text) => setJira((prev) => ({ ...prev, apiToken: text })))}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg transition flex items-center gap-1 border border-blue-200"
+                    className="text-[11px] font-bold text-[#2047a8] hover:text-[#16347d] bg-[#edf3fb] hover:bg-[#dfeaf8] px-2 py-0.5 rounded-md transition flex items-center gap-1 border border-[#2047a8]/20"
                   >
                     📋 Paste
                   </button>
@@ -613,12 +612,12 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                     placeholder="Generated from id.atlassian.com/manage-profile/security/api-tokens"
                     autoComplete="off"
                     spellCheck={false}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3.5 pr-10 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-xs font-mono"
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl pl-3 pr-9 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-mono"
                   />
                   <button
                     type="button"
                     onClick={() => setShowJiraToken((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-700 p-1"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#5d6f88] hover:text-[#10233f] p-1"
                     title={showJiraToken ? 'Hide token' : 'Show token'}
                     aria-label={showJiraToken ? 'Hide token' : 'Show token'}
                   >
@@ -628,7 +627,7 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                <label className="block text-xs font-bold text-[#10233f] mb-1">
                   Story Points Custom Field (Optional)
                 </label>
                 <input
@@ -636,7 +635,7 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                   value={jira.pointsField}
                   onChange={(e) => setJira((prev) => ({ ...prev, pointsField: e.target.value.trim() }))}
                   placeholder="customfield_10016"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-xs font-mono"
+                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-mono"
                 />
               </div>
             </div>
@@ -646,14 +645,14 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
           {tab === 'Markdown' && (
             <div className="space-y-3">
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-slate-900">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-[#10233f]">
                     Paste Markdown Stories / Backlog
                   </label>
                   <button
                     type="button"
                     onClick={() => pasteFromClipboard((text) => setRawMarkdown(text))}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg transition flex items-center gap-1 border border-blue-200"
+                    className="text-[11px] font-bold text-[#2047a8] hover:text-[#16347d] bg-[#edf3fb] hover:bg-[#dfeaf8] px-2 py-0.5 rounded-md transition flex items-center gap-1 border border-[#2047a8]/20"
                   >
                     📋 Paste Clipboard
                   </button>
@@ -663,9 +662,9 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                   value={rawMarkdown}
                   onChange={(e) => setRawMarkdown(e.target.value)}
                   placeholder={`# Story 1: User Profile Settings\nAllow users to edit profile and upload avatar.\n\n### Acceptance Criteria\n- [ ] Upload avatar image\n- [ ] Persist bio across sessions\n\n# Story 2: Billing & Checkout\nImplement Stripe checkout session.\n- [ ] Support credit card and Apple Pay`}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-xs font-mono resize-none leading-relaxed"
+                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl p-3 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-mono resize-none"
                 />
-                <p className="text-[11px] text-slate-500 mt-1.5 font-medium">
+                <p className="text-[11px] text-[#5d6f88] mt-1 font-medium">
                   Automatically parses titles (`#`), descriptions, and acceptance criteria checklists (`- [ ]`).
                 </p>
               </div>
@@ -674,10 +673,10 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50/80 flex items-center justify-between gap-3">
+        <div className="p-4 border-t border-[#10233f]/10 bg-[#f9fbff] flex items-center justify-between gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition"
+            className="px-4 py-2 rounded-full text-xs font-bold text-[#5d6f88] hover:text-[#10233f] hover:bg-[#edf3fb] transition"
           >
             Cancel
           </button>
@@ -688,14 +687,14 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                 <button
                   onClick={handleTestConnection}
                   disabled={!getCurrentConfig()}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs active:scale-95"
+                  className="px-3.5 py-2 rounded-full text-xs font-bold bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] border border-[#10233f]/12 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   🔍 Test Connection
                 </button>
                 <button
                   onClick={handleConnectAndFetch}
                   disabled={!getCurrentConfig()}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                  className="px-4 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-[#2047a8] to-[#16347d] hover:from-[#16347d] hover:to-[#10233f] text-white shadow-md shadow-[#2047a8]/25 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   ⚡ Connect &amp; Import
                 </button>
@@ -704,7 +703,7 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
               <button
                 onClick={handleImportMarkdown}
                 disabled={!rawMarkdown.trim()}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                className="px-4 py-2 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/25 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 📥 Import Stories
               </button>
@@ -715,4 +714,3 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
     </div>
   );
 };
-
