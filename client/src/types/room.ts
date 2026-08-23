@@ -154,7 +154,6 @@ export interface StoryDoctorReport {
   scorecard: InvestScorecard;
   complexity: ComplexitySummary;
   edge_cases: EdgeCaseItem[];
-  prompt_preview?: string;
 }
 
 export interface PointReference {

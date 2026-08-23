@@ -58,6 +58,62 @@ impl Story {
             status: Some("Ready".to_string()),
         }
     }
+
+    /// Returns the lowercase concatenation of title, description, and acceptance criteria.
+    pub fn combined_text_lowercase(&self) -> String {
+        format!(
+            "{}\n{}\n{}",
+            self.title,
+            self.description,
+            self.acceptance_criteria.join("\n")
+        )
+        .to_lowercase()
+    }
+
+    /// Returns the lowercase concatenation of title and description.
+    pub fn title_and_description_lowercase(&self) -> String {
+        format!("{} {}", self.title, self.description).to_lowercase()
+    }
+
+    /// Finds matching keywords within the story's full text.
+    pub fn find_matching_keywords<'a>(&self, keywords: &[&'a str]) -> Vec<&'a str> {
+        let combined = self.combined_text_lowercase();
+        keywords
+            .iter()
+            .filter(|&&kw| combined.contains(kw))
+            .copied()
+            .collect()
+    }
+
+    /// Checks if any keyword is present in the story's title or description.
+    pub fn contains_keyword_in_title_or_desc(&self, kw: &str) -> bool {
+        self.title_and_description_lowercase().contains(kw)
+    }
+
+    /// Checks if any of the given keywords are contained in the full story text.
+    pub fn contains_any_keyword(&self, keywords: &[&str]) -> bool {
+        let combined = self.combined_text_lowercase();
+        keywords.iter().any(|&kw| combined.contains(kw))
+    }
+
+    /// Determines if acceptance criteria or checklist indicators are present.
+    pub fn has_testable_criteria(&self) -> bool {
+        if !self.acceptance_criteria.is_empty() {
+            return true;
+        }
+        let combined = self.combined_text_lowercase();
+        combined.contains("[ ]")
+            || combined.contains("acceptance criteria")
+            || combined.contains("given ")
+            || combined.contains("when ")
+            || combined.contains("then ")
+    }
+
+    /// Determines if the story scope exceeds recommended single-sprint thresholds.
+    pub fn is_oversized(&self, indicators: &[&str]) -> bool {
+        let combined = self.combined_text_lowercase();
+        indicators.iter().any(|&kw| combined.contains(kw)) || self.acceptance_criteria.len() > 8
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -74,9 +130,47 @@ pub struct Participant {
 
 use crate::domain::story_doctor::StoryDoctorReport;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct StoryPoints(pub u32);
+
+impl StoryPoints {
+    pub const FIBONACCI_SCALE: &'static [u32] = &[1, 2, 3, 5, 8, 13, 21];
+
+    pub const fn new(points: u32) -> Self {
+        Self(points)
+    }
+
+    pub fn value(&self) -> u32 {
+        self.0
+    }
+
+    pub fn is_standard_fibonacci(&self) -> bool {
+        Self::FIBONACCI_SCALE.contains(&self.0)
+    }
+}
+
+impl std::fmt::Display for StoryPoints {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<u32> for StoryPoints {
+    fn from(points: u32) -> Self {
+        Self(points)
+    }
+}
+
+impl From<StoryPoints> for u32 {
+    fn from(sp: StoryPoints) -> Self {
+        sp.0
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PointReference {
-    pub points: u32,
+    pub points: StoryPoints,
     pub title: String,
     pub description: String,
 }
@@ -85,32 +179,32 @@ impl PointReference {
     pub fn default_library() -> Vec<Self> {
         vec![
             PointReference {
-                points: 1,
+                points: StoryPoints::new(1),
                 title: "1 Point".to_string(),
                 description: "Text/copy update or minor styling tweak in existing component.".to_string(),
             },
             PointReference {
-                points: 2,
+                points: StoryPoints::new(2),
                 title: "2 Points".to_string(),
                 description: "New field added to existing form with validation and DB column.".to_string(),
             },
             PointReference {
-                points: 3,
+                points: StoryPoints::new(3),
                 title: "3 Points".to_string(),
                 description: "Standard CRUD endpoint and simple list view with basic filtering.".to_string(),
             },
             PointReference {
-                points: 5,
+                points: StoryPoints::new(5),
                 title: "5 Points".to_string(),
                 description: "Webhook receiver with signature verification and retry queue.".to_string(),
             },
             PointReference {
-                points: 8,
+                points: StoryPoints::new(8),
                 title: "8 Points".to_string(),
                 description: "Multi-provider authentication flow with token refresh and error states.".to_string(),
             },
             PointReference {
-                points: 13,
+                points: StoryPoints::new(13),
                 title: "13 Points".to_string(),
                 description: "Live zero-downtime database schema migration across active tables.".to_string(),
             },

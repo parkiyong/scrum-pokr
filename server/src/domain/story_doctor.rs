@@ -72,33 +72,22 @@ pub struct StoryDoctorReport {
     pub scorecard: InvestScorecard,
     pub complexity: ComplexitySummary,
     pub edge_cases: Vec<EdgeCaseItem>,
-    pub prompt_preview: Option<String>,
 }
 
 pub fn generate_story_doctor_report(story: &Story) -> StoryDoctorReport {
     let scorecard = evaluate_invest_scorecard(story);
     let complexity = analyze_3axis_complexity(story);
     let edge_cases = generate_4category_edge_cases(story);
-    let prompt_preview = Some(generate_story_doctor_prompt(story));
 
     StoryDoctorReport {
         story_id: story.id.clone(),
         scorecard,
         complexity,
         edge_cases,
-        prompt_preview,
     }
 }
 
 pub fn evaluate_invest_scorecard(story: &Story) -> InvestScorecard {
-    let combined_text = format!(
-        "{}\n{}\n{}",
-        story.title,
-        story.description,
-        story.acceptance_criteria.join("\n")
-    )
-    .to_lowercase();
-
     let mut criteria = Vec::with_capacity(6);
     let mut issues = Vec::new();
     let mut total_score = 0;
@@ -120,11 +109,7 @@ pub fn evaluate_invest_scorecard(story: &Story) -> InvestScorecard {
         "needs completion of",
     ];
 
-    let found_deps: Vec<&str> = dep_keywords
-        .iter()
-        .filter(|&&kw| combined_text.contains(kw))
-        .copied()
-        .collect();
+    let found_deps = story.find_matching_keywords(&dep_keywords);
 
     let independent_passed = found_deps.is_empty();
     let independent_score = if independent_passed { 15 } else { 0 };
@@ -163,11 +148,7 @@ pub fn evaluate_invest_scorecard(story: &Story) -> InvestScorecard {
         "exact sql query:",
         "specifically line",
     ];
-    let found_rigid: Vec<&str> = rigid_keywords
-        .iter()
-        .filter(|&&kw| combined_text.contains(kw))
-        .copied()
-        .collect();
+    let found_rigid = story.find_matching_keywords(&rigid_keywords);
 
     let negotiable_passed = found_rigid.is_empty();
     let negotiable_score = if negotiable_passed { 10 } else { 0 };
@@ -215,8 +196,7 @@ pub fn evaluate_invest_scorecard(story: &Story) -> InvestScorecard {
         "to ensure",
     ];
 
-    let has_value_statement = value_keywords.iter().any(|&kw| combined_text.contains(kw));
-    let valuable_passed = has_value_statement;
+    let valuable_passed = story.contains_any_keyword(&value_keywords);
     let valuable_score = if valuable_passed { 20 } else { 0 };
     total_score += valuable_score;
 
@@ -258,11 +238,7 @@ pub fn evaluate_invest_scorecard(story: &Story) -> InvestScorecard {
         "and so on",
     ];
 
-    let found_vague: Vec<&str> = vague_keywords
-        .iter()
-        .filter(|&&kw| combined_text.contains(kw))
-        .copied()
-        .collect();
+    let found_vague = story.find_matching_keywords(&vague_keywords);
 
     let estimable_passed = found_vague.is_empty();
     let estimable_score = if estimable_passed { 20 } else { 0 };
@@ -301,10 +277,7 @@ pub fn evaluate_invest_scorecard(story: &Story) -> InvestScorecard {
         "complete rewrite",
         "build everything",
     ];
-    let is_oversized = multi_feature_indicators
-        .iter()
-        .any(|&kw| combined_text.contains(kw))
-        || story.acceptance_criteria.len() > 8;
+    let is_oversized = story.is_oversized(&multi_feature_indicators);
 
     let small_passed = !is_oversized;
     let small_score = if small_passed { 15 } else { 0 };
@@ -332,14 +305,7 @@ pub fn evaluate_invest_scorecard(story: &Story) -> InvestScorecard {
     });
 
     // 6. Testable (Weight: 20)
-    let has_explicit_ac = !story.acceptance_criteria.is_empty()
-        || combined_text.contains("[ ]")
-        || combined_text.contains("acceptance criteria")
-        || combined_text.contains("given ")
-        || combined_text.contains("when ")
-        || combined_text.contains("then ");
-
-    let testable_passed = has_explicit_ac;
+    let testable_passed = story.has_testable_criteria();
     let testable_score = if testable_passed { 20 } else { 0 };
     total_score += testable_score;
 
@@ -386,24 +352,12 @@ pub fn evaluate_invest_scorecard(story: &Story) -> InvestScorecard {
 }
 
 pub fn analyze_3axis_complexity(story: &Story) -> ComplexitySummary {
-    let combined_text = format!(
-        "{}\n{}\n{}",
-        story.title,
-        story.description,
-        story.acceptance_criteria.join("\n")
-    )
-    .to_lowercase();
-
     // 1. Data Models
     let data_keywords = [
         "postgres", "database", "schema", "table", "migration", "cache", "redis", "index",
         "column", "persistence", "jsonb", "query", "sql", "model", "entity", "store",
     ];
-    let matched_data: Vec<&str> = data_keywords
-        .iter()
-        .filter(|&&kw| combined_text.contains(kw))
-        .copied()
-        .collect();
+    let matched_data = story.find_matching_keywords(&data_keywords);
 
     let data_models = if !matched_data.is_empty() {
         format!(
@@ -419,11 +373,7 @@ pub fn analyze_3axis_complexity(story: &Story) -> ComplexitySummary {
         "api", "webhook", "websocket", "http", "rest", "graphql", "oauth", "token", "linear",
         "jira", "github", "stripe", "external", "third-party", "queue", "worker", "service",
     ];
-    let matched_apis: Vec<&str> = api_keywords
-        .iter()
-        .filter(|&&kw| combined_text.contains(kw))
-        .copied()
-        .collect();
+    let matched_apis = story.find_matching_keywords(&api_keywords);
 
     let dependencies_apis = if !matched_apis.is_empty() {
         format!(
@@ -440,11 +390,7 @@ pub fn analyze_3axis_complexity(story: &Story) -> ComplexitySummary {
         "lock", "race", "active user", "session", "real-time", "latency", "sla", "backward",
         "regression", "export",
     ];
-    let matched_blast: Vec<&str> = blast_keywords
-        .iter()
-        .filter(|&&kw| combined_text.contains(kw))
-        .copied()
-        .collect();
+    let matched_blast = story.find_matching_keywords(&blast_keywords);
 
     let blast_radius = if !matched_blast.is_empty() {
         format!(
@@ -463,16 +409,20 @@ pub fn analyze_3axis_complexity(story: &Story) -> ComplexitySummary {
 }
 
 pub fn generate_4category_edge_cases(story: &Story) -> Vec<EdgeCaseItem> {
-    let lower = format!("{} {}", story.title, story.description).to_lowercase();
     let mut items = Vec::with_capacity(4);
 
     // 1. Error & Failure States
-    let (err_title, err_desc) = if lower.contains("webhook") || lower.contains("api") || lower.contains("tracker") {
+    let (err_title, err_desc) = if story.contains_keyword_in_title_or_desc("webhook")
+        || story.contains_keyword_in_title_or_desc("api")
+        || story.contains_keyword_in_title_or_desc("tracker")
+    {
         (
             "External API timeout or rate limit (HTTP 429)".to_string(),
             "Handling network drops, exponential backoff retries, and surfacing user-friendly error toasts.".to_string(),
         )
-    } else if lower.contains("export") || lower.contains("csv") {
+    } else if story.contains_keyword_in_title_or_desc("export")
+        || story.contains_keyword_in_title_or_desc("csv")
+    {
         (
             "Export format & payload sanitization failure".to_string(),
             "Handling special formula injection characters (=, +, -, @) and corrupt UTF-8 character sets.".to_string(),
@@ -494,12 +444,18 @@ pub fn generate_4category_edge_cases(story: &Story) -> Vec<EdgeCaseItem> {
     });
 
     // 2. Empty & Boundary States
-    let (empty_title, empty_desc) = if lower.contains("list") || lower.contains("backlog") || lower.contains("search") {
+    let (empty_title, empty_desc) = if story.contains_keyword_in_title_or_desc("list")
+        || story.contains_keyword_in_title_or_desc("backlog")
+        || story.contains_keyword_in_title_or_desc("search")
+    {
         (
             "Empty dataset (0 items returned)".to_string(),
             "Clear zero-state illustration and instructions when no records or matches exist.".to_string(),
         )
-    } else if lower.contains("field") || lower.contains("input") || lower.contains("title") {
+    } else if story.contains_keyword_in_title_or_desc("field")
+        || story.contains_keyword_in_title_or_desc("input")
+        || story.contains_keyword_in_title_or_desc("title")
+    {
         (
             "String boundary length & unicode overflow".to_string(),
             "Max character constraints, emoji rendering, and whitespace-only submission prevention.".to_string(),
@@ -521,12 +477,17 @@ pub fn generate_4category_edge_cases(story: &Story) -> Vec<EdgeCaseItem> {
     });
 
     // 3. Concurrency & Race Conditions
-    let (race_title, race_desc) = if lower.contains("vote") || lower.contains("real-time") || lower.contains("websocket") {
+    let (race_title, race_desc) = if story.contains_keyword_in_title_or_desc("vote")
+        || story.contains_keyword_in_title_or_desc("real-time")
+        || story.contains_keyword_in_title_or_desc("websocket")
+    {
         (
             "Simultaneous multi-tab or multi-user mutations".to_string(),
             "Handling concurrent vote submissions or state flips across multiple tabs for the same participant.".to_string(),
         )
-    } else if lower.contains("migration") || lower.contains("cache") {
+    } else if story.contains_keyword_in_title_or_desc("migration")
+        || story.contains_keyword_in_title_or_desc("cache")
+    {
         (
             "Stale cache reads during active database write".to_string(),
             "Ensuring transactional consistency and read-after-write coherence during high-concurrency loads.".to_string(),
@@ -548,12 +509,17 @@ pub fn generate_4category_edge_cases(story: &Story) -> Vec<EdgeCaseItem> {
     });
 
     // 4. Permissions & Access
-    let (perm_title, perm_desc) = if lower.contains("auth") || lower.contains("session") || lower.contains("token") {
+    let (perm_title, perm_desc) = if story.contains_keyword_in_title_or_desc("auth")
+        || story.contains_keyword_in_title_or_desc("session")
+        || story.contains_keyword_in_title_or_desc("token")
+    {
         (
             "Expired session token or invalidated credentials".to_string(),
             "Automatic refresh attempt or clean redirect to login without corrupting ongoing work.".to_string(),
         )
-    } else if lower.contains("facilitator") || lower.contains("role") {
+    } else if story.contains_keyword_in_title_or_desc("facilitator")
+        || story.contains_keyword_in_title_or_desc("role")
+    {
         (
             "Observer attempting restricted facilitator action".to_string(),
             "Server-side authorization validation rejecting unauthorized role actions with clear error feedback.".to_string(),

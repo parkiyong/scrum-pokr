@@ -1,11 +1,39 @@
 use server::actor::room_actor::{RoomActor, RoomCommand};
-use server::domain::models::{EstimationPhase, PointReference, Story};
+use server::domain::models::{EstimationPhase, PointReference, Story, StoryPoints};
 use server::domain::protocol::ClientCommand;
 use server::domain::story_doctor::{
     generate_story_doctor_prompt, generate_story_doctor_report, EdgeCaseCategoryType,
     InvestCriterion,
 };
 use tokio::sync::mpsc;
+
+#[test]
+fn test_story_query_methods() {
+    let story = Story::new(
+        "s-0",
+        "OAuth2 Login Flow",
+        "As a user, I want to log in via GitHub so that I can access my rooms.",
+        vec![
+            "Given valid credentials, user is logged in".to_string(),
+            "Token is securely stored".to_string(),
+        ],
+    );
+
+    assert_eq!(
+        story.combined_text_lowercase(),
+        "oauth2 login flow\nas a user, i want to log in via github so that i can access my rooms.\ngiven valid credentials, user is logged in\ntoken is securely stored"
+    );
+    assert_eq!(
+        story.title_and_description_lowercase(),
+        "oauth2 login flow as a user, i want to log in via github so that i can access my rooms."
+    );
+    assert_eq!(
+        story.find_matching_keywords(&["github", "nonexistent", "oauth2"]),
+        vec!["github", "oauth2"]
+    );
+    assert!(story.has_testable_criteria());
+    assert!(!story.is_oversized(&["complete rewrite", "build everything"]));
+}
 
 #[test]
 fn test_invest_scorecard_calculation_perfect_story() {
@@ -189,17 +217,46 @@ fn test_story_doctor_prompt_generation() {
 }
 
 #[test]
+fn test_story_points_domain_value_object() {
+    let pt = StoryPoints::new(5);
+    assert_eq!(pt.value(), 5);
+    assert_eq!(u32::from(pt), 5);
+    assert!(pt.is_standard_fibonacci());
+    assert_eq!(format!("{}", pt), "5");
+
+    let custom = StoryPoints(42);
+    assert_eq!(custom.value(), 42);
+    assert!(!custom.is_standard_fibonacci());
+
+    // Serialization / deserialization roundtrip
+    let json = serde_json::to_string(&pt).unwrap();
+    assert_eq!(json, "5");
+    let deserialized: StoryPoints = serde_json::from_str(&json).unwrap();
+    assert_eq!(deserialized, pt);
+}
+
+#[test]
 fn test_point_reference_library_defaults() {
     let defaults = PointReference::default_library();
     assert_eq!(defaults.len(), 6);
 
-    let points: Vec<u32> = defaults.iter().map(|r| r.points).collect();
-    assert_eq!(points, vec![1, 2, 3, 5, 8, 13]);
+    let points: Vec<StoryPoints> = defaults.iter().map(|r| r.points).collect();
+    assert_eq!(
+        points,
+        vec![
+            StoryPoints::new(1),
+            StoryPoints::new(2),
+            StoryPoints::new(3),
+            StoryPoints::new(5),
+            StoryPoints::new(8),
+            StoryPoints::new(13)
+        ]
+    );
 
-    let one_pt = defaults.iter().find(|r| r.points == 1).unwrap();
+    let one_pt = defaults.iter().find(|r| r.points == StoryPoints::new(1)).unwrap();
     assert!(one_pt.description.to_lowercase().contains("copy") || one_pt.description.to_lowercase().contains("styling"));
 
-    let thirteen_pt = defaults.iter().find(|r| r.points == 13).unwrap();
+    let thirteen_pt = defaults.iter().find(|r| r.points == StoryPoints::new(13)).unwrap();
     assert!(thirteen_pt.description.to_lowercase().contains("migration") || thirteen_pt.description.to_lowercase().contains("zero-downtime"));
 }
 

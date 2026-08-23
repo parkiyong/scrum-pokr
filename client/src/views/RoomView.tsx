@@ -102,6 +102,38 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
     syncEstimateToTracker(activeStory.id, numericPoints, true);
   };
 
+  const renderStoryDoctor = (isMobileModal = false) => (
+    <StoryDoctorPanel
+      story={activeStory || null}
+      report={storyDoctorReport}
+      phase={phase}
+      isFacilitator={isFacilitator}
+      onStartVoting={() => {
+        startVoting();
+        if (isMobileModal) setIsDoctorDrawerOpen(false);
+      }}
+      onClose={isMobileModal ? () => setIsDoctorDrawerOpen(false) : undefined}
+    />
+  );
+
+  const renderPointReferenceLibrary = (isMobileModal = false) => (
+    <div className={isMobileModal ? 'relative' : undefined}>
+      {isMobileModal && (
+        <button
+          onClick={() => setIsRefLibraryDrawerOpen(false)}
+          className="absolute top-4 right-4 text-[#5d6f88] hover:text-[#10233f] z-10 text-sm font-bold"
+        >
+          ✕
+        </button>
+      )}
+      <PointReferenceLibrary
+        references={pointReferences}
+        isFacilitator={isFacilitator}
+        onUpdateReferences={updatePointReferences}
+      />
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col bg-transparent text-[#10233f] pb-28">
       {/* Header */}
@@ -235,13 +267,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-start">
           {/* Left Column (Desktop): Story Doctor Quality Gate */}
           <div className="hidden lg:block lg:col-span-4 space-y-4">
-            <StoryDoctorPanel
-              story={activeStory || null}
-              report={storyDoctorReport}
-              phase={phase}
-              isFacilitator={isFacilitator}
-              onStartVoting={startVoting}
-            />
+            {renderStoryDoctor()}
           </div>
 
           {/* Center Column: Poker Table Arena */}
@@ -258,11 +284,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
 
           {/* Right Column: Point Reference Library */}
           <div className="hidden lg:block lg:col-span-3 space-y-4">
-            <PointReferenceLibrary
-              references={pointReferences}
-              isFacilitator={isFacilitator}
-              onUpdateReferences={updatePointReferences}
-            />
+            {renderPointReferenceLibrary()}
           </div>
         </div>
       </main>
@@ -271,17 +293,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
       {isDoctorDrawerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a1220]/60 backdrop-blur-sm lg:hidden animate-fade-in">
           <div className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <StoryDoctorPanel
-              story={activeStory || null}
-              report={storyDoctorReport}
-              phase={phase}
-              isFacilitator={isFacilitator}
-              onStartVoting={() => {
-                startVoting();
-                setIsDoctorDrawerOpen(false);
-              }}
-              onClose={() => setIsDoctorDrawerOpen(false)}
-            />
+            {renderStoryDoctor(true)}
           </div>
         </div>
       )}
@@ -290,19 +302,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
       {isRefLibraryDrawerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a1220]/60 backdrop-blur-sm lg:hidden animate-fade-in">
           <div className="max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="relative">
-              <button
-                onClick={() => setIsRefLibraryDrawerOpen(false)}
-                className="absolute top-4 right-4 text-[#5d6f88] hover:text-[#10233f] z-10 text-sm font-bold"
-              >
-                ✕
-              </button>
-              <PointReferenceLibrary
-                references={pointReferences}
-                isFacilitator={isFacilitator}
-                onUpdateReferences={updatePointReferences}
-              />
-            </div>
+            {renderPointReferenceLibrary(true)}
           </div>
         </div>
       )}
