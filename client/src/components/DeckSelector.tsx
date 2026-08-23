@@ -6,7 +6,7 @@ interface DeckSelectorProps {
   disabled?: boolean;
 }
 
-const FIBONACCI_DECK = ['0', '1', '2', '3', '5', '8', '13', '21', '?'];
+const FIBONACCI_DECK = ['0', '0.5', '1', '2', '3', '5', '8', '13', '21', '?'];
 
 export const DeckSelector: React.FC<DeckSelectorProps> = ({
   selectedCard,

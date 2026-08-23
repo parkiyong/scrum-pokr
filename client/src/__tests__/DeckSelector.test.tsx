@@ -10,7 +10,10 @@ describe('DeckSelector component', () => {
     const card5 = screen.getAllByRole('button', { name: /5/i })[0];
     expect(card5).toBeInTheDocument();
 
-    const card8 = screen.getAllByRole('button', { name: /8/i })[0];
+    const cardHalf = screen.getByRole('button', { name: '0.5' });
+    expect(cardHalf).toBeInTheDocument();
+
+    const card8 = screen.getByRole('button', { name: '8' });
     fireEvent.click(card8);
 
     expect(handleSelect).toHaveBeenCalledWith('8');
