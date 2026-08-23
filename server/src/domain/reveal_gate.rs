@@ -97,12 +97,27 @@ pub fn project_room_state(state: &RoomState, viewer_id: Option<&str>) -> RoomSta
 
     let tracker_connected = state.active_tracker_provider.is_some();
 
+    let active_story = state.active_story.as_ref().map(|s| {
+        let mut story = s.clone();
+        let show_points = matches!(
+            state.phase,
+            EstimationPhase::Revealed
+                | EstimationPhase::Discussing
+                | EstimationPhase::Slicing
+                | EstimationPhase::Finalized
+        );
+        if !show_points {
+            story.points = None;
+        }
+        story
+    });
+
     let data = RoomSnapshotData {
         slug: state.slug.clone(),
         short_code: state.short_code.clone(),
         phase: state.phase,
         round_number: state.round_number,
-        active_story: state.active_story.clone(),
+        active_story,
         story_doctor_report: state.story_doctor_report.clone(),
         point_references: state.point_references.clone(),
         backlog: state.backlog.clone(),

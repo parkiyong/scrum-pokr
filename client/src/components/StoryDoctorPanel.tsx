@@ -25,7 +25,17 @@ export const StoryDoctorPanel: React.FC<StoryDoctorPanelProps> = ({
 
   if (!story) {
     return (
-      <div className="bg-white/95 backdrop-blur-md border border-[#10233f]/12 rounded-2xl p-5 shadow-[0_10px_30px_rgba(18,42,82,0.06)] text-center text-[#5d6f88]">
+      <div className="relative bg-white/95 backdrop-blur-md border border-[#10233f]/12 rounded-2xl p-5 shadow-[0_10px_30px_rgba(18,42,82,0.06)] text-center text-[#5d6f88]">
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 text-xs text-[#5d6f88] hover:text-[#10233f] p-1 rounded-md hover:bg-[#edf3fb]"
+            title="Close Panel"
+            aria-label="Close Story Doctor Panel"
+          >
+            ✕
+          </button>
+        )}
         <div className="text-3xl mb-2">🩺</div>
         <h3 className="text-sm font-bold text-[#10233f]">Story Doctor Idle</h3>
         <p className="text-xs mt-1">Select an active story from the backlog to generate the pre-vote INVEST quality scorecard and technical edge cases.</p>
@@ -50,8 +60,12 @@ export const StoryDoctorPanel: React.FC<StoryDoctorPanelProps> = ({
     return '#e11d48';
   };
 
+  const isChecked = (ec: (typeof edgeCases)[0]) =>
+    checkedEdgeCases[ec.id] ?? ec.checked;
+
   const toggleEdgeCase = (id: string) => {
-    const current = edgeCases.find((e) => e.id === id)?.checked ?? !!checkedEdgeCases[id];
+    const edgeCase = edgeCases.find((e) => e.id === id);
+    const current = edgeCase ? isChecked(edgeCase) : false;
     const next = !current;
     setCheckedEdgeCases((prev) => ({
       ...prev,
@@ -59,9 +73,6 @@ export const StoryDoctorPanel: React.FC<StoryDoctorPanelProps> = ({
     }));
     onToggleEdgeCase?.(id, next);
   };
-
-  const isChecked = (ec: (typeof edgeCases)[0]) =>
-    ec.checked || !!checkedEdgeCases[ec.id];
 
   const checkedCount = edgeCases.filter(isChecked).length;
 

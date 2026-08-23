@@ -75,30 +75,36 @@ impl Story {
         format!("{} {}", self.title, self.description).to_lowercase()
     }
 
-    /// Finds matching keywords within the story's full text.
+    /// Finds matching keywords within the story's full text at word/phrase boundaries.
     pub fn find_matching_keywords<'a>(&self, keywords: &[&'a str]) -> Vec<&'a str> {
         let combined = self.combined_text_lowercase();
         keywords
             .iter()
-            .filter(|&&kw| combined.contains(kw))
+            .filter(|&&kw| matches_word_or_phrase(&combined, kw))
             .copied()
             .collect()
     }
 
-    /// Checks if any keyword is present in the story's title or description.
+    /// Checks if any keyword is present in the story's title or description at word/phrase boundaries.
     pub fn contains_keyword_in_title_or_desc(&self, kw: &str) -> bool {
-        self.title_and_description_lowercase().contains(kw)
+        matches_word_or_phrase(&self.title_and_description_lowercase(), kw)
     }
 
-    /// Checks if any of the given keywords are contained in the full story text.
+    /// Checks if any of the given keywords are contained in the full story text at word/phrase boundaries.
     pub fn contains_any_keyword(&self, keywords: &[&str]) -> bool {
         let combined = self.combined_text_lowercase();
-        keywords.iter().any(|&kw| combined.contains(kw))
+        keywords
+            .iter()
+            .any(|&kw| matches_word_or_phrase(&combined, kw))
     }
 
     /// Determines if acceptance criteria or checklist indicators are present.
     pub fn has_testable_criteria(&self) -> bool {
-        if !self.acceptance_criteria.is_empty() {
+        if self
+            .acceptance_criteria
+            .iter()
+            .any(|ac| !ac.trim().is_empty())
+        {
             return true;
         }
         let combined = self.combined_text_lowercase();
@@ -112,8 +118,45 @@ impl Story {
     /// Determines if the story scope exceeds recommended single-sprint thresholds.
     pub fn is_oversized(&self, indicators: &[&str]) -> bool {
         let combined = self.combined_text_lowercase();
-        indicators.iter().any(|&kw| combined.contains(kw)) || self.acceptance_criteria.len() > 8
+        indicators
+            .iter()
+            .any(|&kw| matches_word_or_phrase(&combined, kw))
+            || self
+                .acceptance_criteria
+                .iter()
+                .filter(|ac| !ac.trim().is_empty())
+                .count()
+                > 8
     }
+}
+
+/// Matches a keyword or multi-word phrase against text at non-alphanumeric word boundaries.
+pub fn matches_word_or_phrase(text: &str, pattern: &str) -> bool {
+    let mut search_idx = 0;
+    while let Some(rel_pos) = text[search_idx..].find(pattern) {
+        let start = search_idx + rel_pos;
+        let end = start + pattern.len();
+
+        let left_boundary = start == 0 || {
+            let prev_char = text[..start].chars().next_back().unwrap();
+            !prev_char.is_alphanumeric()
+        };
+
+        let right_boundary = end == text.len() || {
+            let next_char = text[end..].chars().next().unwrap();
+            !next_char.is_alphanumeric()
+        };
+
+        if left_boundary && right_boundary {
+            return true;
+        }
+
+        search_idx = start + 1;
+        if search_idx >= text.len() {
+            break;
+        }
+    }
+    false
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

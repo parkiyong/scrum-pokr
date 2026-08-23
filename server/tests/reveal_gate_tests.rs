@@ -122,3 +122,41 @@ fn test_reveal_gate_exposes_all_votes_during_revealed_phase() {
         _ => panic!("Expected Revealed projection during Revealed phase"),
     }
 }
+
+#[test]
+fn test_reveal_gate_masks_active_story_points_until_revealed() {
+    let mut story = Story::new(
+        "story-10",
+        "Legacy Feature",
+        "Description",
+        vec!["AC".to_string()],
+    );
+    story.points = Some("8".to_string()); // Story already has points in backlog
+
+    let mut room_state = RoomState::new("swift-badger-42".to_string(), "SWB-42".to_string());
+    room_state.active_story = Some(story);
+
+    // 1. StoryDoctorReview phase -> points MUST be redacted
+    room_state.phase = EstimationPhase::StoryDoctorReview;
+    let proj_review = project_room_state(&room_state, None);
+    assert_eq!(
+        proj_review.inner().active_story.as_ref().unwrap().points,
+        None
+    );
+
+    // 2. Voting phase -> points MUST be redacted
+    room_state.phase = EstimationPhase::Voting;
+    let proj_voting = project_room_state(&room_state, None);
+    assert_eq!(
+        proj_voting.inner().active_story.as_ref().unwrap().points,
+        None
+    );
+
+    // 3. Revealed phase -> points CAN be shown
+    room_state.phase = EstimationPhase::Revealed;
+    let proj_revealed = project_room_state(&room_state, None);
+    assert_eq!(
+        proj_revealed.inner().active_story.as_ref().unwrap().points,
+        Some("8".to_string())
+    );
+}

@@ -33,6 +33,40 @@ fn test_story_query_methods() {
     );
     assert!(story.has_testable_criteria());
     assert!(!story.is_oversized(&["complete rewrite", "build everything"]));
+
+    // Word boundary matching tests: "api" should not match "rapid", "race" should not match "grace"
+    let word_boundary_story = Story::new(
+        "s-wb",
+        "Rapid prototyping with grace",
+        "Build a rapid prototype with graceful degradation",
+        vec![],
+    );
+    assert!(word_boundary_story
+        .find_matching_keywords(&["api", "race"])
+        .is_empty());
+    assert!(!word_boundary_story.contains_any_keyword(&["api", "race"]));
+    assert!(!word_boundary_story.contains_keyword_in_title_or_desc("api"));
+
+    let actual_api_story = Story::new(
+        "s-api",
+        "REST API Integration",
+        "Connect to external API endpoint",
+        vec![],
+    );
+    assert_eq!(
+        actual_api_story.find_matching_keywords(&["api"]),
+        vec!["api"]
+    );
+    assert!(actual_api_story.contains_keyword_in_title_or_desc("api"));
+
+    // Blank / whitespace acceptance criteria should not count as testable criteria on their own
+    let blank_ac_story = Story::new(
+        "s-blank",
+        "Do stuff",
+        "No criteria mentioned here",
+        vec!["   ".to_string(), "\t\n".to_string()],
+    );
+    assert!(!blank_ac_story.has_testable_criteria());
 }
 
 #[test]

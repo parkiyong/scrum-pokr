@@ -128,6 +128,26 @@ describe('StoryDoctorPanel component', () => {
     expect(screen.getByText('Valuable')).toBeInTheDocument();
   });
 
+  it('renders idle state with close button when onClose is provided and handles click', () => {
+    const handleClose = vi.fn();
+    render(
+      <StoryDoctorPanel
+        story={null}
+        report={null}
+        phase="Idle"
+        isFacilitator={true}
+        onStartVoting={vi.fn()}
+        onClose={handleClose}
+      />
+    );
+
+    expect(screen.getByText(/Story Doctor Idle/i)).toBeInTheDocument();
+    const closeBtn = screen.getByRole('button', { name: /Close Story Doctor Panel/i });
+    expect(closeBtn).toBeInTheDocument();
+    fireEvent.click(closeBtn);
+    expect(handleClose).toHaveBeenCalled();
+  });
+
   it('allows clicking interactive edge-case checkboxes and triggers onToggleEdgeCase', () => {
     const handleToggle = vi.fn();
     render(
@@ -148,6 +168,33 @@ describe('StoryDoctorPanel component', () => {
     fireEvent.click(checkbox);
     expect(checkbox).toBeChecked();
     expect(handleToggle).toHaveBeenCalledWith('ec-1', true);
+  });
+
+  it('allows checking and then immediately unchecking the same edge-case checkbox optimistically', () => {
+    const handleToggle = vi.fn();
+    render(
+      <StoryDoctorPanel
+        story={mockStory}
+        report={mockReport}
+        phase="StoryDoctorReview"
+        isFacilitator={true}
+        onStartVoting={vi.fn()}
+        onToggleEdgeCase={handleToggle}
+      />
+    );
+
+    const checkbox = screen.getAllByRole('checkbox')[0];
+    expect(checkbox).not.toBeChecked();
+
+    // First click -> checked = true
+    fireEvent.click(checkbox);
+    expect(checkbox).toBeChecked();
+    expect(handleToggle).toHaveBeenLastCalledWith('ec-1', true);
+
+    // Second click before server response -> checked = false
+    fireEvent.click(checkbox);
+    expect(checkbox).not.toBeChecked();
+    expect(handleToggle).toHaveBeenLastCalledWith('ec-1', false);
   });
 
   it('allows facilitator to start voting round', () => {
