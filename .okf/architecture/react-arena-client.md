@@ -33,12 +33,21 @@ App.tsx
 ├── LobbyView.tsx (Home / Room creation / Code entry)
 └── RoomView.tsx (Live Planning Poker Arena)
     ├── Header.tsx (Room code, 1-click share, user profile switch)
-    ├── FacilitatorBar.tsx (State transition actions for room leader)
+    ├── FacilitatorBar.tsx (State transition actions & tracker drawer trigger)
+    ├── BacklogDrawer.tsx (Interactive backlog item drawer & 2-way sync state)
+    ├── ConnectTrackerModal.tsx (Credentials & token modal for Linear, GitHub, Jira)
+    ├── SPIDRSliceModal.tsx (AI story slicing modal using SPIDR breakdown)
     ├── PokerTableArena.tsx (Felt table, center status hub, surround seats)
     │   └── PokerCard.tsx (3D flip card with CSS perspective transform)
     ├── DeckSelector.tsx (Docked Fibonacci card picker: 0, 1, 2, 3, 5, 8, 13, 21, ?)
     └── JoinModal.tsx (Zero-auth nickname & avatar onboarding)
 ```
+
+## Visual System & EXP Light Mode Theme
+
+The client UI is styled using **EXP Light Mode** principles:
+* High-contrast neutral background surfaces (`bg-slate-50`, `bg-white`) paired with refined indigo and emerald status accents.
+* Tailwind token mappings for card flip states, elevation drop-shadows, and responsive flex/grid viewports.
 
 ## Real-Time Synchronization Hook (`useRoomSocket`)
 
