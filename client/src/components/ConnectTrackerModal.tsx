@@ -78,6 +78,20 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
   });
 
   const [rawMarkdown, setRawMarkdown] = useState('');
+  const [showLinearKey, setShowLinearKey] = useState(false);
+  const [showGithubPat, setShowGithubPat] = useState(false);
+  const [showJiraToken, setShowJiraToken] = useState(false);
+
+  const pasteFromClipboard = async (onPasted: (text: string) => void) => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        onPasted(text.trim());
+      }
+    } catch {
+      // Browser clipboard permission denied or not supported
+    }
+  };
 
   // Load ephemeral credentials from sessionStorage
   useEffect(() => {
@@ -304,16 +318,45 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
           {tab === 'Linear' && (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-[#10233f] mb-1">
-                  Linear Personal API Key <span className="text-[#2047a8]">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={linear.apiKey}
-                  onChange={(e) => setLinear((prev) => ({ ...prev, apiKey: e.target.value }))}
-                  placeholder="lin_api_..."
-                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-mono"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-[#10233f]">
+                    Linear Personal API Key <span className="text-[#2047a8]">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => pasteFromClipboard((text) => setLinear((prev) => ({ ...prev, apiKey: text })))}
+                    className="text-[11px] font-bold text-[#2047a8] hover:text-[#16347d] bg-[#edf3fb] hover:bg-[#dfeaf8] px-2 py-0.5 rounded-md transition flex items-center gap-1 border border-[#2047a8]/20"
+                  >
+                    📋 Paste
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showLinearKey ? 'text' : 'password'}
+                    value={linear.apiKey}
+                    onChange={(e) => setLinear((prev) => ({ ...prev, apiKey: e.target.value.trim() }))}
+                    onPaste={(e) => {
+                      const text = e.clipboardData.getData('text');
+                      if (text) {
+                        e.preventDefault();
+                        setLinear((prev) => ({ ...prev, apiKey: text.trim() }));
+                      }
+                    }}
+                    placeholder="lin_api_..."
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl pl-3 pr-9 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLinearKey((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#5d6f88] hover:text-[#10233f] p-1"
+                    title={showLinearKey ? 'Hide key' : 'Show key'}
+                    aria-label={showLinearKey ? 'Hide key' : 'Show key'}
+                  >
+                    {showLinearKey ? '🙈' : '👁️'}
+                  </button>
+                </div>
                 <p className="text-[11px] text-[#5d6f88] mt-1 font-medium">
                   Created in Linear Settings &gt; API &gt; Personal API Keys.
                 </p>
@@ -365,16 +408,45 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
           {tab === 'GitHub' && (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-[#10233f] mb-1">
-                  GitHub Personal Access Token (PAT) <span className="text-[#2047a8]">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={github.pat}
-                  onChange={(e) => setGithub((prev) => ({ ...prev, pat: e.target.value }))}
-                  placeholder="ghp_..."
-                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-mono"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-[#10233f]">
+                    GitHub Personal Access Token (PAT) <span className="text-[#2047a8]">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => pasteFromClipboard((text) => setGithub((prev) => ({ ...prev, pat: text })))}
+                    className="text-[11px] font-bold text-[#2047a8] hover:text-[#16347d] bg-[#edf3fb] hover:bg-[#dfeaf8] px-2 py-0.5 rounded-md transition flex items-center gap-1 border border-[#2047a8]/20"
+                  >
+                    📋 Paste
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showGithubPat ? 'text' : 'password'}
+                    value={github.pat}
+                    onChange={(e) => setGithub((prev) => ({ ...prev, pat: e.target.value.trim() }))}
+                    onPaste={(e) => {
+                      const text = e.clipboardData.getData('text');
+                      if (text) {
+                        e.preventDefault();
+                        setGithub((prev) => ({ ...prev, pat: text.trim() }));
+                      }
+                    }}
+                    placeholder="ghp_..."
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl pl-3 pr-9 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowGithubPat((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#5d6f88] hover:text-[#10233f] p-1"
+                    title={showGithubPat ? 'Hide token' : 'Show token'}
+                    aria-label={showGithubPat ? 'Hide token' : 'Show token'}
+                  >
+                    {showGithubPat ? '🙈' : '👁️'}
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -385,7 +457,14 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                   <input
                     type="text"
                     value={github.owner}
-                    onChange={(e) => setGithub((prev) => ({ ...prev, owner: e.target.value }))}
+                    onChange={(e) => setGithub((prev) => ({ ...prev, owner: e.target.value.trim() }))}
+                    onPaste={(e) => {
+                      const text = e.clipboardData.getData('text');
+                      if (text) {
+                        e.preventDefault();
+                        setGithub((prev) => ({ ...prev, owner: text.trim() }));
+                      }
+                    }}
                     placeholder="e.g. facebook"
                     className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-medium"
                   />
@@ -397,7 +476,14 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                   <input
                     type="text"
                     value={github.repo}
-                    onChange={(e) => setGithub((prev) => ({ ...prev, repo: e.target.value }))}
+                    onChange={(e) => setGithub((prev) => ({ ...prev, repo: e.target.value.trim() }))}
+                    onPaste={(e) => {
+                      const text = e.clipboardData.getData('text');
+                      if (text) {
+                        e.preventDefault();
+                        setGithub((prev) => ({ ...prev, repo: text.trim() }));
+                      }
+                    }}
                     placeholder="e.g. react"
                     className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 text-xs font-medium"
                   />
@@ -438,7 +524,16 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                     <input
                       type="text"
                       value={jira.domain}
-                      onChange={(e) => setJira((prev) => ({ ...prev, domain: e.target.value }))}
+                      onChange={(e) => setJira((prev) => ({ ...prev, domain: e.target.value.trim() }))}
+                      onPaste={(e) => {
+                        const text = e.clipboardData.getData('text');
+                        if (text) {
+                          e.preventDefault();
+                          // Support full URL or subdomain paste
+                          const cleaned = text.trim().replace(/^https?:\/\//, '').replace(/\.atlassian\.net.*$/, '');
+                          setJira((prev) => ({ ...prev, domain: cleaned }));
+                        }
+                      }}
                       placeholder="my-company"
                       className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-l-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-medium"
                     />
@@ -455,7 +550,14 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                   <input
                     type="text"
                     value={jira.projectKey}
-                    onChange={(e) => setJira((prev) => ({ ...prev, projectKey: e.target.value }))}
+                    onChange={(e) => setJira((prev) => ({ ...prev, projectKey: e.target.value.trim().toUpperCase() }))}
+                    onPaste={(e) => {
+                      const text = e.clipboardData.getData('text');
+                      if (text) {
+                        e.preventDefault();
+                        setJira((prev) => ({ ...prev, projectKey: text.trim().toUpperCase() }));
+                      }
+                    }}
                     placeholder="e.g. PROJ"
                     className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs uppercase font-semibold"
                   />
@@ -469,23 +571,59 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                 <input
                   type="email"
                   value={jira.email}
-                  onChange={(e) => setJira((prev) => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) => setJira((prev) => ({ ...prev, email: e.target.value.trim() }))}
+                  onPaste={(e) => {
+                    const text = e.clipboardData.getData('text');
+                    if (text) {
+                      e.preventDefault();
+                      setJira((prev) => ({ ...prev, email: text.trim() }));
+                    }
+                  }}
                   placeholder="name@company.com"
                   className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#10233f] mb-1">
-                  Jira API Token <span className="text-[#2047a8]">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={jira.apiToken}
-                  onChange={(e) => setJira((prev) => ({ ...prev, apiToken: e.target.value }))}
-                  placeholder="Generated from id.atlassian.com/manage-profile/security/api-tokens"
-                  className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-mono"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-[#10233f]">
+                    Jira API Token <span className="text-[#2047a8]">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => pasteFromClipboard((text) => setJira((prev) => ({ ...prev, apiToken: text })))}
+                    className="text-[11px] font-bold text-[#2047a8] hover:text-[#16347d] bg-[#edf3fb] hover:bg-[#dfeaf8] px-2 py-0.5 rounded-md transition flex items-center gap-1 border border-[#2047a8]/20"
+                  >
+                    📋 Paste
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showJiraToken ? 'text' : 'password'}
+                    value={jira.apiToken}
+                    onChange={(e) => setJira((prev) => ({ ...prev, apiToken: e.target.value.trim() }))}
+                    onPaste={(e) => {
+                      const text = e.clipboardData.getData('text');
+                      if (text) {
+                        e.preventDefault();
+                        setJira((prev) => ({ ...prev, apiToken: text.trim() }));
+                      }
+                    }}
+                    placeholder="Generated from id.atlassian.com/manage-profile/security/api-tokens"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl pl-3 pr-9 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowJiraToken((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#5d6f88] hover:text-[#10233f] p-1"
+                    title={showJiraToken ? 'Hide token' : 'Show token'}
+                    aria-label={showJiraToken ? 'Hide token' : 'Show token'}
+                  >
+                    {showJiraToken ? '🙈' : '👁️'}
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -495,7 +633,7 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                 <input
                   type="text"
                   value={jira.pointsField}
-                  onChange={(e) => setJira((prev) => ({ ...prev, pointsField: e.target.value }))}
+                  onChange={(e) => setJira((prev) => ({ ...prev, pointsField: e.target.value.trim() }))}
                   placeholder="customfield_10016"
                   className="w-full bg-[#f9fbff] border border-[#10233f]/15 rounded-xl px-3 py-2 text-[#10233f] placeholder-[#5d6f88]/60 focus:outline-none focus:border-[#2047a8] text-xs font-mono"
                 />
@@ -507,9 +645,18 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
           {tab === 'Markdown' && (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-[#10233f] mb-1">
-                  Paste Markdown Stories / Backlog
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-[#10233f]">
+                    Paste Markdown Stories / Backlog
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => pasteFromClipboard((text) => setRawMarkdown(text))}
+                    className="text-[11px] font-bold text-[#2047a8] hover:text-[#16347d] bg-[#edf3fb] hover:bg-[#dfeaf8] px-2 py-0.5 rounded-md transition flex items-center gap-1 border border-[#2047a8]/20"
+                  >
+                    📋 Paste Clipboard
+                  </button>
+                </div>
                 <textarea
                   rows={8}
                   value={rawMarkdown}
