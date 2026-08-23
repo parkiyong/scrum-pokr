@@ -59,7 +59,7 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {phase === 'Idle' && (
+        {(phase === 'Idle' || phase === 'StoryDoctorReview') && (
           <button
             onClick={onStartVoting}
             className="px-4 py-2 text-xs font-bold rounded-full bg-[#2047a8] hover:bg-[#16347d] text-white shadow-md shadow-[#2047a8]/25 transition active:scale-95 flex items-center gap-1.5"

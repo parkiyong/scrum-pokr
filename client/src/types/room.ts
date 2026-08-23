@@ -104,6 +104,65 @@ export type ConsensusCategory =
   | 'BimodalSplit'
   | 'WideSpread';
 
+export type InvestCriterion =
+  | 'Independent'
+  | 'Negotiable'
+  | 'Valuable'
+  | 'Estimable'
+  | 'Small'
+  | 'Testable';
+
+export interface InvestCriterionResult {
+  criterion: InvestCriterion;
+  name: string;
+  passed: boolean;
+  score: number;
+  observation: string;
+  recommendation?: string;
+}
+
+export interface InvestScorecard {
+  overall_score: number;
+  criteria: InvestCriterionResult[];
+  summary: string;
+  issues: string[];
+}
+
+export interface ComplexitySummary {
+  data_models: string;
+  dependencies_apis: string;
+  blast_radius: string;
+}
+
+export type EdgeCaseCategoryType =
+  | 'ErrorFailure'
+  | 'EmptyBoundary'
+  | 'ConcurrencyRaces'
+  | 'PermissionsAccess';
+
+export interface EdgeCaseItem {
+  id: string;
+  category: EdgeCaseCategoryType;
+  category_name: string;
+  title: string;
+  description: string;
+  checked: boolean;
+}
+
+export interface StoryDoctorReport {
+  story_id: string;
+  scorecard: InvestScorecard;
+  complexity: ComplexitySummary;
+  edge_cases: EdgeCaseItem[];
+  prompt_preview?: string;
+}
+
+export interface PointReference {
+  points: number;
+  title: string;
+  description: string;
+}
+
 export interface ConsensusSummary {
   category: ConsensusCategory;
   consensus_pct: number;
@@ -120,6 +179,8 @@ export interface RoomSnapshotData {
   phase: EstimationPhase;
   round_number: number;
   active_story: Story | null;
+  story_doctor_report?: StoryDoctorReport | null;
+  point_references: PointReference[];
   backlog: Story[];
   active_tracker_provider?: string;
   tracker_connected: boolean;
@@ -140,6 +201,10 @@ export type ClientCommand =
     }
   | { type: 'SelectStory'; payload: { story: Story | null } }
   | { type: 'SelectStoryById'; payload: { story_id: string } }
+  | {
+      type: 'UpdatePointReferences';
+      payload: { references: PointReference[] };
+    }
   | { type: 'ConnectTracker'; payload: { config: TrackerConfig } }
   | { type: 'DisconnectTracker' }
   | { type: 'TestTrackerConnection'; payload: { config: TrackerConfig } }
@@ -189,6 +254,14 @@ export type ServerEvent =
     }
   | { type: 'RoundReset'; payload: { round_number: number } }
   | { type: 'StoryFinalized'; payload: { story_id?: string; points: string } }
+  | {
+      type: 'PointReferencesUpdated';
+      payload: { references: PointReference[] };
+    }
+  | {
+      type: 'StoryDoctorReportUpdated';
+      payload: { report: StoryDoctorReport | null };
+    }
   | { type: 'TrackerConnected'; payload: { provider: string } }
   | { type: 'TrackerDisconnected' }
   | {

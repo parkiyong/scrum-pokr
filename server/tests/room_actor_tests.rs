@@ -314,7 +314,7 @@ async fn test_reconnect_preserves_vote_and_identity() {
         .iter()
         .find(|p| p.id == "user-123")
         .unwrap();
-    assert_eq!(p.voted, true);
+    assert!(p.voted);
     assert_eq!(p.vote, Some("8".to_string())); // Self vote visible
 }
 

@@ -3,6 +3,7 @@ import {
   ClientCommand,
   ConnectionPreview,
   LocalSessionProfile,
+  PointReference,
   Role,
   RoomSnapshotData,
   ServerEvent,
@@ -31,6 +32,7 @@ export interface UseRoomSocketReturn {
   finalizeStory: (points?: string) => void;
   selectStory: (story: Story | null) => void;
   selectStoryById: (storyId: string) => void;
+  updatePointReferences: (references: PointReference[]) => void;
   connectTracker: (config: TrackerConfig) => void;
   disconnectTracker: () => void;
   testTrackerConnection: (config: TrackerConfig) => void;
@@ -138,6 +140,10 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           });
         } else if (msg.type === 'BacklogUpdated') {
           setRoomState((prev) => (prev ? { ...prev, backlog: msg.payload.backlog } : prev));
+        } else if (msg.type === 'PointReferencesUpdated') {
+          setRoomState((prev) => (prev ? { ...prev, point_references: msg.payload.references } : prev));
+        } else if (msg.type === 'StoryDoctorReportUpdated') {
+          setRoomState((prev) => (prev ? { ...prev, story_doctor_report: msg.payload.report } : prev));
         } else if (msg.type === 'TrackerConnectionTested') {
           setConnectionPreview(msg.payload.preview);
           setTrackerError(null);
@@ -204,6 +210,10 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const selectStoryById = useCallback((storyId: string) => {
     sendCommand({ type: 'SelectStoryById', payload: { story_id: storyId } });
+  }, [sendCommand]);
+
+  const updatePointReferences = useCallback((references: PointReference[]) => {
+    sendCommand({ type: 'UpdatePointReferences', payload: { references } });
   }, [sendCommand]);
 
   const connectTracker = useCallback((config: TrackerConfig) => {
@@ -285,6 +295,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     finalizeStory,
     selectStory,
     selectStoryById,
+    updatePointReferences,
     connectTracker,
     disconnectTracker,
     testTrackerConnection,

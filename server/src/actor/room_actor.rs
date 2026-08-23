@@ -2,6 +2,7 @@ use crate::domain::markdown_parser::parse_markdown_backlog;
 use crate::domain::models::{EstimationPhase, Participant, Role, RoomState, Story};
 use crate::domain::protocol::{ClientCommand, ServerEvent};
 use crate::domain::reveal_gate::{project_room_state, RoomSnapshotData};
+use crate::domain::story_doctor::generate_story_doctor_report;
 use crate::domain::tracker::{create_adapter, IssueTrackerAdapter};
 use std::collections::HashMap;
 use tokio::sync::{broadcast, mpsc, oneshot};
@@ -146,9 +147,16 @@ impl RoomActor {
                 if !self.is_facilitator(sender_id) {
                     return self.get_participant(sender_id);
                 }
-                self.state.active_story = story;
                 self.reset_votes();
-                self.state.phase = EstimationPhase::Idle;
+                if let Some(s) = story {
+                    self.state.phase = EstimationPhase::StoryDoctorReview;
+                    self.state.story_doctor_report = Some(generate_story_doctor_report(&s));
+                    self.state.active_story = Some(s);
+                } else {
+                    self.state.phase = EstimationPhase::Idle;
+                    self.state.story_doctor_report = None;
+                    self.state.active_story = None;
+                }
                 self.broadcast_snapshot();
                 self.get_participant(sender_id)
             }
@@ -164,11 +172,24 @@ impl RoomActor {
                     .find(|s| s.id == story_id || s.key.as_deref() == Some(&story_id))
                     .cloned()
                 {
-                    self.state.active_story = Some(story);
                     self.reset_votes();
-                    self.state.phase = EstimationPhase::Idle;
+                    self.state.phase = EstimationPhase::StoryDoctorReview;
+                    self.state.story_doctor_report = Some(generate_story_doctor_report(&story));
+                    self.state.active_story = Some(story);
                     self.broadcast_snapshot();
                 }
+                self.get_participant(sender_id)
+            }
+
+            ClientCommand::UpdatePointReferences { references } => {
+                if !self.is_facilitator(sender_id) {
+                    return self.get_participant(sender_id);
+                }
+                self.state.point_references = references.clone();
+                let _ = self
+                    .event_tx
+                    .send(ServerEvent::PointReferencesUpdated { references });
+                self.broadcast_snapshot();
                 self.get_participant(sender_id)
             }
 

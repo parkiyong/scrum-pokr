@@ -72,6 +72,52 @@ pub struct Participant {
     pub vote: Option<String>,
 }
 
+use crate::domain::story_doctor::StoryDoctorReport;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PointReference {
+    pub points: u32,
+    pub title: String,
+    pub description: String,
+}
+
+impl PointReference {
+    pub fn default_library() -> Vec<Self> {
+        vec![
+            PointReference {
+                points: 1,
+                title: "1 Point".to_string(),
+                description: "Text/copy update or minor styling tweak in existing component.".to_string(),
+            },
+            PointReference {
+                points: 2,
+                title: "2 Points".to_string(),
+                description: "New field added to existing form with validation and DB column.".to_string(),
+            },
+            PointReference {
+                points: 3,
+                title: "3 Points".to_string(),
+                description: "Standard CRUD endpoint and simple list view with basic filtering.".to_string(),
+            },
+            PointReference {
+                points: 5,
+                title: "5 Points".to_string(),
+                description: "Webhook receiver with signature verification and retry queue.".to_string(),
+            },
+            PointReference {
+                points: 8,
+                title: "8 Points".to_string(),
+                description: "Multi-provider authentication flow with token refresh and error states.".to_string(),
+            },
+            PointReference {
+                points: 13,
+                title: "13 Points".to_string(),
+                description: "Live zero-downtime database schema migration across active tables.".to_string(),
+            },
+        ]
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ConsensusCategory {
     Consensus,
@@ -99,6 +145,8 @@ pub struct RoomState {
     pub phase: EstimationPhase,
     pub round_number: u32,
     pub active_story: Option<Story>,
+    pub story_doctor_report: Option<StoryDoctorReport>,
+    pub point_references: Vec<PointReference>,
     pub backlog: Vec<Story>,
     pub active_tracker_provider: Option<String>,
     pub participants: HashMap<String, Participant>,
@@ -113,6 +161,8 @@ impl RoomState {
             phase: EstimationPhase::Idle,
             round_number: 1,
             active_story: None,
+            story_doctor_report: None,
+            point_references: PointReference::default_library(),
             backlog: Vec::new(),
             active_tracker_provider: None,
             participants: HashMap::new(),

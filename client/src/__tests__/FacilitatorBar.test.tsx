@@ -22,6 +22,25 @@ describe('FacilitatorBar component', () => {
     expect(handleStart).toHaveBeenCalled();
   });
 
+  it('renders start voting in StoryDoctorReview phase', () => {
+    const handleStart = vi.fn();
+    render(
+      <FacilitatorBar
+        phase="StoryDoctorReview"
+        onStartVoting={handleStart}
+        onRevealCards={vi.fn()}
+        onTriggerReVote={vi.fn()}
+        onFinalize={vi.fn()}
+        isFacilitator={true}
+      />
+    );
+
+    const btn = screen.getByText(/Start Voting/i);
+    expect(btn).toBeInTheDocument();
+    fireEvent.click(btn);
+    expect(handleStart).toHaveBeenCalled();
+  });
+
   it('renders reveal cards in Voting phase', () => {
     const handleReveal = vi.fn();
     render(

@@ -59,15 +59,15 @@ fn test_reveal_gate_masks_votes_during_voting_phase() {
         RoomStateProjection::Voting(v) => {
             assert_eq!(v.phase, EstimationPhase::Voting);
             let p1_proj = v.participants.iter().find(|p| p.id == "p1").unwrap();
-            assert_eq!(p1_proj.voted, true);
+            assert!(p1_proj.voted);
             assert_eq!(p1_proj.vote, Some("5".to_string())); // Self vote visible
 
             let p2_proj = v.participants.iter().find(|p| p.id == "p2").unwrap();
-            assert_eq!(p2_proj.voted, true);
+            assert!(p2_proj.voted);
             assert_eq!(p2_proj.vote, None); // Peer vote is masked!
 
             let p3_proj = v.participants.iter().find(|p| p.id == "p3").unwrap();
-            assert_eq!(p3_proj.voted, false);
+            assert!(!p3_proj.voted);
             assert_eq!(p3_proj.vote, None);
         }
         _ => panic!("Expected Voting projection during Voting phase"),

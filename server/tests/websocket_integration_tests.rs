@@ -50,7 +50,7 @@ async fn test_websocket_join_vote_and_reveal_flow() {
         role: None,
     };
     ws_a.send(Message::Text(
-        serde_json::to_string(&join_cmd_a).unwrap().into(),
+        serde_json::to_string(&join_cmd_a).unwrap(),
     ))
     .await
     .unwrap();
@@ -67,7 +67,7 @@ async fn test_websocket_join_vote_and_reveal_flow() {
         role: None,
     };
     ws_b.send(Message::Text(
-        serde_json::to_string(&join_cmd_b).unwrap().into(),
+        serde_json::to_string(&join_cmd_b).unwrap(),
     ))
     .await
     .unwrap();
@@ -75,7 +75,7 @@ async fn test_websocket_join_vote_and_reveal_flow() {
     // 3. Client A starts voting
     let start_voting_cmd = ClientCommand::StartVoting;
     ws_a.send(Message::Text(
-        serde_json::to_string(&start_voting_cmd).unwrap().into(),
+        serde_json::to_string(&start_voting_cmd).unwrap(),
     ))
     .await
     .unwrap();
@@ -85,7 +85,7 @@ async fn test_websocket_join_vote_and_reveal_flow() {
         value: "5".to_string(),
     };
     ws_a.send(Message::Text(
-        serde_json::to_string(&vote_a).unwrap().into(),
+        serde_json::to_string(&vote_a).unwrap(),
     ))
     .await
     .unwrap();
@@ -94,7 +94,7 @@ async fn test_websocket_join_vote_and_reveal_flow() {
         value: "8".to_string(),
     };
     ws_b.send(Message::Text(
-        serde_json::to_string(&vote_b).unwrap().into(),
+        serde_json::to_string(&vote_b).unwrap(),
     ))
     .await
     .unwrap();
@@ -127,7 +127,7 @@ async fn test_websocket_join_vote_and_reveal_flow() {
     // 6. Client A reveals cards
     let reveal_cmd = ClientCommand::RevealCards;
     ws_a.send(Message::Text(
-        serde_json::to_string(&reveal_cmd).unwrap().into(),
+        serde_json::to_string(&reveal_cmd).unwrap(),
     ))
     .await
     .unwrap();

@@ -1,4 +1,5 @@
-use crate::domain::models::{ConsensusSummary, EstimationPhase, Role, RoomState, Story};
+use crate::domain::models::{ConsensusSummary, EstimationPhase, PointReference, Role, RoomState, Story};
+use crate::domain::story_doctor::StoryDoctorReport;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -20,6 +21,8 @@ pub struct RoomSnapshotData {
     pub phase: EstimationPhase,
     pub round_number: u32,
     pub active_story: Option<Story>,
+    pub story_doctor_report: Option<StoryDoctorReport>,
+    pub point_references: Vec<PointReference>,
     pub backlog: Vec<Story>,
     pub active_tracker_provider: Option<String>,
     pub tracker_connected: bool,
@@ -98,6 +101,8 @@ pub fn project_room_state(state: &RoomState, viewer_id: Option<&str>) -> RoomSta
         phase: state.phase,
         round_number: state.round_number,
         active_story: state.active_story.clone(),
+        story_doctor_report: state.story_doctor_report.clone(),
+        point_references: state.point_references.clone(),
         backlog: state.backlog.clone(),
         active_tracker_provider: state.active_tracker_provider.clone(),
         tracker_connected,
