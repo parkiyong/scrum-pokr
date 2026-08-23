@@ -13,3 +13,4 @@ dist-ssr/
 .vscode/
 .idea/
 *.log
+.worktrees/
