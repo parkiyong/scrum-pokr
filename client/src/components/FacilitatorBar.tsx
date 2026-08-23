@@ -1,4 +1,5 @@
 import React from 'react';
+import { Check, Crown, Eye, Play, RotateCcw, Scissors, Zap } from 'lucide-react';
 import { EstimationPhase, Story } from '../types/room';
 
 interface FacilitatorBarProps {
@@ -33,47 +34,59 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
   }
 
   return (
-    <div className="bg-white/95 backdrop-blur-md border border-[#2047a8]/20 rounded-2xl p-3 shadow-[0_14px_34px_rgba(18,42,82,0.1)] flex flex-wrap items-center justify-between gap-3 my-4">
+    <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-3 shadow-soft flex flex-wrap items-center justify-between gap-3 my-3 transition-all">
+      {/* Facilitator Status Label */}
       <div className="flex items-center gap-2">
-        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-        <span className="text-xs font-bold uppercase tracking-wider text-[#2047a8]">
-          Facilitator Controls
-        </span>
+        <div className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600 shadow-xs">
+          <Crown className="w-4 h-4" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900 leading-none">
+            Facilitator Controls
+          </span>
+          <span className="text-[10px] text-slate-500 font-medium">Phase: {phase}</span>
+        </div>
 
         {syncFeedback && (
           <span
             title={syncFeedback.message || (syncFeedback.success ? 'Successfully synced to tracker' : 'Sync failed')}
-            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
+            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full transition-all ml-2 flex items-center gap-1 ${
               syncFeedback.success
-                ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30'
-                : 'bg-rose-500/10 text-rose-700 border border-rose-500/30'
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'bg-rose-50 text-rose-700 border border-rose-200'
             }`}
           >
-            {syncFeedback.success
-              ? '✓ Synced to Tracker'
-              : syncFeedback.message
-              ? `Sync failed: ${syncFeedback.message}`
-              : 'Sync failed'}
+            {syncFeedback.success ? (
+              <>
+                <Check className="w-3 h-3" />
+                <span>Synced to Tracker</span>
+              </>
+            ) : (
+              <span>Sync failed: {syncFeedback.message || 'Error'}</span>
+            )}
           </span>
         )}
       </div>
 
+      {/* Action Buttons */}
       <div className="flex items-center gap-2 flex-wrap">
         {phase === 'Idle' && (
           <button
             onClick={onStartVoting}
-            className="px-4 py-2 text-xs font-bold rounded-full bg-[#2047a8] hover:bg-[#16347d] text-white shadow-md shadow-[#2047a8]/25 transition active:scale-95 flex items-center gap-1.5"
+            className="px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all duration-150 active:scale-95 flex items-center gap-1.5"
           >
-            ▶ Start Voting
+            <Play className="w-3.5 h-3.5 fill-current" />
+            <span>Start Voting</span>
           </button>
         )}
 
         {phase === 'Voting' && (
           <button
             onClick={onRevealCards}
-            className="px-4 py-2 text-xs font-bold rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-600/25 transition active:scale-95 flex items-center gap-1.5 animate-pulse"
+            className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-600/25 transition-all duration-150 active:scale-95 flex items-center gap-1.5 ring-2 ring-emerald-500/20"
           >
-            👁 Reveal Cards
+            <Eye className="w-3.5 h-3.5" />
+            <span>Reveal Cards</span>
           </button>
         )}
 
@@ -81,24 +94,27 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
           <>
             <button
               onClick={onTriggerReVote}
-              className="px-3.5 py-2 text-xs font-bold rounded-full bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] border border-[#10233f]/15 transition active:scale-95 flex items-center gap-1.5"
+              className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 transition-all duration-150 active:scale-95 flex items-center gap-1.5"
             >
-              ↺ Re-Vote Round
+              <RotateCcw className="w-3.5 h-3.5 text-slate-600" />
+              <span>Re-Vote Round</span>
             </button>
             {onDecomposeSlices && activeStory && (
               <button
                 onClick={onDecomposeSlices}
-                className="px-3.5 py-2 text-xs font-bold rounded-full bg-[#7f1d7a]/10 hover:bg-[#7f1d7a]/20 text-[#7f1d7a] border border-[#7f1d7a]/30 transition active:scale-95 flex items-center gap-1.5"
+                className="px-3.5 py-2 text-xs font-bold rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 transition-all duration-150 active:scale-95 flex items-center gap-1.5"
                 title="Decompose story into vertical SPIDR slices"
               >
-                ✂ SPIDR Slices
+                <Scissors className="w-3.5 h-3.5 text-violet-600" />
+                <span>SPIDR Slices</span>
               </button>
             )}
             <button
               onClick={onFinalize}
-              className="px-4 py-2 text-xs font-bold rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/25 transition active:scale-95 flex items-center gap-1.5"
+              className="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition-all duration-150 active:scale-95 flex items-center gap-1.5"
             >
-              ✓ Finalize Estimate
+              <Check className="w-3.5 h-3.5" />
+              <span>Finalize Estimate</span>
             </button>
           </>
         )}
@@ -108,16 +124,18 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
             {onSyncEstimate && activeStory && (
               <button
                 onClick={onSyncEstimate}
-                className="px-4 py-2 text-xs font-bold rounded-full bg-[#2047a8] hover:bg-[#16347d] text-white shadow-md shadow-[#2047a8]/25 transition active:scale-95 flex items-center gap-1.5 animate-pulse"
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 transition-all duration-150 active:scale-95 flex items-center gap-1.5"
               >
-                ⚡ Sync Estimate to {hasTracker ? 'Tracker' : 'Backlog'}
+                <Zap className="w-3.5 h-3.5" />
+                <span>Sync Estimate to {hasTracker ? 'Tracker' : 'Backlog'}</span>
               </button>
             )}
             <button
               onClick={onStartVoting}
-              className="px-3.5 py-2 text-xs font-bold rounded-full bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] border border-[#10233f]/15 transition active:scale-95 flex items-center gap-1.5"
+              className="px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 transition-all duration-150 active:scale-95 flex items-center gap-1.5"
             >
-              ▶ Next Story
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>Next Story</span>
             </button>
           </>
         )}
@@ -125,4 +143,5 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
     </div>
   );
 };
+
 
