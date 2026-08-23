@@ -84,29 +84,29 @@ export const SPIDRSliceModal: React.FC<SPIDRSliceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#10233f]/55 backdrop-blur-md animate-in fade-in duration-200">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="spidr-slice-modal-title"
-        className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+        className="bg-white border border-[#10233f]/12 rounded-2xl w-full max-w-2xl overflow-hidden shadow-[0_30px_60px_rgba(12,28,55,0.25)] flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-5 border-b border-[#10233f]/10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-xl">✂</span>
             <div>
-              <h2 id="spidr-slice-modal-title" className="text-lg font-bold text-white">
+              <h2 id="spidr-slice-modal-title" className="text-lg font-bold text-[#10233f]">
                 SPIDR Vertical Slicing
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#5d6f88] font-medium">
                 Decompose &ldquo;{activeStory.title}&rdquo; into independently deliverable slices
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-lg p-1 rounded-lg hover:bg-slate-800 transition"
+            className="text-[#5d6f88] hover:text-[#10233f] text-lg p-1 rounded-lg hover:bg-[#edf3fb] transition"
           >
             ✕
           </button>
@@ -114,7 +114,7 @@ export const SPIDRSliceModal: React.FC<SPIDRSliceModalProps> = ({
 
         {/* Body */}
         <div className="p-5 space-y-4 overflow-y-auto flex-1 text-xs sm:text-sm">
-          <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 text-indigo-300 text-xs">
+          <div className="bg-[#2047a8]/10 border border-[#2047a8]/20 rounded-xl p-3 text-[#2047a8] text-xs font-semibold">
             💡 <strong>SPIDR Method</strong>: Slice across <em>Spikes, Paths, Interfaces, Data, or Rules</em> to produce thin end-to-end vertical slices.
           </div>
 
@@ -122,16 +122,16 @@ export const SPIDRSliceModal: React.FC<SPIDRSliceModalProps> = ({
             {slices.map((slice, index) => (
               <div
                 key={index}
-                className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2.5"
+                className="bg-[#f9fbff] border border-[#10233f]/12 rounded-xl p-3.5 space-y-2.5"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider">
+                  <span className="text-[11px] font-bold text-[#2047a8] uppercase tracking-wider">
                     Slice {index + 1}
                   </span>
                   {slices.length > 1 && (
                     <button
                       onClick={() => handleRemoveSlice(index)}
-                      className="text-slate-500 hover:text-rose-400 text-xs transition"
+                      className="text-[#5d6f88] hover:text-rose-600 text-xs transition font-semibold"
                     >
                       Remove
                     </button>
@@ -145,7 +145,7 @@ export const SPIDRSliceModal: React.FC<SPIDRSliceModalProps> = ({
                       value={slice.title}
                       onChange={(e) => handleUpdateSlice(index, 'title', e.target.value)}
                       placeholder="Slice title..."
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs"
+                      className="w-full bg-white border border-[#10233f]/15 focus:border-[#2047a8] rounded-lg px-2.5 py-1.5 text-[#10233f] text-xs font-semibold"
                     />
                   </div>
                   <div>
@@ -160,7 +160,7 @@ export const SPIDRSliceModal: React.FC<SPIDRSliceModalProps> = ({
                         )
                       }
                       placeholder="Points"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs"
+                      className="w-full bg-white border border-[#10233f]/15 focus:border-[#2047a8] rounded-lg px-2.5 py-1.5 text-[#10233f] text-xs font-semibold"
                     />
                   </div>
                 </div>
@@ -171,7 +171,7 @@ export const SPIDRSliceModal: React.FC<SPIDRSliceModalProps> = ({
                     value={slice.description}
                     onChange={(e) => handleUpdateSlice(index, 'description', e.target.value)}
                     placeholder="Slice description / user flow..."
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-xs resize-none"
+                    className="w-full bg-white border border-[#10233f]/15 focus:border-[#2047a8] rounded-lg p-2 text-[#10233f] text-xs font-medium resize-none"
                   />
                 </div>
               </div>
@@ -181,7 +181,7 @@ export const SPIDRSliceModal: React.FC<SPIDRSliceModalProps> = ({
           {slices.length < 5 && (
             <button
               onClick={handleAddSlice}
-              className="w-full py-2 bg-slate-950 border border-dashed border-slate-700 hover:border-slate-600 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 transition"
+              className="w-full py-2 bg-[#f9fbff] border border-dashed border-[#10233f]/20 hover:border-[#2047a8] rounded-xl text-xs font-bold text-[#5d6f88] hover:text-[#2047a8] transition"
             >
               + Add Another Slice
             </button>
@@ -189,16 +189,16 @@ export const SPIDRSliceModal: React.FC<SPIDRSliceModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between">
+        <div className="p-4 border-t border-[#10233f]/10 bg-[#f9fbff] flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition"
+            className="px-4 py-2 rounded-full text-xs font-bold text-[#5d6f88] hover:text-[#10233f] hover:bg-[#edf3fb] transition"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition"
+            className="px-4 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-[#2047a8] to-[#16347d] hover:from-[#16347d] hover:to-[#10233f] text-white shadow-md shadow-[#2047a8]/25 transition"
           >
             🚀 Push Slices to Tracker &amp; Queue
           </button>

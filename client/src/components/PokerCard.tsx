@@ -23,13 +23,13 @@ export const PokerCard: React.FC<PokerCardProps> = ({
   const isFlipped = isRevealed && hasVote;
 
   const avatarColors: Record<string, string> = {
-    indigo: 'from-indigo-600 to-indigo-700 ring-indigo-500/50',
+    indigo: 'from-[#2047a8] to-[#16347d] ring-[#2047a8]/50',
     emerald: 'from-emerald-600 to-emerald-700 ring-emerald-500/50',
     amber: 'from-amber-600 to-amber-700 ring-amber-500/50',
     rose: 'from-rose-600 to-rose-700 ring-rose-500/50',
     cyan: 'from-cyan-600 to-cyan-700 ring-cyan-500/50',
-    violet: 'from-violet-600 to-violet-700 ring-violet-500/50',
-    slate: 'from-slate-600 to-slate-700 ring-slate-500/50',
+    violet: 'from-[#7f1d7a] to-[#9c2768] ring-[#7f1d7a]/50',
+    slate: 'from-[#2f4565] to-[#10233f] ring-[#2f4565]/50',
   };
 
   const bgGrad = avatarColors[participant.avatar] || avatarColors.indigo;
@@ -47,25 +47,25 @@ export const PokerCard: React.FC<PokerCardProps> = ({
           <div
             className={`absolute inset-0 w-full h-full backface-hidden rounded-xl border flex flex-col items-center justify-center p-2 select-none transition-colors ${
               participant.voted
-                ? 'bg-slate-900 border-indigo-500/60 shadow-indigo-500/20 shadow-md ring-1 ring-indigo-500/30'
-                : 'bg-slate-950/80 border-slate-800 text-slate-500'
+                ? 'bg-white border-[#2047a8] shadow-[#2047a8]/15 shadow-md ring-2 ring-[#2047a8]/20'
+                : 'bg-[#f9fbff]/90 border-[#10233f]/15 text-[#5d6f88]'
             }`}
           >
             {participant.voted ? (
               <div className="flex flex-col items-center gap-1.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold text-sm animate-pulse">
+                <div className="w-8 h-8 rounded-lg bg-[#2047a8]/10 border border-[#2047a8]/30 flex items-center justify-center text-[#2047a8] font-bold text-sm animate-pulse">
                   ✓
                 </div>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-400">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-[#2047a8]">
                   {isSelf && participant.vote ? participant.vote : 'Voted'}
                 </span>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-1">
-                <div className="w-6 h-6 rounded-full border border-dashed border-slate-700 flex items-center justify-center text-xs text-slate-600">
+                <div className="w-6 h-6 rounded-full border border-dashed border-[#10233f]/25 flex items-center justify-center text-xs text-[#5d6f88]">
                   ⋯
                 </div>
-                <span className="text-[9px] uppercase font-semibold text-slate-500">
+                <span className="text-[9px] uppercase font-bold text-[#5d6f88]">
                   {participant.role === 'Observer' ? 'Observer' : 'Thinking'}
                 </span>
               </div>
@@ -76,19 +76,19 @@ export const PokerCard: React.FC<PokerCardProps> = ({
           <div
             className={`absolute inset-0 w-full h-full backface-hidden rotate-y-180 rounded-xl border flex flex-col items-center justify-between p-2 select-none ${
               isConsensus
-                ? 'bg-gradient-to-b from-emerald-950/80 to-slate-900 border-emerald-500/80 ring-2 ring-emerald-500/40 shadow-emerald-500/30 shadow-lg text-emerald-300'
+                ? 'bg-gradient-to-b from-emerald-500 to-emerald-700 border-emerald-400 ring-2 ring-emerald-400/40 shadow-emerald-500/30 shadow-lg text-white'
                 : isOutlier
-                ? 'bg-gradient-to-b from-rose-950/80 to-slate-900 border-rose-500/80 ring-2 ring-rose-500/40 shadow-rose-500/30 shadow-lg text-rose-300'
-                : 'bg-gradient-to-b from-slate-900 to-slate-950 border-slate-700 text-slate-100 shadow-md'
+                ? 'bg-gradient-to-b from-rose-500 to-rose-700 border-rose-400 ring-2 ring-rose-400/40 shadow-rose-500/30 shadow-lg text-white'
+                : 'bg-gradient-to-b from-[#2047a8] to-[#16347d] border-[#2047a8] text-white shadow-md'
             }`}
           >
-            <span className="text-[10px] font-mono font-bold self-start opacity-70">
+            <span className="text-[10px] font-mono font-bold self-start opacity-80">
               {participant.vote}
             </span>
             <span className="text-2xl sm:text-3xl font-black tracking-tighter">
               {participant.vote}
             </span>
-            <span className="text-[10px] font-mono font-bold self-end opacity-70">
+            <span className="text-[10px] font-mono font-bold self-end opacity-80">
               {participant.vote}
             </span>
           </div>
@@ -96,17 +96,17 @@ export const PokerCard: React.FC<PokerCardProps> = ({
       </div>
 
       {/* Participant Avatar & Name Label */}
-      <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-full border border-slate-800 max-w-[140px] shadow-sm">
+      <div className="flex items-center gap-1.5 bg-white/95 px-2.5 py-1 rounded-full border border-[#10233f]/12 max-w-[140px] shadow-sm">
         <div
           className={`w-4 h-4 rounded-full bg-gradient-to-tr ${bgGrad} ring-1 flex-shrink-0 flex items-center justify-center text-[9px] font-bold text-white uppercase`}
         >
           {participant.nickname.charAt(0)}
         </div>
-        <span className="text-xs font-medium text-slate-300 truncate">
+        <span className="text-xs font-bold text-[#10233f] truncate">
           {participant.nickname} {isSelf && '(You)'}
         </span>
         {isFacilitator && (
-          <span title="Facilitator" className="text-[10px] text-amber-400">
+          <span title="Facilitator" className="text-[10px] text-amber-500">
             👑
           </span>
         )}

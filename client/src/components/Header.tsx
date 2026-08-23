@@ -28,19 +28,19 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+    <header className="border-b border-[#10233f]/12 bg-white/88 backdrop-blur-md px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40 shadow-[0_14px_34px_rgba(18,42,82,0.08)]">
       <div className="flex items-center gap-3">
-        <a href="/" className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center font-bold text-lg shadow-lg shadow-indigo-500/20 hover:scale-105 transition">
+        <a href="/" className="h-9 w-9 rounded-xl bg-gradient-to-tr from-[#2047a8] to-[#7f1d7a] flex items-center justify-center font-bold text-lg text-white shadow-md shadow-[#2047a8]/20 hover:scale-105 transition">
           🃏
         </a>
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-bold text-sm tracking-wide text-slate-200">Scrum Pokr AI</h1>
-            <span className="px-2.5 py-0.5 text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full font-mono font-bold tracking-wider">
+            <h1 className="font-bold text-sm tracking-wide text-[#10233f]">Scrum Pokr AI</h1>
+            <span className="px-2.5 py-0.5 text-xs bg-[#2047a8]/10 text-[#2047a8] border border-[#2047a8]/20 rounded-full font-mono font-bold tracking-wider">
               {slug}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400">Zero-Auth Room • Standalone Mode</p>
+          <p className="text-[11px] text-[#5d6f88] font-medium">Zero-Auth Room • Standalone Mode</p>
         </div>
       </div>
 
@@ -48,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Share Button */}
         <button
           onClick={handleShare}
-          className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition text-slate-300 flex items-center gap-1.5"
+          className="text-xs bg-[#edf3fb] hover:bg-[#e2ebf7] border border-[#10233f]/12 px-3 py-1.5 rounded-full transition text-[#10233f] font-semibold flex items-center gap-1.5 shadow-sm"
         >
           <span>{copied ? '✓ Copied!' : `🔗 Share (${slug})`}</span>
         </button>
@@ -57,14 +57,14 @@ export const Header: React.FC<HeaderProps> = ({
         {myParticipant ? (
           <button
             onClick={onChangeProfile}
-            className="flex items-center gap-2 text-xs bg-slate-800 hover:bg-slate-750 border border-slate-700 px-3 py-1.5 rounded-full transition"
+            className="flex items-center gap-2 text-xs bg-[#edf3fb] hover:bg-[#e2ebf7] border border-[#10233f]/12 px-3 py-1.5 rounded-full transition shadow-sm"
           >
             <span
               className={`w-2 h-2 rounded-full ${
-                status === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                status === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
               }`}
             />
-            <span className="font-medium text-slate-200">
+            <span className="font-semibold text-[#10233f]">
               {myParticipant.nickname}{' '}
               {isFacilitator
                 ? myParticipant.role === 'Observer'
@@ -76,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
         ) : (
           <button
             onClick={onChangeProfile}
-            className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition font-medium"
+            className="text-xs bg-[#2047a8] hover:bg-[#16347d] text-white px-3 py-1.5 rounded-full transition font-bold shadow-md shadow-[#2047a8]/20"
           >
             Join Table
           </button>

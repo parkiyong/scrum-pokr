@@ -33,19 +33,19 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
   }
 
   return (
-    <div className="bg-slate-900/90 backdrop-blur border border-indigo-500/20 rounded-2xl p-3 shadow-xl flex flex-wrap items-center justify-between gap-3 my-4">
+    <div className="bg-white/95 backdrop-blur-md border border-[#2047a8]/20 rounded-2xl p-3 shadow-[0_14px_34px_rgba(18,42,82,0.1)] flex flex-wrap items-center justify-between gap-3 my-4">
       <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-        <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+        <span className="text-xs font-bold uppercase tracking-wider text-[#2047a8]">
           Facilitator Controls
         </span>
 
         {syncFeedback && (
           <span
-            className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
               syncFeedback.success
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30'
+                : 'bg-rose-500/10 text-rose-700 border border-rose-500/30'
             }`}
           >
             {syncFeedback.success ? '✓ Synced to Tracker' : 'Sync failed'}
@@ -57,7 +57,7 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
         {phase === 'Idle' && (
           <button
             onClick={onStartVoting}
-            className="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition active:scale-95 flex items-center gap-1.5"
+            className="px-4 py-2 text-xs font-bold rounded-full bg-[#2047a8] hover:bg-[#16347d] text-white shadow-md shadow-[#2047a8]/25 transition active:scale-95 flex items-center gap-1.5"
           >
             ▶ Start Voting
           </button>
@@ -66,7 +66,7 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
         {phase === 'Voting' && (
           <button
             onClick={onRevealCards}
-            className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-600/30 transition active:scale-95 flex items-center gap-1.5 animate-pulse"
+            className="px-4 py-2 text-xs font-bold rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-600/25 transition active:scale-95 flex items-center gap-1.5 animate-pulse"
           >
             👁 Reveal Cards
           </button>
@@ -76,14 +76,14 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
           <>
             <button
               onClick={onTriggerReVote}
-              className="px-3 py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition active:scale-95 flex items-center gap-1.5"
+              className="px-3.5 py-2 text-xs font-bold rounded-full bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] border border-[#10233f]/15 transition active:scale-95 flex items-center gap-1.5"
             >
               ↺ Re-Vote Round
             </button>
             {onDecomposeSlices && activeStory && (
               <button
                 onClick={onDecomposeSlices}
-                className="px-3 py-2 text-xs font-bold rounded-xl bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-500/30 transition active:scale-95 flex items-center gap-1.5"
+                className="px-3.5 py-2 text-xs font-bold rounded-full bg-[#7f1d7a]/10 hover:bg-[#7f1d7a]/20 text-[#7f1d7a] border border-[#7f1d7a]/30 transition active:scale-95 flex items-center gap-1.5"
                 title="Decompose story into vertical SPIDR slices"
               >
                 ✂ SPIDR Slices
@@ -91,7 +91,7 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
             )}
             <button
               onClick={onFinalize}
-              className="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition active:scale-95 flex items-center gap-1.5"
+              className="px-4 py-2 text-xs font-bold rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/25 transition active:scale-95 flex items-center gap-1.5"
             >
               ✓ Finalize Estimate
             </button>
@@ -103,14 +103,14 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
             {onSyncEstimate && activeStory && (
               <button
                 onClick={onSyncEstimate}
-                className="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition active:scale-95 flex items-center gap-1.5 animate-pulse"
+                className="px-4 py-2 text-xs font-bold rounded-full bg-[#2047a8] hover:bg-[#16347d] text-white shadow-md shadow-[#2047a8]/25 transition active:scale-95 flex items-center gap-1.5 animate-pulse"
               >
                 ⚡ Sync Estimate to {hasTracker ? 'Tracker' : 'Backlog'}
               </button>
             )}
             <button
               onClick={onStartVoting}
-              className="px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition active:scale-95 flex items-center gap-1.5"
+              className="px-3.5 py-2 text-xs font-bold rounded-full bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] border border-[#10233f]/15 transition active:scale-95 flex items-center gap-1.5"
             >
               ▶ Next Story
             </button>
