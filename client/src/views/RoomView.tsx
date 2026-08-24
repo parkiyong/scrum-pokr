@@ -17,7 +17,7 @@ interface RoomViewProps {
   onLeave: () => void;
 }
 
-export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) => {
+export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
   const {
     roomState,
     status,
@@ -57,7 +57,6 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
   const [isSliceModalOpen, setIsSliceModalOpen] = useState(false);
   const [isDoctorDrawerOpen, setIsDoctorDrawerOpen] = useState(false);
   const [isRefLibraryDrawerOpen, setIsRefLibraryDrawerOpen] = useState(false);
-  const [showAcList, setShowAcList] = useState(false);
 
   const myParticipant = roomState?.participants.find((p) => p.id === currentParticipantId);
   const myVote = myParticipant?.vote;
@@ -77,11 +76,11 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
 
   if (!roomState && status === 'connecting') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-[#10233f]">
-        <div className="w-12 h-12 rounded-2xl bg-[#2047a8]/10 border border-[#2047a8]/30 flex items-center justify-center text-2xl font-bold text-[#2047a8] animate-pulse">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-slate-800">
+        <div className="w-12 h-12 rounded-2xl bg-blue-100 border border-blue-200 flex items-center justify-center text-2xl font-bold text-blue-600 animate-pulse shadow-sm">
           🃏
         </div>
-        <p className="text-sm font-semibold text-[#5d6f88]">Connecting to room {slug}...</p>
+        <p className="text-sm font-semibold text-slate-600">Connecting to room {slug}...</p>
       </div>
     );
   }
@@ -104,59 +103,9 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
     syncEstimateToTracker(activeStory.id, numericPoints, true);
   };
 
-  const renderDesktopStoryDoctor = () => (
-    <StoryDoctorPanel
-      story={activeStory || null}
-      report={storyDoctorReport}
-      phase={phase}
-      isFacilitator={isFacilitator}
-      onStartVoting={startVoting}
-      onToggleEdgeCase={toggleEdgeCaseCheck}
-    />
-  );
-
-  const renderMobileStoryDoctor = () => (
-    <StoryDoctorPanel
-      story={activeStory || null}
-      report={storyDoctorReport}
-      phase={phase}
-      isFacilitator={isFacilitator}
-      onStartVoting={() => {
-        startVoting();
-        setIsDoctorDrawerOpen(false);
-      }}
-      onToggleEdgeCase={toggleEdgeCaseCheck}
-      onClose={() => setIsDoctorDrawerOpen(false)}
-    />
-  );
-
-  const renderDesktopPointReferenceLibrary = () => (
-    <PointReferenceLibrary
-      references={pointReferences}
-      isFacilitator={isFacilitator}
-      onUpdateReferences={updatePointReferences}
-    />
-  );
-
-  const renderMobilePointReferenceLibrary = () => (
-    <div className="relative">
-      <button
-        onClick={() => setIsRefLibraryDrawerOpen(false)}
-        className="absolute top-4 right-4 text-[#5d6f88] hover:text-[#10233f] z-10 text-sm font-bold"
-      >
-        ✕
-      </button>
-      <PointReferenceLibrary
-        references={pointReferences}
-        isFacilitator={isFacilitator}
-        onUpdateReferences={updatePointReferences}
-      />
-    </div>
-  );
-
   return (
-    <div className="min-h-screen flex flex-col bg-transparent text-[#10233f] pb-28">
-      {/* Header */}
+    <div className="min-h-screen flex flex-col bg-[#dce8f5] text-slate-900 pb-12">
+      {/* Top Header */}
       <Header
         slug={roomState?.slug || slug}
         shortCode={roomState?.short_code || '---'}
@@ -166,111 +115,89 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
         onChangeProfile={() => setIsJoinModalOpen(true)}
       />
 
-      {/* Main Room Arena Container */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 flex flex-col">
-        {/* Story Info Banner */}
-        <div className="bg-white/95 backdrop-blur-md border border-[#10233f]/12 rounded-2xl p-4 mb-4 flex flex-col gap-3 shadow-[0_14px_34px_rgba(18,42,82,0.08)]">
+      {/* Main Content Arena */}
+      <main className="flex-1 max-w-[90%] mx-auto w-full px-2 sm:px-4 py-3 flex flex-col">
+        {/* Active Story Banner */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 mb-2 shadow-[0_4px_20px_rgba(15,23,42,0.04)]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-1.5 max-w-3xl">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-[#2047a8]/10 text-[#2047a8] border border-[#2047a8]/20 px-2 py-0.5 rounded-full">
-                  Active Story
-                </span>
+            {/* Story Info Left */}
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <button
+                onClick={onLeave}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition flex-shrink-0 mt-0.5"
+                title="Leave room"
+                aria-label="Back to Lobby"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
 
-                {activeStory?.key && (
-                  <span className="text-[11px] font-mono font-bold bg-[#edf3fb] text-[#2047a8] border border-[#10233f]/12 px-2 py-0.5 rounded-md">
-                    {activeStory.key}
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#dceefc] text-[#0284c7] border border-[#bae6fd] px-2.5 py-0.5 rounded-md">
+                    ACTIVE STORY
                   </span>
-                )}
 
-                {activeStory?.url && (
-                  <a
-                    href={activeStory.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] font-semibold text-[#5d6f88] hover:text-[#2047a8] underline flex items-center gap-1 transition"
-                  >
-                    View in {activeStory.tracker_provider || 'Tracker'} ↗
-                  </a>
-                )}
-
-                <h2 className="text-sm sm:text-base font-bold text-[#10233f]">
-                  {activeStory?.title || 'General Estimation Round'}
-                </h2>
-              </div>
-
-              {activeStory?.description && (
-                <p className="text-xs text-[#5d6f88] line-clamp-2 font-medium">
-                  {activeStory.description}
-                </p>
-              )}
-
-              {activeStory?.acceptance_criteria && activeStory.acceptance_criteria.length > 0 && (
-                <div>
-                  <button
-                    onClick={() => setShowAcList(!showAcList)}
-                    className="text-[11px] font-bold text-[#2047a8] hover:text-[#16347d] transition flex items-center gap-1"
-                  >
-                    <span>{showAcList ? '▼ Hide' : '▶ Show'} Acceptance Criteria ({activeStory.acceptance_criteria.length})</span>
-                  </button>
-
-                  {showAcList && (
-                    <ul className="mt-2 space-y-1 bg-[#f9fbff] border border-[#10233f]/12 rounded-xl p-3 text-xs text-[#10233f] font-medium">
-                      {activeStory.acceptance_criteria.map((ac, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-[#2047a8] font-bold">•</span>
-                          <span>{ac}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  {activeStory?.key && (
+                    <span className="text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.2 rounded-md">
+                      {activeStory.key}
+                    </span>
                   )}
+
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 truncate">
+                    {activeStory?.title || 'Sample User Story'}
+                  </h2>
                 </div>
-              )}
+
+                <p className="text-xs text-slate-500 font-normal leading-relaxed">
+                  {activeStory?.description ||
+                    'As a user, I want to estimate user stories collaboratively so that our team aligns on effort.'}
+                </p>
+              </div>
             </div>
 
-            {/* Top Quick Action Buttons */}
-            <div className="flex items-center gap-2 self-start sm:self-center flex-wrap flex-shrink-0">
-              {/* Mobile / Tablet Quick Toggles */}
+            {/* Story Banner Right Action Buttons */}
+            <div className="flex items-center gap-2 self-start sm:self-center flex-shrink-0">
+              {/* Mobile Quick Toggles */}
               <button
                 onClick={() => setIsDoctorDrawerOpen(true)}
-                className="lg:hidden px-3.5 py-1.5 bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#2047a8] border border-[#2047a8]/20 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                className="lg:hidden px-3 py-1.5 bg-white hover:bg-slate-50 text-blue-600 border border-blue-200 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1"
               >
-                <span>🩺</span>
-                <span>Story Doctor</span>
+                🩺 Story Doctor
               </button>
 
               <button
                 onClick={() => setIsRefLibraryDrawerOpen(true)}
-                className="lg:hidden px-3.5 py-1.5 bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] border border-[#10233f]/12 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                className="lg:hidden px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1"
               >
-                <span>📚</span>
-                <span>References</span>
+                📚 References
               </button>
 
               <button
                 onClick={() => setIsBacklogOpen(true)}
-                className="px-3.5 py-1.5 bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] border border-[#10233f]/12 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5"
               >
-                📋 Backlog ({backlog.length})
+                Backlog ({backlog.length})
               </button>
 
               {isFacilitator && (
                 <button
                   onClick={() => setIsTrackerModalOpen(true)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm ${
+                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 ${
                     trackerConnected
                       ? 'bg-emerald-50 border border-emerald-300 text-emerald-800'
-                      : 'bg-gradient-to-r from-[#7f1d7a] to-[#9c2768] hover:opacity-95 text-white'
+                      : 'bg-[#3b82f6] hover:bg-[#2563eb] text-white'
                   }`}
                 >
-                  ⚡ {activeTrackerProvider ? `${activeTrackerProvider} Connected` : 'Connect Tracker'}
+                  {activeTrackerProvider ? `${activeTrackerProvider} Connected` : 'Connect Tracker'}
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        {/* Facilitator Controls Bar */}
+        {/* Facilitator Controls Row */}
         <FacilitatorBar
           phase={phase}
           activeStory={activeStory}
@@ -286,57 +213,100 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
           syncFeedback={syncFeedback}
         />
 
-        {/* 3-Column Responsive Command Center Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-start">
-          {/* Left Column (Desktop): Story Doctor Quality Gate */}
-          <div className="hidden lg:block lg:col-span-4 space-y-4">
-            {renderDesktopStoryDoctor()}
+        {/* 3-Column Responsive Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 items-start mt-1">
+          {/* Left Column: Story Doctor Quality Gate */}
+          <div className="hidden lg:block lg:col-span-3 xl:col-span-3">
+            <StoryDoctorPanel
+              story={activeStory || { id: 'sample-1', title: 'Sample User Story', description: 'As a user, I want to estimate user stories collaboratively so that our team aligns on effort.', acceptance_criteria: ['Collaborative estimation', 'Consensus detection'] }}
+              report={storyDoctorReport}
+              phase={phase}
+              isFacilitator={isFacilitator}
+              onStartVoting={startVoting}
+              onToggleEdgeCase={toggleEdgeCaseCheck}
+            />
           </div>
 
-          {/* Center Column: Poker Table Arena */}
-          <div className="col-span-1 lg:col-span-5 flex flex-col items-center justify-center min-h-[420px]">
+          {/* Center Column: Virtual Poker Table + Docked Card Deck */}
+          <div className="col-span-1 lg:col-span-6 xl:col-span-6 flex flex-col items-center justify-between">
             <PokerTableArena
-              participants={participants}
+              participants={participants.length > 0 ? participants : [
+                {
+                  id: currentParticipantId,
+                  nickname: myProfile?.nickname || 'Jaka',
+                  avatar: myProfile?.avatar || 'indigo',
+                  role: myProfile?.role || 'Estimator',
+                  connected: true,
+                  voted: false,
+                },
+              ]}
               currentUserId={currentParticipantId}
-              facilitatorId={roomState?.facilitator_id}
+              facilitatorId={roomState?.facilitator_id || currentParticipantId}
               phase={phase}
               roundNumber={roundNumber}
               consensus={consensus}
             />
+
+            {/* Pick Card Bar docked directly under poker table */}
+            {myParticipant?.role !== 'Observer' && (
+              <DeckSelector
+                selectedCard={myVote}
+                onSelectCard={handleCardClick}
+                disabled={phase !== 'Voting'}
+              />
+            )}
           </div>
 
           {/* Right Column: Point Reference Library */}
-          <div className="hidden lg:block lg:col-span-3 space-y-4">
-            {renderDesktopPointReferenceLibrary()}
+          <div className="hidden lg:block lg:col-span-3 xl:col-span-3">
+            <PointReferenceLibrary
+              references={pointReferences}
+              isFacilitator={isFacilitator}
+              onUpdateReferences={updatePointReferences}
+            />
           </div>
         </div>
       </main>
 
-      {/* Mobile/Tablet Story Doctor Drawer/Modal */}
+      {/* Mobile Story Doctor Modal */}
       {isDoctorDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a1220]/60 backdrop-blur-sm lg:hidden animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm lg:hidden animate-fade-in">
           <div className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            {renderMobileStoryDoctor()}
+            <StoryDoctorPanel
+              story={activeStory || { id: 'sample-1', title: 'Sample User Story', description: 'As a user, I want to estimate user stories collaboratively.', acceptance_criteria: ['Collaborative estimation'] }}
+              report={storyDoctorReport}
+              phase={phase}
+              isFacilitator={isFacilitator}
+              onStartVoting={() => {
+                startVoting();
+                setIsDoctorDrawerOpen(false);
+              }}
+              onToggleEdgeCase={toggleEdgeCaseCheck}
+              onClose={() => setIsDoctorDrawerOpen(false)}
+            />
           </div>
         </div>
       )}
 
-      {/* Mobile/Tablet Point Reference Library Modal */}
+      {/* Mobile Point Reference Library Modal */}
       {isRefLibraryDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a1220]/60 backdrop-blur-sm lg:hidden animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm lg:hidden animate-fade-in">
           <div className="max-w-md w-full max-h-[90vh] overflow-y-auto">
-            {renderMobilePointReferenceLibrary()}
+            <div className="relative">
+              <button
+                onClick={() => setIsRefLibraryDrawerOpen(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 z-10 text-sm font-bold p-1"
+              >
+                ✕
+              </button>
+              <PointReferenceLibrary
+                references={pointReferences}
+                isFacilitator={isFacilitator}
+                onUpdateReferences={updatePointReferences}
+              />
+            </div>
           </div>
         </div>
-      )}
-
-      {/* Bottom Fibonacci Card Deck */}
-      {myParticipant?.role !== 'Observer' && (
-        <DeckSelector
-          selectedCard={myVote}
-          onSelectCard={handleCardClick}
-          disabled={phase !== 'Voting'}
-        />
       )}
 
       {/* Backlog Drawer */}
@@ -397,4 +367,5 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
     </div>
   );
 };
+
 

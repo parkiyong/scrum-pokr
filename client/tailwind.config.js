@@ -7,25 +7,27 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"IBM Plex Sans"', 'sans-serif'],
-        display: ['"DM Sans"', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', '"DM Sans"', 'sans-serif'],
       },
       colors: {
         ink: {
-          DEFAULT: '#10233f',
-          soft: '#2f4565',
-          muted: '#5d6f88',
+          DEFAULT: '#0f172a',
+          soft: '#334155',
+          muted: '#64748b',
         },
         brand: {
-          accent: '#2047a8',
-          strong: '#16347d',
-          magenta: '#7f1d7a',
+          DEFAULT: '#2563eb',
+          accent: '#3b82f6',
+          strong: '#1d4ed8',
+          light: '#e0f0fe',
+          sky: '#dce8f5',
         },
         surface: {
-          bgA: '#edf3fb',
-          bgB: '#f9fbff',
-          card: 'rgba(255, 255, 255, 0.95)',
-          border: 'rgba(16, 35, 63, 0.12)',
+          bgA: '#dce8f5',
+          bgB: '#eaf2fa',
+          card: '#ffffff',
+          border: 'rgba(15, 23, 42, 0.08)',
         },
       },
     },

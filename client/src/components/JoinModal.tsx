@@ -11,13 +11,13 @@ interface JoinModalProps {
 }
 
 const AVATAR_COLORS = [
-  { id: 'indigo', label: 'Indigo', bg: 'bg-[#2047a8]' },
+  { id: 'indigo', label: 'Indigo', bg: 'bg-blue-600' },
   { id: 'emerald', label: 'Emerald', bg: 'bg-emerald-600' },
   { id: 'amber', label: 'Amber', bg: 'bg-amber-600' },
   { id: 'rose', label: 'Rose', bg: 'bg-rose-600' },
   { id: 'cyan', label: 'Cyan', bg: 'bg-cyan-600' },
-  { id: 'violet', label: 'Violet', bg: 'bg-[#7f1d7a]' },
-  { id: 'slate', label: 'Slate', bg: 'bg-[#2f4565]' },
+  { id: 'violet', label: 'Violet', bg: 'bg-purple-600' },
+  { id: 'slate', label: 'Slate', bg: 'bg-slate-600' },
 ];
 
 export const JoinModal: React.FC<JoinModalProps> = ({
@@ -50,21 +50,21 @@ export const JoinModal: React.FC<JoinModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#10233f]/55 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white border border-[#10233f]/12 rounded-2xl max-w-md w-full p-6 shadow-[0_30px_60px_rgba(12,28,55,0.25)]">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#2047a8] to-[#7f1d7a] flex items-center justify-center text-xl font-bold text-white shadow-md shadow-[#2047a8]/20">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl font-bold text-white shadow-xs">
             🃏
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#10233f]">Join Poker Room</h2>
-            <p className="text-xs text-[#5d6f88] font-medium">Zero-auth session • Reconnect anytime</p>
+            <h2 className="text-base font-bold text-slate-900">Join Poker Room</h2>
+            <p className="text-xs text-slate-500 font-normal">Zero-auth session • Reconnect anytime</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#2047a8] mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
               Your Nickname
             </label>
             <input
@@ -73,13 +73,13 @@ export const JoinModal: React.FC<JoinModalProps> = ({
               placeholder="e.g. Alex, Sarah, Devon"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              className="w-full bg-[#f9fbff] border border-[#10233f]/15 focus:border-[#2047a8] focus:ring-2 focus:ring-[#2047a8]/20 rounded-xl px-3.5 py-2 text-sm text-[#10233f] placeholder-[#5d6f88]/60 outline-none transition font-medium"
+              className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition font-medium"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#2047a8] mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
               Avatar Color
             </label>
             <div className="flex items-center gap-2.5">
@@ -90,7 +90,7 @@ export const JoinModal: React.FC<JoinModalProps> = ({
                   onClick={() => setAvatar(c.id)}
                   className={`w-8 h-8 rounded-full ${c.bg} transition-all duration-150 flex items-center justify-center ${
                     avatar === c.id
-                      ? 'ring-4 ring-[#2047a8]/40 scale-110 shadow-lg'
+                      ? 'ring-3 ring-blue-500/40 scale-110 shadow-md'
                       : 'opacity-75 hover:opacity-100'
                   }`}
                 >
@@ -101,7 +101,7 @@ export const JoinModal: React.FC<JoinModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#2047a8] mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
               Participation Role
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -110,8 +110,8 @@ export const JoinModal: React.FC<JoinModalProps> = ({
                 onClick={() => setRole('Estimator')}
                 className={`py-2 px-3 rounded-xl text-xs font-bold border transition text-left flex flex-col ${
                   role === 'Estimator'
-                    ? 'bg-[#2047a8]/10 border-[#2047a8] text-[#2047a8]'
-                    : 'bg-[#f9fbff] border-[#10233f]/12 text-[#5d6f88] hover:border-[#10233f]/25'
+                    ? 'bg-blue-50 border-blue-500 text-blue-700'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
                 <span>Estimator</span>
@@ -123,8 +123,8 @@ export const JoinModal: React.FC<JoinModalProps> = ({
                 onClick={() => setRole('Observer')}
                 className={`py-2 px-3 rounded-xl text-xs font-bold border transition text-left flex flex-col ${
                   role === 'Observer'
-                    ? 'bg-[#7f1d7a]/10 border-[#7f1d7a] text-[#7f1d7a]'
-                    : 'bg-[#f9fbff] border-[#10233f]/12 text-[#5d6f88] hover:border-[#10233f]/25'
+                    ? 'bg-purple-50 border-purple-500 text-purple-700'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
                 <span>Observer</span>
@@ -136,7 +136,7 @@ export const JoinModal: React.FC<JoinModalProps> = ({
           <button
             type="submit"
             disabled={!nickname.trim()}
-            className="w-full mt-2 py-2.5 rounded-full bg-gradient-to-r from-[#2047a8] to-[#16347d] hover:from-[#16347d] hover:to-[#10233f] disabled:opacity-50 text-white font-bold text-sm shadow-lg shadow-[#2047a8]/25 transition active:scale-98"
+            className="w-full mt-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs sm:text-sm shadow-sm transition active:scale-98"
           >
             Enter Room
           </button>
@@ -145,3 +145,4 @@ export const JoinModal: React.FC<JoinModalProps> = ({
     </div>
   );
 };
+

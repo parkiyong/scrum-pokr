@@ -237,36 +237,36 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#10233f]/55 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="connect-tracker-modal-title"
-        className="bg-white border border-[#10233f]/12 rounded-2xl w-full max-w-xl overflow-hidden shadow-[0_30px_60px_rgba(12,28,55,0.25)] flex flex-col max-h-[90vh]"
+        className="bg-white border border-slate-200 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-5 border-b border-[#10233f]/10 flex items-center justify-between">
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-xl">⚡</span>
             <div>
-              <h2 id="connect-tracker-modal-title" className="text-lg font-bold text-[#10233f]">
-                Backlog Ingestion & Tracker Sync
+              <h2 id="connect-tracker-modal-title" className="text-base font-bold text-slate-900">
+                Backlog Ingestion &amp; Tracker Sync
               </h2>
-              <p className="text-xs text-[#5d6f88] font-medium">
+              <p className="text-xs text-slate-500 font-normal">
                 Zero-Auth ephemeral credentials stored in browser session memory
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-[#5d6f88] hover:text-[#10233f] text-lg p-1 rounded-lg hover:bg-[#edf3fb] transition"
+            className="text-slate-400 hover:text-slate-700 text-lg p-1 rounded-lg hover:bg-slate-100 transition"
           >
             ✕
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-[#10233f]/10 bg-[#edf3fb] p-1.5 gap-1 text-xs font-bold">
+        <div className="flex border-b border-slate-100 bg-slate-50 p-1.5 gap-1 text-xs font-bold">
           {(['Linear', 'GitHub', 'Jira', 'Markdown'] as const).map((t) => (
             <button
               key={t}
@@ -276,8 +276,8 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
               }}
               className={`flex-1 py-2 rounded-xl transition flex items-center justify-center gap-1.5 ${
                 tab === t
-                  ? 'bg-[#2047a8] text-white shadow-sm'
-                  : 'text-[#5d6f88] hover:text-[#10233f] hover:bg-white/60'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
               }`}
             >
               {t === 'Linear' && '📐 Linear'}
@@ -673,10 +673,10 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-[#10233f]/10 bg-[#f9fbff] flex items-center justify-between gap-3">
+        <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-full text-xs font-bold text-[#5d6f88] hover:text-[#10233f] hover:bg-[#edf3fb] transition"
+            className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
           >
             Cancel
           </button>
@@ -687,14 +687,14 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
                 <button
                   onClick={handleTestConnection}
                   disabled={!getCurrentConfig()}
-                  className="px-3.5 py-2 rounded-full text-xs font-bold bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] border border-[#10233f]/12 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
                 >
                   🔍 Test Connection
                 </button>
                 <button
                   onClick={handleConnectAndFetch}
                   disabled={!getCurrentConfig()}
-                  className="px-4 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-[#2047a8] to-[#16347d] hover:from-[#16347d] hover:to-[#10233f] text-white shadow-md shadow-[#2047a8]/25 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   ⚡ Connect &amp; Import
                 </button>
@@ -703,7 +703,7 @@ export const ConnectTrackerModal: React.FC<ConnectTrackerModalProps> = ({
               <button
                 onClick={handleImportMarkdown}
                 disabled={!rawMarkdown.trim()}
-                className="px-4 py-2 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/25 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 📥 Import Stories
               </button>

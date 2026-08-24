@@ -20,91 +20,80 @@ export const PokerCard: React.FC<PokerCardProps> = ({
 }) => {
   const isRevealed = phase === 'Revealed' || phase === 'Finalized' || phase === 'Discussing' || phase === 'Slicing';
   const hasVote = participant.vote !== undefined && participant.vote !== null;
-  const isFlipped = isRevealed && hasVote;
 
-  const avatarColors: Record<string, string> = {
-    indigo: 'from-[#2047a8] to-[#16347d] ring-[#2047a8]/50',
-    emerald: 'from-emerald-600 to-emerald-700 ring-emerald-500/50',
-    amber: 'from-amber-600 to-amber-700 ring-amber-500/50',
-    rose: 'from-rose-600 to-rose-700 ring-rose-500/50',
-    cyan: 'from-cyan-600 to-cyan-700 ring-cyan-500/50',
-    violet: 'from-[#7f1d7a] to-[#9c2768] ring-[#7f1d7a]/50',
-    slate: 'from-[#2f4565] to-[#10233f] ring-[#2f4565]/50',
+  const avatarColors: Record<string, { from: string; to: string; bg: string; text: string }> = {
+    indigo: { from: '#3b82f6', to: '#1d4ed8', bg: 'bg-blue-100', text: 'text-blue-700' },
+    emerald: { from: '#10b981', to: '#047857', bg: 'bg-emerald-100', text: 'text-emerald-700' },
+    amber: { from: '#f59e0b', to: '#b45309', bg: 'bg-amber-100', text: 'text-amber-700' },
+    rose: { from: '#f43f5e', to: '#be123c', bg: 'bg-rose-100', text: 'text-rose-700' },
+    cyan: { from: '#06b6d4', to: '#0e7490', bg: 'bg-cyan-100', text: 'text-cyan-700' },
+    violet: { from: '#8b5cf6', to: '#6d28d9', bg: 'bg-purple-100', text: 'text-purple-700' },
+    slate: { from: '#64748b', to: '#334155', bg: 'bg-slate-100', text: 'text-slate-700' },
   };
 
-  const bgGrad = avatarColors[participant.avatar] || avatarColors.indigo;
+  const col = avatarColors[participant.avatar] || avatarColors.indigo;
 
   return (
-    <div className="flex flex-col items-center gap-2 group transition-all duration-300">
-      {/* 3D Flip Card Container */}
-      <div className="w-16 h-24 sm:w-20 sm:h-28 perspective-1000">
-        <div
-          className={`relative w-full h-full transform-style-3d card-flip rounded-xl shadow-lg ${
-            isFlipped ? 'rotate-y-180' : ''
-          }`}
-        >
-          {/* CARD FRONT (Face-down / Hidden state) */}
+    <div className="flex flex-col items-center gap-1.5 group select-none">
+      {/* If Revealed with a vote, show the 3D card above avatar */}
+      {isRevealed && hasVote ? (
+        <div className="w-14 h-20 sm:w-16 sm:h-22 perspective-1000 mb-1">
           <div
-            className={`absolute inset-0 w-full h-full backface-hidden rounded-xl border flex flex-col items-center justify-center p-2 select-none transition-colors ${
-              participant.voted
-                ? 'bg-white border-[#2047a8] shadow-[#2047a8]/15 shadow-md ring-2 ring-[#2047a8]/20'
-                : 'bg-[#f9fbff]/90 border-[#10233f]/15 text-[#5d6f88]'
-            }`}
-          >
-            {participant.voted ? (
-              <div className="flex flex-col items-center gap-1.5">
-                <div className="w-8 h-8 rounded-lg bg-[#2047a8]/10 border border-[#2047a8]/30 flex items-center justify-center text-[#2047a8] font-bold text-sm animate-pulse">
-                  ✓
-                </div>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-[#2047a8]">
-                  {isSelf && participant.vote ? participant.vote : 'Voted'}
-                </span>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-6 h-6 rounded-full border border-dashed border-[#10233f]/25 flex items-center justify-center text-xs text-[#5d6f88]">
-                  ⋯
-                </div>
-                <span className="text-[9px] uppercase font-bold text-[#5d6f88]">
-                  {participant.role === 'Observer' ? 'Observer' : 'Thinking'}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* CARD BACK (Revealed face-up state) */}
-          <div
-            className={`absolute inset-0 w-full h-full backface-hidden rotate-y-180 rounded-xl border flex items-center justify-center p-2 select-none ${
+            className={`relative w-full h-full transform-style-3d card-flip rounded-xl shadow-lg rotate-y-180 flex items-center justify-center p-2 border ${
               isConsensus
-                ? 'bg-gradient-to-b from-emerald-500 to-emerald-700 border-emerald-400 ring-2 ring-emerald-400/40 shadow-emerald-500/30 shadow-lg text-white'
+                ? 'bg-gradient-to-b from-emerald-500 to-emerald-700 border-emerald-400 text-white shadow-emerald-500/20'
                 : isOutlier
-                ? 'bg-gradient-to-b from-rose-500 to-rose-700 border-rose-400 ring-2 ring-rose-400/40 shadow-rose-500/30 shadow-lg text-white'
-                : 'bg-gradient-to-b from-[#2047a8] to-[#16347d] border-[#2047a8] text-white shadow-md'
+                ? 'bg-gradient-to-b from-rose-500 to-rose-700 border-rose-400 text-white shadow-rose-500/20'
+                : 'bg-gradient-to-b from-blue-600 to-blue-800 border-blue-500 text-white shadow-blue-500/20'
             }`}
           >
-            <span className="text-3xl sm:text-4xl font-black tracking-tight">
-              {participant.vote}
-            </span>
+            <span className="text-2xl sm:text-3xl font-black tracking-tight">{participant.vote}</span>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Avatar Container with Facilitator Crown */}
+      <div className="relative flex flex-col items-center">
+        {isFacilitator && (
+          <div
+            className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-sm drop-shadow-sm pointer-events-none z-10"
+            title="Facilitator"
+          >
+            👑
+          </div>
+        )}
+
+        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white p-0.5 shadow-md border-2 border-blue-200 flex items-center justify-center">
+          <div
+            className="w-full h-full rounded-full flex items-center justify-center text-sm font-bold text-white shadow-inner"
+            style={{ background: `linear-gradient(135deg, ${col.from}, ${col.to})` }}
+          >
+            {participant.nickname ? participant.nickname.charAt(0).toUpperCase() : '?'}
           </div>
         </div>
       </div>
 
-      {/* Participant Avatar & Name Label */}
-      <div className="flex items-center gap-1.5 bg-white/95 px-2.5 py-1 rounded-full border border-[#10233f]/12 max-w-[140px] shadow-sm">
-        <div
-          className={`w-4 h-4 rounded-full bg-gradient-to-tr ${bgGrad} ring-1 flex-shrink-0 flex items-center justify-center text-[9px] font-bold text-white uppercase`}
-        >
-          {participant.nickname.charAt(0)}
-        </div>
-        <span className="text-xs font-bold text-[#10233f] truncate">
-          {participant.nickname} {isSelf && '(You)'}
-        </span>
-        {isFacilitator && (
-          <span title="Facilitator" className="text-[10px] text-amber-500">
-            👑
+      {/* Nickname */}
+      <div className="text-xs font-bold text-slate-800 flex items-center gap-1 drop-shadow-sm">
+        <span>{participant.nickname}</span>
+        {isSelf && <span className="font-semibold text-slate-600">(You)</span>}
+      </div>
+
+      {/* Status Badge below name */}
+      <div>
+        {participant.voted ? (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0] shadow-sm flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]" />
+            <span>Voted</span>
+          </span>
+        ) : (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#fef3c7] text-[#b45309] border border-[#fde68a] shadow-sm flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-pulse" />
+            <span>{participant.role === 'Observer' ? 'Observer' : 'Thinking'}</span>
           </span>
         )}
       </div>
     </div>
   );
 };
+
