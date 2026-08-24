@@ -20,6 +20,7 @@ A complete and clean replacement of the real-time WebSocket protocol with standa
 - [Implement Axum SSE Route and Event Broadcast Stream](issues/01-sse-handler.md): Added `/api/rooms/:slug/events` SSE streaming endpoint with Reveal Gate projection and 15s keep-alive heartbeats.
 - [Implement Axum REST Command Endpoints](issues/02-rest-commands.md): Added 22 REST endpoints for room state queries, participant lifecycle, voting phases, story selection, backlog operations, and issue tracker synchronization.
 - [SSE Stream Lifecycle & Disconnect Presence Detection](issues/03-presence-and-disconnect.md): Implemented `DisconnectGuard` on SSE streams to automatically trigger participant disconnect and Facilitator failover on stream drops, plus `POST /api/rooms/:slug/leave`.
+- [React Client Hook Migration to EventSource and REST](issues/04-client-hook-migration.md): Refactored `useRoomSocket` to subscribe to Server-Sent Events via `EventSource` and dispatch actions over HTTP `fetch`, preserving component interfaces and passing all Vitest suites.
 
 ## Not yet specified
 

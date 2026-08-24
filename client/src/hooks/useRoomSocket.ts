@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  ClientCommand,
   ConnectionPreview,
   LocalSessionProfile,
   PointReference,
@@ -57,64 +56,79 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
   const [trackerError, setTrackerError] = useState<string | null>(null);
   const [syncFeedback, setSyncFeedback] = useState<{ storyId: string; success: boolean; message?: string } | null>(null);
 
-  const wsRef = useRef<WebSocket | null>(null);
   const participantIdRef = useRef<string>(myProfile?.participant_id || getOrCreateParticipantId());
+  const esRef = useRef<EventSource | null>(null);
 
-  const sendCommand = useCallback((cmd: ClientCommand) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(cmd));
-    }
-  }, []);
+  const sendAction = useCallback(
+    async (
+      path: string,
+      body?: unknown,
+      method: 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'POST'
+    ) => {
+      try {
+        const res = await fetch(`/api/rooms/${slug}${path}`, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Participant-ID': participantIdRef.current,
+          },
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+        });
+        if (!res.ok) {
+          console.warn(`Action ${path} returned status ${res.status}`);
+        }
+      } catch (err) {
+        console.error(`Action ${path} failed:`, err);
+      }
+    },
+    [slug]
+  );
 
-  const joinRoom = useCallback((nickname: string, avatar: string, role?: Role) => {
-    const profile: LocalSessionProfile = {
-      participant_id: participantIdRef.current,
-      nickname,
-      avatar,
-      role,
-    };
-    saveStoredProfile(slug, profile);
-    setMyProfile(profile);
+  const joinRoom = useCallback(
+    (nickname: string, avatar: string, role?: Role) => {
+      const profile: LocalSessionProfile = {
+        participant_id: participantIdRef.current,
+        nickname,
+        avatar,
+        role,
+      };
+      saveStoredProfile(slug, profile);
+      setMyProfile(profile);
 
-    sendCommand({
-      type: 'JoinRoom',
-      payload: {
+      sendAction('/participants', {
         participant_id: profile.participant_id,
         nickname: profile.nickname,
         avatar: profile.avatar,
         role: profile.role,
-      },
-    });
-  }, [slug, sendCommand]);
+      });
+    },
+    [slug, sendAction]
+  );
 
   useEffect(() => {
     if (!slug) return;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/ws/rooms/${slug}`;
+    const eventSourceUrl = `/api/rooms/${slug}/events?participant_id=${encodeURIComponent(
+      participantIdRef.current
+    )}`;
+    const es = new EventSource(eventSourceUrl);
+    esRef.current = es;
 
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
+    es.onopen = () => {
       setStatus('connected');
       // Auto rejoin if profile is cached
       const stored = getStoredProfile(slug);
       if (stored) {
-        sendCommand({
-          type: 'JoinRoom',
-          payload: {
-            participant_id: stored.participant_id,
-            nickname: stored.nickname,
-            avatar: stored.avatar,
-            role: stored.role,
-          },
+        sendAction('/participants', {
+          participant_id: stored.participant_id,
+          nickname: stored.nickname,
+          avatar: stored.avatar,
+          role: stored.role,
         });
       }
     };
 
-    ws.onmessage = (event) => {
+    es.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data) as ServerEvent;
         if (msg.type === 'RoomSnapshot') {
@@ -135,14 +149,20 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
             return {
               ...prev,
               participants: prev.participants.map((p) =>
-                p.id === msg.payload.participant_id ? { ...p, voted: false, vote: undefined } : p
+                p.id === msg.payload.participant_id
+                  ? { ...p, voted: false, vote: undefined }
+                  : p
               ),
             };
           });
         } else if (msg.type === 'BacklogUpdated') {
-          setRoomState((prev) => (prev ? { ...prev, backlog: msg.payload.backlog } : prev));
+          setRoomState((prev) =>
+            prev ? { ...prev, backlog: msg.payload.backlog } : prev
+          );
         } else if (msg.type === 'PointReferencesUpdated') {
-          setRoomState((prev) => (prev ? { ...prev, point_references: msg.payload.references } : prev));
+          setRoomState((prev) =>
+            prev ? { ...prev, point_references: msg.payload.references } : prev
+          );
         } else if (msg.type === 'EdgeCaseToggled') {
           setRoomState((prev) => {
             if (!prev || !prev.story_doctor_report) return prev;
@@ -151,13 +171,17 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
               story_doctor_report: {
                 ...prev.story_doctor_report,
                 edge_cases: prev.story_doctor_report.edge_cases.map((ec) =>
-                  ec.id === msg.payload.edge_case_id ? { ...ec, checked: msg.payload.checked } : ec
+                  ec.id === msg.payload.edge_case_id
+                    ? { ...ec, checked: msg.payload.checked }
+                    : ec
                 ),
               },
             };
           });
         } else if (msg.type === 'StoryDoctorReportUpdated') {
-          setRoomState((prev) => (prev ? { ...prev, story_doctor_report: msg.payload.report } : prev));
+          setRoomState((prev) =>
+            prev ? { ...prev, story_doctor_report: msg.payload.report } : prev
+          );
         } else if (msg.type === 'TrackerConnectionTested') {
           setConnectionPreview(msg.payload.preview);
           setTrackerError(null);
@@ -175,121 +199,185 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           });
         }
       } catch (err) {
-        console.error('Failed to parse server message:', err);
+        console.error('Failed to parse SSE event message:', err);
       }
     };
 
-    ws.onerror = (err) => {
-      console.error('WebSocket error:', err);
-      setStatus('error');
-    };
-
-    ws.onclose = () => {
-      setStatus('disconnected');
+    es.onerror = (err) => {
+      console.warn('SSE connection state change / error:', err);
+      if (es.readyState === EventSource.CLOSED) {
+        setStatus('disconnected');
+      } else {
+        setStatus('error');
+      }
     };
 
     return () => {
-      ws.close();
-      wsRef.current = null;
+      es.close();
+      esRef.current = null;
+      // Trigger disconnect cleanup
+      fetch(`/api/rooms/${slug}/leave`, {
+        method: 'POST',
+        headers: {
+          'X-Participant-ID': participantIdRef.current,
+        },
+      }).catch(() => {});
     };
-  }, [slug, sendCommand]);
+  }, [slug, sendAction]);
 
   const startVoting = useCallback(() => {
-    sendCommand({ type: 'StartVoting' });
-  }, [sendCommand]);
+    sendAction('/voting/start');
+  }, [sendAction]);
 
-  const castVote = useCallback((value: string) => {
-    sendCommand({ type: 'CastVote', payload: { value } });
-  }, [sendCommand]);
+  const castVote = useCallback(
+    (value: string) => {
+      sendAction('/voting/vote', { value });
+    },
+    [sendAction]
+  );
 
   const retractVote = useCallback(() => {
-    sendCommand({ type: 'RetractVote' });
-  }, [sendCommand]);
+    sendAction('/voting/retract');
+  }, [sendAction]);
 
   const revealCards = useCallback(() => {
-    sendCommand({ type: 'RevealCards' });
-  }, [sendCommand]);
+    sendAction('/voting/reveal');
+  }, [sendAction]);
 
   const triggerReVote = useCallback(() => {
-    sendCommand({ type: 'TriggerReVote' });
-  }, [sendCommand]);
+    sendAction('/voting/revote');
+  }, [sendAction]);
 
-  const finalizeStory = useCallback((points?: string) => {
-    sendCommand({ type: 'FinalizeStory', payload: { points } });
-  }, [sendCommand]);
+  const finalizeStory = useCallback(
+    (points?: string) => {
+      sendAction('/voting/finalize', { points });
+    },
+    [sendAction]
+  );
 
-  const selectStory = useCallback((story: Story | null) => {
-    sendCommand({ type: 'SelectStory', payload: { story } });
-  }, [sendCommand]);
+  const selectStory = useCallback(
+    (story: Story | null) => {
+      sendAction('/active-story', { story });
+    },
+    [sendAction]
+  );
 
-  const selectStoryById = useCallback((storyId: string) => {
-    sendCommand({ type: 'SelectStoryById', payload: { story_id: storyId } });
-  }, [sendCommand]);
+  const selectStoryById = useCallback(
+    (storyId: string) => {
+      sendAction('/active-story', { story_id: storyId });
+    },
+    [sendAction]
+  );
 
-  const updatePointReferences = useCallback((references: PointReference[]) => {
-    sendCommand({ type: 'UpdatePointReferences', payload: { references } });
-  }, [sendCommand]);
+  const updatePointReferences = useCallback(
+    (references: PointReference[]) => {
+      sendAction('/point-references', { references }, 'PUT');
+    },
+    [sendAction]
+  );
 
-  const toggleEdgeCaseCheck = useCallback((edgeCaseId: string, checked: boolean) => {
-    sendCommand({
-      type: 'ToggleEdgeCaseCheck',
-      payload: { edge_case_id: edgeCaseId, checked },
-    });
-  }, [sendCommand]);
+  const toggleEdgeCaseCheck = useCallback(
+    (edgeCaseId: string, checked: boolean) => {
+      sendAction(
+        `/edge-cases/${encodeURIComponent(edgeCaseId)}`,
+        { checked },
+        'PATCH'
+      );
+    },
+    [sendAction]
+  );
 
-  const connectTracker = useCallback((config: TrackerConfig) => {
-    sendCommand({ type: 'ConnectTracker', payload: { config } });
-  }, [sendCommand]);
+  const connectTracker = useCallback(
+    (config: TrackerConfig) => {
+      sendAction('/tracker/connect', { config });
+    },
+    [sendAction]
+  );
 
   const disconnectTracker = useCallback(() => {
-    sendCommand({ type: 'DisconnectTracker' });
-  }, [sendCommand]);
+    sendAction('/tracker/disconnect');
+  }, [sendAction]);
 
-  const testTrackerConnection = useCallback((config: TrackerConfig) => {
-    sendCommand({ type: 'TestTrackerConnection', payload: { config } });
-  }, [sendCommand]);
+  const testTrackerConnection = useCallback(
+    (config: TrackerConfig) => {
+      sendAction('/tracker/test', { config });
+    },
+    [sendAction]
+  );
 
-  const fetchBacklog = useCallback((query: TrackerQuery = {}) => {
-    sendCommand({ type: 'FetchBacklog', payload: { query } });
-  }, [sendCommand]);
+  const fetchBacklog = useCallback(
+    (query: TrackerQuery = {}) => {
+      sendAction('/tracker/fetch', { query });
+    },
+    [sendAction]
+  );
 
-  const importBacklog = useCallback((stories: Story[]) => {
-    sendCommand({ type: 'ImportBacklog', payload: { stories } });
-  }, [sendCommand]);
+  const importBacklog = useCallback(
+    (stories: Story[]) => {
+      sendAction('/backlog/import', { stories });
+    },
+    [sendAction]
+  );
 
-  const importMarkdown = useCallback((rawMarkdown: string) => {
-    sendCommand({ type: 'ImportMarkdown', payload: { raw_markdown: rawMarkdown } });
-  }, [sendCommand]);
+  const importMarkdown = useCallback(
+    (rawMarkdown: string) => {
+      sendAction('/backlog/markdown', { raw_markdown: rawMarkdown });
+    },
+    [sendAction]
+  );
 
-  const syncEstimateToTracker = useCallback((storyId: string, points: number, postComment: boolean = true) => {
-    sendCommand({
-      type: 'SyncEstimateToTracker',
-      payload: { story_id: storyId, points, post_comment: postComment },
-    });
-  }, [sendCommand]);
+  const syncEstimateToTracker = useCallback(
+    (storyId: string, points: number, postComment: boolean = true) => {
+      sendAction('/tracker/sync', {
+        story_id: storyId,
+        points,
+        post_comment: postComment,
+      });
+    },
+    [sendAction]
+  );
 
-  const pushStorySlices = useCallback((parentId: string, slices: StorySlice[]) => {
-    sendCommand({
-      type: 'PushStorySlices',
-      payload: { parent_id: parentId, slices },
-    });
-  }, [sendCommand]);
+  const pushStorySlices = useCallback(
+    (parentId: string, slices: StorySlice[]) => {
+      sendAction('/tracker/slices', {
+        parent_id: parentId,
+        slices,
+      });
+    },
+    [sendAction]
+  );
 
-  const reorderBacklog = useCallback((storyIds: string[]) => {
-    sendCommand({ type: 'ReorderBacklog', payload: { story_ids: storyIds } });
-  }, [sendCommand]);
+  const reorderBacklog = useCallback(
+    (storyIds: string[]) => {
+      sendAction('/backlog/order', { story_ids: storyIds }, 'PUT');
+    },
+    [sendAction]
+  );
 
-  const removeStoryFromBacklog = useCallback((storyId: string) => {
-    sendCommand({ type: 'RemoveStoryFromBacklog', payload: { story_id: storyId } });
-  }, [sendCommand]);
+  const removeStoryFromBacklog = useCallback(
+    (storyId: string) => {
+      sendAction(`/backlog/${encodeURIComponent(storyId)}`, undefined, 'DELETE');
+    },
+    [sendAction]
+  );
 
-  const updateRole = useCallback((targetId: string, newRole: Role) => {
-    sendCommand({ type: 'UpdateRole', payload: { target_id: targetId, new_role: newRole } });
-  }, [sendCommand]);
+  const updateRole = useCallback(
+    (targetId: string, newRole: Role) => {
+      sendAction(
+        `/participants/${encodeURIComponent(targetId)}/role`,
+        { role: newRole },
+        'PATCH'
+      );
+    },
+    [sendAction]
+  );
 
-  const transferFacilitator = useCallback((targetId: string) => {
-    sendCommand({ type: 'TransferFacilitator', payload: { target_id: targetId } });
-  }, [sendCommand]);
+  const transferFacilitator = useCallback(
+    (targetId: string) => {
+      sendAction('/facilitator', { target_id: targetId });
+    },
+    [sendAction]
+  );
 
   const clearTrackerFeedback = useCallback(() => {
     setTrackerError(null);
@@ -333,4 +421,3 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     clearTrackerFeedback,
   };
 }
-
