@@ -155,7 +155,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           story_doctor_report: state.story_doctor_report ? {
             story_id: state.current_story?.id || '',
             scorecard: {
-              overall_score: state.story_doctor_report.investScore || 85,
+              overall_score: state.story_doctor_report.invest_score || state.story_doctor_report.investScore || 85,
               criteria: [],
               summary: state.story_doctor_report.summary || '',
               issues: [],
@@ -165,7 +165,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
               dependencies_apis: 'None',
               blast_radius: 'Isolated',
             },
-            edge_cases: (state.story_doctor_report.edgeCases || []).map((ec: any) => ({
+            edge_cases: (state.story_doctor_report.edge_cases || state.story_doctor_report.edgeCases || []).map((ec: any) => ({
               id: ec.id,
               category: 'NetworkTimeouts',
               category_name: 'Edge Case',
