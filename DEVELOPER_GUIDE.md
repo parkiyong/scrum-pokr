@@ -52,8 +52,8 @@ cd ..
 Run the backend and frontend in separate terminals with hot reloading:
 
 ```bash
-# Terminal 1: Backend Java Spring Boot server
-cd server && mvn spring-boot:run
+# Terminal 1: Backend Java Spring Boot server (from root or server/)
+./mvnw spring-boot:run
 
 # Terminal 2: Frontend Vite dev server
 cd client && npm run dev
@@ -73,7 +73,7 @@ Build the frontend bundle and serve everything from the Spring Boot JAR:
 cd client && npm run build && cd ..
 
 # 2. Package and run Spring Boot JAR
-cd server && mvn clean package && java -jar target/server-0.1.0-SNAPSHOT.jar
+./mvnw clean package && java -jar server/target/server-0.1.0-SNAPSHOT.jar
 ```
 * **Unified Web App**: [http://localhost:3000](http://localhost:3000)
 
