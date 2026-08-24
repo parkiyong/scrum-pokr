@@ -6,23 +6,21 @@ RUN npm ci
 COPY client/ ./
 RUN npm run build
 
-# 2. Build server binary
-FROM rust:1-slim AS server-builder
-WORKDIR /app
-RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
-COPY Cargo.toml Cargo.lock* ./
-COPY server/ ./server/
-RUN cargo build --release --bin server
+# 2. Build Java Spring Boot server JAR
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS server-builder
+WORKDIR /app/server
+COPY server/pom.xml .
+COPY server/src ./src
+COPY --from=client-builder /app/client/dist ./src/main/resources/static
+RUN mvn clean package -DskipTests
 
 # 3. Final lightweight runtime image
-FROM debian:bookworm-slim
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
 
-COPY --from=server-builder /app/target/release/server /app/server
-COPY --from=client-builder /app/client/dist /app/client/dist
+COPY --from=server-builder /app/server/target/*.jar /app/server.jar
 
 ENV PORT=3000
 EXPOSE 3000
 
-CMD ["/app/server"]
+ENTRYPOINT ["java", "-jar", "/app/server.jar"]
