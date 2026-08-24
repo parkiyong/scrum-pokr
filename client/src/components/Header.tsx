@@ -28,27 +28,30 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="border-b border-[#10233f]/12 bg-white/88 backdrop-blur-md px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40 shadow-[0_14px_34px_rgba(18,42,82,0.08)]">
+    <header className="border-b border-blue-200/60 bg-white/80 backdrop-blur-md px-4 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-40 shadow-xs">
       <div className="flex items-center gap-3">
-        <a href="/" className="h-9 w-9 rounded-xl bg-gradient-to-tr from-[#2047a8] to-[#7f1d7a] flex items-center justify-center font-bold text-lg text-white shadow-md shadow-[#2047a8]/20 hover:scale-105 transition">
+        <a
+          href="/"
+          className="h-8 w-8 rounded-xl bg-blue-600 hover:bg-blue-700 flex items-center justify-center font-bold text-base text-white shadow-xs transition"
+          title="Home"
+        >
           🃏
         </a>
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-bold text-sm tracking-wide text-[#10233f]">Scrum Pokr AI</h1>
-            <span className="px-2.5 py-0.5 text-xs bg-[#2047a8]/10 text-[#2047a8] border border-[#2047a8]/20 rounded-full font-mono font-bold tracking-wider">
+            <h1 className="font-bold text-sm tracking-tight text-slate-900">Scrum Pokr AI</h1>
+            <span className="px-2 py-0.2 rounded-md text-[11px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
               {slug}
             </span>
           </div>
-          <p className="text-[11px] text-[#5d6f88] font-medium">Zero-Auth Room • Standalone Mode</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-2 sm:gap-2.5">
         {/* Share Button */}
         <button
           onClick={handleShare}
-          className="text-xs bg-[#edf3fb] hover:bg-[#e2ebf7] border border-[#10233f]/12 px-3 py-1.5 rounded-full transition text-[#10233f] font-semibold flex items-center gap-1.5 shadow-sm"
+          className="text-xs bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl transition text-slate-700 font-semibold flex items-center gap-1 shadow-xs"
         >
           <span>{copied ? '✓ Copied!' : `🔗 Share (${slug})`}</span>
         </button>
@@ -57,14 +60,14 @@ export const Header: React.FC<HeaderProps> = ({
         {myParticipant ? (
           <button
             onClick={onChangeProfile}
-            className="flex items-center gap-2 text-xs bg-[#edf3fb] hover:bg-[#e2ebf7] border border-[#10233f]/12 px-3 py-1.5 rounded-full transition shadow-sm"
+            className="flex items-center gap-2 text-xs bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl transition shadow-xs"
           >
             <span
               className={`w-2 h-2 rounded-full ${
                 status === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
               }`}
             />
-            <span className="font-semibold text-[#10233f]">
+            <span className="font-bold text-slate-800">
               {myParticipant.nickname}{' '}
               {isFacilitator
                 ? myParticipant.role === 'Observer'
@@ -76,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
         ) : (
           <button
             onClick={onChangeProfile}
-            className="text-xs bg-[#2047a8] hover:bg-[#16347d] text-white px-3 py-1.5 rounded-full transition font-bold shadow-md shadow-[#2047a8]/20"
+            className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl transition font-bold shadow-xs"
           >
             Join Table
           </button>
@@ -85,3 +88,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

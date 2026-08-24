@@ -1,45 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@500;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --bg-a: #edf3fb;
-  --bg-b: #f9fbff;
-  --ink: #10233f;
-  --ink-soft: #2f4565;
-  --card: rgba(255, 255, 255, 0.95);
-  --accent: #2047a8;
-  --accent-strong: #16347d;
-  --accent-2: #7f1d7a;
-  --line: rgba(16, 35, 63, 0.12);
-  --muted: #5d6f88;
-  --error: #bb1f3f;
-  --radius: 24px;
-  --shadow: 0 24px 60px rgba(18, 42, 82, 0.12);
+  --bg-a: #dce8f5;
+  --bg-b: #eaf2fa;
+  --ink: #0f172a;
+  --ink-soft: #334155;
+  --card: #ffffff;
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --accent-light: #e0f0fe;
+  --line: rgba(15, 23, 42, 0.08);
+  --muted: #64748b;
+  --error: #ef4444;
+  --radius: 20px;
+  --shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
 }
 
 body {
   margin: 0;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
   color: var(--ink);
   min-height: 100vh;
-  background: linear-gradient(180deg, var(--bg-b), var(--bg-a));
-}
-
-.bg-layer {
-  position: fixed;
-  inset: 0;
-  background-image:
-    radial-gradient(circle at 8% 12%, rgba(32, 71, 168, 0.18), transparent 24%),
-    radial-gradient(circle at 88% 18%, rgba(127, 29, 122, 0.12), transparent 26%);
-  pointer-events: none;
-  z-index: 0;
+  background-color: #dce8f5;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .perspective-1000 {
