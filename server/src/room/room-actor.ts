@@ -147,9 +147,20 @@ export class RoomActor {
     }
   }
 
+  public hasSubscribers(): boolean {
+    for (const set of this.subscribers.values()) {
+      if (set.size > 0) return true;
+    }
+    return false;
+  }
+
+  public closeAllSubscribers(): void {
+    this.subscribers.clear();
+  }
+
   private promoteNextOldestEstimator(): void {
     const connectedEstimators = this.state.participants.filter(
-      (p) => p.connected && p.id !== this.state.facilitator_id
+      (p) => p.connected && p.role === 'Estimator' && p.id !== this.state.facilitator_id
     );
 
     if (connectedEstimators.length > 0) {

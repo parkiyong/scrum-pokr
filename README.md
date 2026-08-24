@@ -94,7 +94,7 @@ npm run test:client
 
 ## 📂 Project Structure
 
-```
+```text
 ├── shared/               # @scrumpokr/shared (Domain models, Zod schemas, Reveal Gate logic)
 │   └── src/              # domain.ts, schemas.ts, reveal-gate.ts, room-reducer.ts
 │

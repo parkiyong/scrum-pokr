@@ -13,7 +13,16 @@ export class RoomRegistry {
   }
 
   public createRoom(): RoomActor {
-    const { slug, shortCode } = generateRoomSlug();
+    let slug = '';
+    let shortCode = '';
+
+    // Guarantee unique slug and shortCode
+    do {
+      const generated = generateRoomSlug();
+      slug = generated.slug;
+      shortCode = generated.shortCode;
+    } while (this.rooms.has(slug) || this.codeIndex.has(shortCode.toUpperCase()));
+
     const actor = new RoomActor(slug, shortCode);
 
     this.rooms.set(slug, actor);
@@ -66,7 +75,9 @@ export class RoomRegistry {
   public evictInactiveRooms(): void {
     const now = Date.now();
     for (const [slug, room] of this.rooms.entries()) {
-      if (now - room.lastActiveAt > ROOM_TTL_MS) {
+      // Do not evict rooms that still have active SSE subscribers
+      if (now - room.lastActiveAt > ROOM_TTL_MS && !room.hasSubscribers()) {
+        room.closeAllSubscribers();
         this.rooms.delete(slug);
         this.codeIndex.delete(room.shortCode.toUpperCase());
         this.codeIndex.delete(slug.toLowerCase());

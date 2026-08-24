@@ -17,7 +17,12 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     expect(body.short_code).toBeDefined();
   });
 
-  it('enforces Reveal Gate across Join, Vote, and Reveal cycles', async () => {
+  it('GET /api/rooms/:code returns 404 for non-existent room', async () => {
+    const res = await app.request('/api/rooms/NON_EXISTENT_ROOM_123');
+    expect(res.status).toBe(404);
+  });
+
+  it('enforces Reveal Gate and Facilitator Authorization across Join, Vote, and Reveal cycles', async () => {
     // 1. Create Room
     const createRes = await app.request('/api/rooms', { method: 'POST' });
     const { slug } = await createRes.json();
@@ -40,12 +45,21 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     expect(joinBobRes.status).toBe(200);
     const { participant_id: bobId } = await joinBobRes.json();
 
-    // 4. Start Voting
-    await app.request(`/api/rooms/${slug}/start-voting`, {
+    // Non-facilitator cannot start voting
+    const bobStartRes = await app.request(`/api/rooms/${slug}/start-voting`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participantId: bobId }),
+    });
+    expect(bobStartRes.status).toBe(403);
+
+    // 4. Start Voting (Alice is Facilitator)
+    const aliceStartRes = await app.request(`/api/rooms/${slug}/start-voting`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ participantId: aliceId }),
     });
+    expect(aliceStartRes.status).toBe(200);
 
     // 5. Cast votes
     await app.request(`/api/rooms/${slug}/vote`, {
@@ -73,12 +87,21 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     expect(bobViewOfBob.has_voted).toBe(true);
     expect(bobViewOfBob.vote).toBe('8'); // Bob sees his own vote
 
-    // 7. Reveal Cards
-    await app.request(`/api/rooms/${slug}/reveal`, {
+    // Non-facilitator cannot reveal cards
+    const bobRevealRes = await app.request(`/api/rooms/${slug}/reveal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participantId: bobId }),
+    });
+    expect(bobRevealRes.status).toBe(403);
+
+    // 7. Reveal Cards (Alice)
+    const aliceRevealRes = await app.request(`/api/rooms/${slug}/reveal`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ participantId: aliceId }),
     });
+    expect(aliceRevealRes.status).toBe(200);
 
     // 8. Verify Unmasked State
     const revealedRes = await app.request(`/api/rooms/${slug}?participantId=${bobId}`);
@@ -100,7 +123,7 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     });
     expect(postRevealVoteRes.status).toBe(400);
 
-    // 10. Advance to Next Story
+    // 10. Advance to Next Story (Alice)
     const nextStoryRes = await app.request(`/api/rooms/${slug}/next-story`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -116,14 +139,34 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     expect(nextRoundState.participants[0].has_voted).toBe(false);
   });
 
-  it('gating check: rejects divergence analysis during Voting phase', async () => {
+  it('gating check: rejects divergence analysis and SPIDR slicing during Voting phase', async () => {
     const createRes = await app.request('/api/rooms', { method: 'POST' });
     const { slug } = await createRes.json();
+
+    // Join and start voting
+    const joinRes = await app.request(`/api/rooms/${slug}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Alice', role: 'Estimator' }),
+    });
+    const { participant_id: aliceId } = await joinRes.json();
+
+    await app.request(`/api/rooms/${slug}/start-voting`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participantId: aliceId }),
+    });
 
     const divergenceRes = await app.request(`/api/rooms/${slug}/ai/divergence`, {
       method: 'POST',
     });
-
     expect(divergenceRes.status).toBe(403);
+
+    const sliceRes = await app.request(`/api/rooms/${slug}/ai/slice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    expect(sliceRes.status).toBe(403);
   });
 });

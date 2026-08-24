@@ -11,20 +11,28 @@ const apiKey = process.env.GEMINI_API_KEY || '';
 export const gemini = apiKey ? new GoogleGenAI({ apiKey }) : null;
 export const ADVISORY_MODEL = 'gemini-2.5-flash';
 
-export async function analyzeStoryWithStoryDoctor(story: Story): Promise<StoryDoctorReport> {
+export interface AdvisoryEnvelope<T> {
+  data: T;
+  fallback: boolean;
+}
+
+export async function analyzeStoryWithStoryDoctor(story: Story): Promise<AdvisoryEnvelope<StoryDoctorReport>> {
   if (!gemini) {
     return {
-      invest_score: 85,
-      summary: 'Automated fallback: INVEST criteria verified based on heuristic review.',
-      complexity: {
-        data_models: 'Low - Standard CRUD boundary',
-        dependencies_apis: 'None identified',
-        blast_radius: 'Isolated module update',
+      fallback: true,
+      data: {
+        invest_score: 85,
+        summary: 'Automated fallback: INVEST criteria verified based on heuristic review.',
+        complexity: {
+          data_models: 'Low - Standard CRUD boundary',
+          dependencies_apis: 'None identified',
+          blast_radius: 'Isolated module update',
+        },
+        edge_cases: [
+          { id: 'ec-fb-1', category: 'NetworkTimeouts', title: 'Network Disconnect', description: 'Ensure graceful error handling if network drops during action', checked: false },
+          { id: 'ec-fb-2', category: 'EmptyBoundary', title: 'Empty Input', description: 'Validate input constraints when payload is blank', checked: false },
+        ],
       },
-      edge_cases: [
-        { id: 'ec-fb-1', category: 'NetworkTimeouts', title: 'Network Disconnect', description: 'Ensure graceful error handling if network drops during action', checked: false },
-        { id: 'ec-fb-2', category: 'EmptyBoundary', title: 'Empty Input', description: 'Validate input constraints when payload is blank', checked: false },
-      ],
     };
   }
 
@@ -74,45 +82,54 @@ export async function analyzeStoryWithStoryDoctor(story: Story): Promise<StoryDo
     });
 
     if (response.text) {
-      return JSON.parse(response.text) as StoryDoctorReport;
+      return {
+        fallback: false,
+        data: JSON.parse(response.text) as StoryDoctorReport,
+      };
     }
   } catch (err) {
     console.error('Error generating Story Doctor report from Gemini:', err);
   }
 
   return {
-    invest_score: 80,
-    summary: 'INVEST review completed with default heuristics (AI service temporarily degraded).',
-    complexity: {
-      data_models: 'Low',
-      dependencies_apis: 'None',
-      blast_radius: 'Isolated',
+    fallback: true,
+    data: {
+      invest_score: 80,
+      summary: 'INVEST review completed with default heuristics (AI service temporarily degraded).',
+      complexity: {
+        data_models: 'Low',
+        dependencies_apis: 'None',
+        blast_radius: 'Isolated',
+      },
+      edge_cases: [
+        { id: 'ec-err-1', category: 'NetworkTimeouts', title: 'Network Retry', description: 'Validate timeout and retry mechanics', checked: false },
+      ],
     },
-    edge_cases: [
-      { id: 'ec-err-1', category: 'NetworkTimeouts', title: 'Network Retry', description: 'Validate timeout and retry mechanics', checked: false },
-    ],
   };
 }
 
-export async function sliceStoryWithSPIDR(story: Story): Promise<{ slices: StorySlice[] }> {
+export async function sliceStoryWithSPIDR(story: Story): Promise<AdvisoryEnvelope<{ slices: StorySlice[] }>> {
   if (!gemini) {
     return {
-      slices: [
-        {
-          title: `[Path 1] ${story.title} - Core Happy Path`,
-          description: `Deliver minimal viable core flow for: ${story.description}`,
-          acceptance_criteria: ['Primary happy path functional', 'Basic error handling present'],
-          spidr_pattern: 'Path',
-          suggested_points: '3',
-        },
-        {
-          title: `[Path 2] ${story.title} - Edge Cases & Validation`,
-          description: 'Comprehensive boundary validations, permissions, and auxiliary logic.',
-          acceptance_criteria: ['All secondary validations pass', 'Audit logging active'],
-          spidr_pattern: 'Rule',
-          suggested_points: '2',
-        },
-      ],
+      fallback: true,
+      data: {
+        slices: [
+          {
+            title: `[Path 1] ${story.title} - Core Happy Path`,
+            description: `Deliver minimal viable core flow for: ${story.description}`,
+            acceptance_criteria: ['Primary happy path functional', 'Basic error handling present'],
+            spidr_pattern: 'Path',
+            suggested_points: '3',
+          },
+          {
+            title: `[Path 2] ${story.title} - Edge Cases & Validation`,
+            description: 'Comprehensive boundary validations, permissions, and auxiliary logic.',
+            acceptance_criteria: ['All secondary validations pass', 'Audit logging active'],
+            spidr_pattern: 'Rule',
+            suggested_points: '2',
+          },
+        ],
+      },
     };
   }
 
@@ -148,30 +165,39 @@ export async function sliceStoryWithSPIDR(story: Story): Promise<{ slices: Story
     });
 
     if (response.text) {
-      return JSON.parse(response.text);
+      return {
+        fallback: false,
+        data: JSON.parse(response.text),
+      };
     }
   } catch (err) {
     console.error('Error generating SPIDR slices from Gemini:', err);
   }
 
-  return { slices: [] };
+  return {
+    fallback: true,
+    data: { slices: [] },
+  };
 }
 
 export async function analyzeDivergence(
   story: Story,
   participants: Participant[],
   consensus: ConsensusSummary | null
-): Promise<{ primary_axis: string; outlier_summary: string; recommended_questions: string[] }> {
+): Promise<AdvisoryEnvelope<{ primary_axis: string; outlier_summary: string; recommended_questions: string[] }>> {
   const votes = participants.map((p) => `${p.name} (${p.role}): ${p.vote}`).join(', ');
 
   if (!gemini) {
     return {
-      primary_axis: 'Differing assumptions about edge cases and data schema migration complexity.',
-      outlier_summary: `Team voted with a spread from ${consensus?.min_vote || '1'} to ${consensus?.max_vote || '8'}.`,
-      recommended_questions: [
-        'What specific technical risks or dependencies account for the higher vote?',
-        'Can we isolate the data migration into an earlier preparatory spike?',
-      ],
+      fallback: true,
+      data: {
+        primary_axis: 'Differing assumptions about edge cases and data schema migration complexity.',
+        outlier_summary: `Team voted with a spread from ${consensus?.min_vote || '1'} to ${consensus?.max_vote || '8'}.`,
+        recommended_questions: [
+          'What specific technical risks or dependencies account for the higher vote?',
+          'Can we isolate the data migration into an earlier preparatory spike?',
+        ],
+      },
     };
   }
 
@@ -196,15 +222,21 @@ export async function analyzeDivergence(
     });
 
     if (response.text) {
-      return JSON.parse(response.text);
+      return {
+        fallback: false,
+        data: JSON.parse(response.text),
+      };
     }
   } catch (err) {
     console.error('Error generating divergence analysis from Gemini:', err);
   }
 
   return {
-    primary_axis: 'Scope interpretation differences',
-    outlier_summary: 'Disagreement between estimators on complexity',
-    recommended_questions: ['What does the simplest version look like?'],
+    fallback: true,
+    data: {
+      primary_axis: 'Scope interpretation differences',
+      outlier_summary: 'Disagreement between estimators on complexity',
+      recommended_questions: ['What does the simplest version look like?'],
+    },
   };
 }

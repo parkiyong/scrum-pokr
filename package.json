@@ -13,7 +13,10 @@
     "test": "vitest run",
     "test:shared": "npm run test -w shared",
     "test:server": "npm run test -w server",
-    "test:client": "npm run test -w client"
+    "test:client": "npm run test -w client",
+    "db:generate": "npm run db:generate -w @scrumpokr/server",
+    "db:migrate": "npm run db:migrate -w @scrumpokr/server",
+    "db:seed": "npm run db:seed -w @scrumpokr/server"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",

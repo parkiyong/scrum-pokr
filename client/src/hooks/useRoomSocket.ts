@@ -275,10 +275,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const startVoting = useCallback(async () => {
     try {
-      await api.api.rooms[':code']['start-voting'].$post({
+      const res = await api.api.rooms[':code']['start-voting'].$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
+      if (!res.ok) throw new Error(`Failed to start voting (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error starting voting:', err);
     }
@@ -286,10 +287,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const castVote = useCallback(async (value: string) => {
     try {
-      await api.api.rooms[':code'].vote.$post({
+      const res = await api.api.rooms[':code'].vote.$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, vote: value },
       });
+      if (!res.ok) throw new Error(`Failed to cast vote (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error casting vote:', err);
     }
@@ -297,10 +299,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const retractVote = useCallback(async () => {
     try {
-      await api.api.rooms[':code'].vote.$post({
+      const res = await api.api.rooms[':code'].vote.$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, vote: null },
       });
+      if (!res.ok) throw new Error(`Failed to retract vote (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error retracting vote:', err);
     }
@@ -308,10 +311,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const revealCards = useCallback(async () => {
     try {
-      await api.api.rooms[':code'].reveal.$post({
+      const res = await api.api.rooms[':code'].reveal.$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
+      if (!res.ok) throw new Error(`Failed to reveal cards (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error revealing cards:', err);
     }
@@ -319,10 +323,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const triggerReVote = useCallback(async () => {
     try {
-      await api.api.rooms[':code'].reset.$post({
+      const res = await api.api.rooms[':code'].reset.$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
+      if (!res.ok) throw new Error(`Failed to reset round (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error triggering revote:', err);
     }
@@ -330,10 +335,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const finalizeStory = useCallback(async (points?: string) => {
     try {
-      await api.api.rooms[':code'].finalize.$post({
+      const res = await api.api.rooms[':code'].finalize.$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, estimate: points },
       });
+      if (!res.ok) throw new Error(`Failed to finalize story (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error finalizing story:', err);
     }
@@ -341,10 +347,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const nextStory = useCallback(async () => {
     try {
-      await api.api.rooms[':code']['next-story'].$post({
+      const res = await api.api.rooms[':code']['next-story'].$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
+      if (!res.ok) throw new Error(`Failed to advance next story (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error advancing next story:', err);
     }
@@ -352,10 +359,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const selectStory = useCallback(async (story: Story | null) => {
     try {
-      await api.api.rooms[':code'].story.$post({
+      const res = await api.api.rooms[':code'].story.$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, story },
       });
+      if (!res.ok) throw new Error(`Failed to select story (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error selecting story:', err);
     }
@@ -370,10 +378,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const updatePointReferences = useCallback(async (references: PointReference[]) => {
     try {
-      await api.api.rooms[':code']['point-references'].$post({
+      const res = await api.api.rooms[':code']['point-references'].$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, references },
       });
+      if (!res.ok) throw new Error(`Failed to update point references (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error updating point references:', err);
     }
@@ -381,10 +390,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const toggleEdgeCaseCheck = useCallback(async (edgeCaseId: string, checked: boolean) => {
     try {
-      await api.api.rooms[':code']['edge-case'].$post({
+      const res = await api.api.rooms[':code']['edge-case'].$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, edge_case_id: edgeCaseId, checked },
       });
+      if (!res.ok) throw new Error(`Failed to toggle edge case (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error toggling edge case check:', err);
     }
@@ -392,10 +402,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const connectTracker = useCallback(async (config: TrackerConfig) => {
     try {
-      await api.api.rooms[':code']['connect-tracker'].$post({
+      const res = await api.api.rooms[':code']['connect-tracker'].$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, config },
       });
+      if (!res.ok) throw new Error(`Tracker connection failed (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error connecting tracker:', err);
       setTrackerError(err instanceof Error ? err.message : 'Tracker connection failed');
@@ -404,10 +415,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const disconnectTracker = useCallback(async () => {
     try {
-      await api.api.rooms[':code']['disconnect-tracker'].$post({
+      const res = await api.api.rooms[':code']['disconnect-tracker'].$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
+      if (!res.ok) throw new Error(`Failed to disconnect tracker (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error disconnecting tracker:', err);
     }
@@ -419,11 +431,10 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, config },
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.preview) {
-          setConnectionPreview(data.preview);
-        }
+      if (!res.ok) throw new Error(`Tracker test failed (status ${res.status})`);
+      const data = await res.json();
+      if (data.preview) {
+        setConnectionPreview(data.preview);
       }
     } catch (err) {
       console.error('[RPC] Error testing tracker connection:', err);
@@ -433,10 +444,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const fetchBacklog = useCallback(async (query: TrackerQuery = {}) => {
     try {
-      await api.api.rooms[':code']['fetch-backlog'].$post({
+      const res = await api.api.rooms[':code']['fetch-backlog'].$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, query },
       });
+      if (!res.ok) throw new Error(`Failed to fetch backlog (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error fetching backlog:', err);
     }
@@ -444,10 +456,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const importBacklog = useCallback(async (stories: Story[]) => {
     try {
-      await api.api.rooms[':code']['import-backlog'].$post({
+      const res = await api.api.rooms[':code']['import-backlog'].$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, stories },
       });
+      if (!res.ok) throw new Error(`Failed to import backlog (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error importing backlog:', err);
     }
@@ -501,7 +514,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const pushStorySlices = useCallback(async (parentId: string, slices: StorySlice[]) => {
     try {
-      await api.api.rooms[':code']['push-slices'].$post({
+      const res = await api.api.rooms[':code']['push-slices'].$post({
         param: { code: slug },
         json: {
           participant_id: participantIdRef.current,
@@ -509,6 +522,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           slices,
         },
       });
+      if (!res.ok) throw new Error(`Failed to push story slices (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error pushing story slices:', err);
     }
@@ -516,10 +530,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const reorderBacklog = useCallback(async (storyIds: string[]) => {
     try {
-      await api.api.rooms[':code']['reorder-backlog'].$post({
+      const res = await api.api.rooms[':code']['reorder-backlog'].$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, story_ids: storyIds },
       });
+      if (!res.ok) throw new Error(`Failed to reorder backlog (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error reordering backlog:', err);
     }
@@ -527,10 +542,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const removeStoryFromBacklog = useCallback(async (storyId: string) => {
     try {
-      await api.api.rooms[':code']['remove-story'].$post({
+      const res = await api.api.rooms[':code']['remove-story'].$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, story_id: storyId },
       });
+      if (!res.ok) throw new Error(`Failed to remove story (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error removing story from backlog:', err);
     }
@@ -538,10 +554,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const updateRole = useCallback(async (targetId: string, newRole: Role) => {
     try {
-      await api.api.rooms[':code'].role.$post({
+      const res = await api.api.rooms[':code'].role.$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, target_id: targetId, new_role: newRole },
       });
+      if (!res.ok) throw new Error(`Failed to update role (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error updating role:', err);
     }
@@ -549,10 +566,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const transferFacilitator = useCallback(async (targetId: string) => {
     try {
-      await api.api.rooms[':code']['transfer-facilitator'].$post({
+      const res = await api.api.rooms[':code']['transfer-facilitator'].$post({
         param: { code: slug },
         json: { participant_id: participantIdRef.current, target_id: targetId },
       });
+      if (!res.ok) throw new Error(`Failed to transfer facilitator (status ${res.status})`);
     } catch (err) {
       console.error('[RPC] Error transferring facilitator:', err);
     }

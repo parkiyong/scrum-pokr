@@ -166,11 +166,13 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
 
     case 'IMPORT_BACKLOG': {
       const stories = action.payload.stories || [];
+      const hasExistingStory = Boolean(state.current_story);
       const currentStory = state.current_story || (stories.length > 0 ? stories[0] : null);
+      const backlog = hasExistingStory ? stories : stories.slice(1);
 
       return {
         ...state,
-        backlog: stories,
+        backlog,
         current_story: currentStory,
       };
     }
@@ -222,13 +224,21 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
     }
 
     case 'REORDER_BACKLOG': {
+      const incomingIds = action.payload.storyIds;
+      if (
+        !incomingIds ||
+        incomingIds.length !== state.backlog.length ||
+        new Set(incomingIds).size !== state.backlog.length
+      ) {
+        return state;
+      }
       const idMap = new Map(state.backlog.map((s) => [s.id, s]));
-      const newBacklog: Story[] = [];
-      action.payload.storyIds.forEach((id) => {
-        const found = idMap.get(id);
-        if (found) newBacklog.push(found);
-      });
+      const allFound = incomingIds.every((id) => idMap.has(id));
+      if (!allFound) {
+        return state;
+      }
 
+      const newBacklog = incomingIds.map((id) => idMap.get(id)!);
       return {
         ...state,
         backlog: newBacklog,

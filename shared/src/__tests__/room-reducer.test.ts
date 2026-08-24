@@ -119,6 +119,63 @@ describe('Room Reducer State Transitions', () => {
     expect(s1.participants[0].vote).toBe('5');
   });
 
+  it('handles IMPORT_BACKLOG on empty current_story and advances on NEXT_STORY', () => {
+    const storyA: Story = { id: 's-A', title: 'Story A', description: '', acceptance_criteria: [] };
+    const storyB: Story = { id: 's-B', title: 'Story B', description: '', acceptance_criteria: [] };
+
+    const s1 = roomReducer(initial, {
+      type: 'IMPORT_BACKLOG',
+      payload: { stories: [storyA, storyB] },
+    });
+
+    expect(s1.current_story?.id).toBe('s-A');
+    expect(s1.backlog).toHaveLength(1);
+    expect(s1.backlog[0].id).toBe('s-B');
+
+    const s2 = roomReducer(s1, { type: 'NEXT_STORY' });
+    expect(s2.current_story?.id).toBe('s-B');
+    expect(s2.backlog).toHaveLength(0);
+  });
+
+  it('validates strict permutation on REORDER_BACKLOG and ignores invalid reorders', () => {
+    const story1: Story = { id: 's-1', title: 'Story 1', description: '', acceptance_criteria: [] };
+    const story2: Story = { id: 's-2', title: 'Story 2', description: '', acceptance_criteria: [] };
+    const story3: Story = { id: 's-3', title: 'Story 3', description: '', acceptance_criteria: [] };
+
+    const state: RoomState = {
+      ...initial,
+      backlog: [story1, story2, story3],
+    };
+
+    // Valid permutation: [3, 1, 2]
+    const validState = roomReducer(state, {
+      type: 'REORDER_BACKLOG',
+      payload: { storyIds: ['s-3', 's-1', 's-2'] },
+    });
+    expect(validState.backlog.map((s) => s.id)).toEqual(['s-3', 's-1', 's-2']);
+
+    // Duplicate IDs: [3, 3, 1] -> ignored
+    const dupState = roomReducer(state, {
+      type: 'REORDER_BACKLOG',
+      payload: { storyIds: ['s-3', 's-3', 's-1'] },
+    });
+    expect(dupState.backlog.map((s) => s.id)).toEqual(['s-1', 's-2', 's-3']);
+
+    // Missing IDs: [3, 1] -> ignored
+    const missingState = roomReducer(state, {
+      type: 'REORDER_BACKLOG',
+      payload: { storyIds: ['s-3', 's-1'] },
+    });
+    expect(missingState.backlog.map((s) => s.id)).toEqual(['s-1', 's-2', 's-3']);
+
+    // Unknown IDs: [3, 1, 999] -> ignored
+    const unknownState = roomReducer(state, {
+      type: 'REORDER_BACKLOG',
+      payload: { storyIds: ['s-3', 's-1', 's-999'] },
+    });
+    expect(unknownState.backlog.map((s) => s.id)).toEqual(['s-1', 's-2', 's-3']);
+  });
+
   it('advances to next story, clears votes, and resets phase to Idle on NEXT_STORY', () => {
     const story1: Story = { id: 's-1', title: 'Story 1', description: '', acceptance_criteria: [] };
     const story2: Story = { id: 's-2', title: 'Story 2', description: '', acceptance_criteria: [] };

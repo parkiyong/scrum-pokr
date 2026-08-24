@@ -36,7 +36,11 @@ import { hc } from 'hono/client';
 import type { AppType } from './contracts';
 
 export const api = hc<AppType>('');
-export { createApiClient } from './index';
+
+export function createApiClient(baseUrl: string = '', options?: Parameters<typeof hc>[1]) {
+  return hc<AppType>(baseUrl, options);
+}
+
 export type { AppType } from './contracts';
 ```
 

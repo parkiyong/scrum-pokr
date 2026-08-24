@@ -220,7 +220,7 @@ To guarantee immediate calibration when a new team room is created, the system c
 
 ```typescript
 // server/src/db/seeder.ts
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { db } from './index';
 import { historicalStories, pointReferenceBenchmarks } from './schema';
 

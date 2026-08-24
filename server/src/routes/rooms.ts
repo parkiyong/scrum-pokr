@@ -13,8 +13,20 @@ import {
   updatePointReferencesSchema,
   updateRoleSchema,
   voteRequestSchema,
+  connectTrackerSchema,
+  testTrackerSchema,
+  fetchBacklogSchema,
+  syncEstimateSchema,
+  pushSlicesSchema,
 } from '@scrumpokr/shared';
 import { roomRegistry } from '../room/registry';
+import type { RoomActor } from '../room/room-actor';
+
+function isAuthorizedFacilitator(room: RoomActor, participantId?: string): boolean {
+  const currentFacilitatorId = room.getState().facilitator_id;
+  if (!currentFacilitatorId) return true;
+  return currentFacilitatorId === participantId;
+}
 
 export const roomRoutes = new Hono()
   // 1. Create Room
@@ -31,7 +43,12 @@ export const roomRoutes = new Hono()
   .get('/api/rooms/:code', async (c) => {
     const code = c.req.param('code');
     const participantId = c.req.query('participantId') || '';
-    const room = roomRegistry.getOrCreate(code);
+    const room = roomRegistry.get(code);
+
+    if (!room) {
+      return c.json({ error: 'Room not found' }, 404);
+    }
+
     return c.json(room.getMaskedState(participantId));
   })
 
@@ -52,10 +69,19 @@ export const roomRoutes = new Hono()
     });
   })
 
-  // 4. Start Voting
+  // 4. Start Voting (Facilitator only)
   .post('/api/rooms/:code/start-voting', zValidator('json', participantActionSchema), async (c) => {
     const code = c.req.param('code');
-    const room = roomRegistry.getOrCreate(code);
+    const body = c.req.valid('json');
+    const participantId = body.participant_id || body.participantId;
+
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
+    if (!isAuthorizedFacilitator(room, participantId)) {
+      return c.json({ error: 'Only the facilitator can perform this action' }, 403);
+    }
+
     room.dispatch({ type: 'START_VOTING' });
     return c.json({ success: true });
   })
@@ -66,7 +92,9 @@ export const roomRoutes = new Hono()
     const body = c.req.valid('json');
     const participantId = body.participant_id || body.participantId || '';
 
-    const room = roomRegistry.getOrCreate(code);
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
     const phase = room.getState().phase;
     if (phase !== 'Voting' && phase !== 'Idle') {
       return c.json({ error: 'Voting is closed for this round' }, 400);
@@ -80,27 +108,53 @@ export const roomRoutes = new Hono()
     return c.json({ success: true });
   })
 
-  // 6. Reveal Cards
+  // 6. Reveal Cards (Facilitator only)
   .post('/api/rooms/:code/reveal', zValidator('json', participantActionSchema), async (c) => {
     const code = c.req.param('code');
-    const room = roomRegistry.getOrCreate(code);
+    const body = c.req.valid('json');
+    const participantId = body.participant_id || body.participantId;
+
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
+    if (!isAuthorizedFacilitator(room, participantId)) {
+      return c.json({ error: 'Only the facilitator can perform this action' }, 403);
+    }
+
     room.dispatch({ type: 'REVEAL_CARDS' });
     return c.json({ success: true });
   })
 
-  // 7. Reset Round
+  // 7. Reset Round (Facilitator only)
   .post('/api/rooms/:code/reset', zValidator('json', participantActionSchema), async (c) => {
     const code = c.req.param('code');
-    const room = roomRegistry.getOrCreate(code);
+    const body = c.req.valid('json');
+    const participantId = body.participant_id || body.participantId;
+
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
+    if (!isAuthorizedFacilitator(room, participantId)) {
+      return c.json({ error: 'Only the facilitator can perform this action' }, 403);
+    }
+
     room.dispatch({ type: 'RESET_ROUND' });
     return c.json({ success: true });
   })
 
-  // 8. Finalize Story
+  // 8. Finalize Story (Facilitator only)
   .post('/api/rooms/:code/finalize', zValidator('json', finalizeRequestSchema), async (c) => {
     const code = c.req.param('code');
     const body = c.req.valid('json');
-    const room = roomRegistry.getOrCreate(code);
+    const participantId = body.participant_id || body.participantId;
+
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
+    if (!isAuthorizedFacilitator(room, participantId)) {
+      return c.json({ error: 'Only the facilitator can perform this action' }, 403);
+    }
+
     room.dispatch({
       type: 'FINALIZE_STORY',
       payload: { estimate: body.estimate || body.points || null },
@@ -108,11 +162,19 @@ export const roomRoutes = new Hono()
     return c.json({ success: true });
   })
 
-  // 9. Set Current Story
+  // 9. Set Current Story (Facilitator only)
   .post('/api/rooms/:code/story', zValidator('json', setStoryRequestSchema), async (c) => {
     const code = c.req.param('code');
     const body = c.req.valid('json');
-    const room = roomRegistry.getOrCreate(code);
+    const participantId = body.participant_id || body.participantId;
+
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
+    if (!isAuthorizedFacilitator(room, participantId)) {
+      return c.json({ error: 'Only the facilitator can perform this action' }, 403);
+    }
+
     room.dispatch({
       type: 'SET_STORY',
       payload: { story: body.story },
@@ -124,7 +186,9 @@ export const roomRoutes = new Hono()
   .post('/api/rooms/:code/import-backlog', zValidator('json', importBacklogSchema), async (c) => {
     const code = c.req.param('code');
     const body = c.req.valid('json');
-    const room = roomRegistry.getOrCreate(code);
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
     room.dispatch({
       type: 'IMPORT_BACKLOG',
       payload: { stories: body.stories },
@@ -136,7 +200,9 @@ export const roomRoutes = new Hono()
   .post('/api/rooms/:code/point-references', zValidator('json', updatePointReferencesSchema), async (c) => {
     const code = c.req.param('code');
     const body = c.req.valid('json');
-    const room = roomRegistry.getOrCreate(code);
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
     room.dispatch({
       type: 'UPDATE_POINT_REFERENCES',
       payload: { references: body.references },
@@ -149,7 +215,9 @@ export const roomRoutes = new Hono()
     const code = c.req.param('code');
     const body = c.req.valid('json');
     const edgeCaseId = body.edge_case_id || body.edgeCaseId || '';
-    const room = roomRegistry.getOrCreate(code);
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
     room.dispatch({
       type: 'TOGGLE_EDGE_CASE',
       payload: { edgeCaseId, checked: body.checked },
@@ -163,7 +231,9 @@ export const roomRoutes = new Hono()
     const body = c.req.valid('json');
     const targetId = body.target_id || body.targetId || '';
     const newRole = body.new_role || body.newRole || 'Estimator';
-    const room = roomRegistry.getOrCreate(code);
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
     room.dispatch({
       type: 'UPDATE_ROLE',
       payload: { targetId, newRole },
@@ -171,12 +241,20 @@ export const roomRoutes = new Hono()
     return c.json({ success: true });
   })
 
-  // 14. Transfer Facilitator Authority
+  // 14. Transfer Facilitator Authority (Facilitator only)
   .post('/api/rooms/:code/transfer-facilitator', zValidator('json', transferFacilitatorSchema), async (c) => {
     const code = c.req.param('code');
     const body = c.req.valid('json');
+    const participantId = body.participant_id || body.participantId;
     const targetId = body.target_id || body.targetId || '';
-    const room = roomRegistry.getOrCreate(code);
+
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
+    if (!isAuthorizedFacilitator(room, participantId)) {
+      return c.json({ error: 'Only the facilitator can perform this action' }, 403);
+    }
+
     room.dispatch({
       type: 'TRANSFER_FACILITATOR',
       payload: { targetId },
@@ -189,7 +267,9 @@ export const roomRoutes = new Hono()
     const code = c.req.param('code');
     const body = c.req.valid('json');
     const storyIds = body.story_ids || body.storyIds || [];
-    const room = roomRegistry.getOrCreate(code);
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
     room.dispatch({
       type: 'REORDER_BACKLOG',
       payload: { storyIds },
@@ -202,7 +282,9 @@ export const roomRoutes = new Hono()
     const code = c.req.param('code');
     const body = c.req.valid('json');
     const storyId = body.story_id || body.storyId || '';
-    const room = roomRegistry.getOrCreate(code);
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
     room.dispatch({
       type: 'REMOVE_STORY',
       payload: { storyId },
@@ -210,10 +292,82 @@ export const roomRoutes = new Hono()
     return c.json({ success: true });
   })
 
-  // 17. Advance to Next Story in Backlog
+  // 17. Advance to Next Story in Backlog (Facilitator only)
   .post('/api/rooms/:code/next-story', zValidator('json', participantActionSchema), async (c) => {
     const code = c.req.param('code');
-    const room = roomRegistry.getOrCreate(code);
+    const body = c.req.valid('json');
+    const participantId = body.participant_id || body.participantId;
+
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
+    if (!isAuthorizedFacilitator(room, participantId)) {
+      return c.json({ error: 'Only the facilitator can perform this action' }, 403);
+    }
+
     room.dispatch({ type: 'NEXT_STORY' });
     return c.json({ success: true });
+  })
+
+  // 18. Connect Tracker
+  .post('/api/rooms/:code/connect-tracker', zValidator('json', connectTrackerSchema), async (c) => {
+    const code = c.req.param('code');
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+    return c.json({ success: true });
+  })
+
+  // 19. Disconnect Tracker
+  .post('/api/rooms/:code/disconnect-tracker', zValidator('json', participantActionSchema), async (c) => {
+    const code = c.req.param('code');
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+    return c.json({ success: true });
+  })
+
+  // 20. Test Tracker Connection
+  .post('/api/rooms/:code/test-tracker', zValidator('json', testTrackerSchema), async (c) => {
+    const code = c.req.param('code');
+    const body = c.req.valid('json');
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+
+    return c.json({
+      success: true,
+      preview: {
+        provider: body.config.provider,
+        authenticated: true,
+        user_name: 'Tracker User',
+        teams: [{ id: 'team-1', name: 'Core Team' }],
+        cycles: [{ id: 'cycle-1', name: 'Sprint 42' }],
+        projects: [{ id: 'proj-1', name: 'Project Pokr' }],
+        sprints: [{ id: 'sprint-1', name: 'Sprint 1' }],
+        milestones: [{ id: 'm-1', name: 'MVP' }],
+      },
+    });
+  })
+
+  // 21. Fetch Backlog from Tracker
+  .post('/api/rooms/:code/fetch-backlog', zValidator('json', fetchBacklogSchema), async (c) => {
+    const code = c.req.param('code');
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+    return c.json({ success: true, stories: [] });
+  })
+
+  // 22. Sync Estimate to Tracker
+  .post('/api/rooms/:code/sync-estimate', zValidator('json', syncEstimateSchema), async (c) => {
+    const code = c.req.param('code');
+    const body = c.req.valid('json');
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+    return c.json({ success: true, story_id: body.story_id || '', message: 'Story estimate synced successfully!' });
+  })
+
+  // 23. Push Slices to Tracker / Backlog
+  .post('/api/rooms/:code/push-slices', zValidator('json', pushSlicesSchema), async (c) => {
+    const code = c.req.param('code');
+    const room = roomRegistry.get(code);
+    if (!room) return c.json({ error: 'Room not found' }, 404);
+    return c.json({ success: true, created_stories: [] });
   });

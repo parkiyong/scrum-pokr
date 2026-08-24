@@ -42,7 +42,10 @@ export function computeConsensus(participants: Participant[]): ConsensusSummary 
   } else if (spread !== undefined && spread > 5) {
     category = 'WideSpread';
   } else if (consensusPct >= 60) {
-    category = 'HighOutlier';
+    const modeNum = parseFloat(mode);
+    const nonModeVotes = numVotes.filter((n) => n !== modeNum);
+    const avgOutlier = nonModeVotes.length > 0 ? nonModeVotes.reduce((a, b) => a + b, 0) / nonModeVotes.length : modeNum;
+    category = avgOutlier < modeNum ? 'LowOutlier' : 'HighOutlier';
   } else {
     category = 'BimodalSplit';
   }

@@ -26,9 +26,10 @@ COPY shared/package*.json ./shared/
 COPY server/package*.json ./server/
 RUN npm ci --omit=dev --workspace=@scrumpokr/server --workspace=@scrumpokr/shared
 
-COPY --from=builder /app/shared/dist ./shared/dist
-COPY --from=builder /app/server/dist ./server/dist
-COPY --from=builder /app/client/dist ./client/dist
+COPY --from=builder --chown=node:node /app/shared/dist ./shared/dist
+COPY --from=builder --chown=node:node /app/server/dist ./server/dist
+COPY --from=builder --chown=node:node /app/client/dist ./client/dist
 
+USER node
 EXPOSE 3000
 CMD ["node", "server/dist/index.js"]

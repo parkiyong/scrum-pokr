@@ -43,7 +43,7 @@ export const pointReferenceBenchmarks = pgTable(
     title: text('title').notNull(),
     description: text('description').notNull(),
     acceptanceCriteria: jsonb('acceptance_criteria').$type<string[]>().notNull().default([]),
-    embedding: vector('embedding', { dimensions: 1536 }),
+    embedding: vector('embedding', { dimensions: 1536 }).notNull(),
     isGlobalDefault: boolean('is_global_default').notNull().default(true),
     teamNamespace: varchar('team_namespace', { length: 64 }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

@@ -6,7 +6,7 @@ Blocked by: 06
 
 ## Question
 
-How should `Dockerfile`, `docker-compose.yml`, `package.json`, and `DEVELOPER_GUIDE.md` be updated to completely remove Java 25, Maven, and JVM dependencies, consolidating into a fast single-engine Node.js 20+ / pnpm build?
+How should `Dockerfile`, `docker-compose.yml`, `package.json`, and `DEVELOPER_GUIDE.md` be updated to completely remove Java 25, Maven, and JVM dependencies, consolidating into a fast single-engine Node.js 20+ / npm workspaces build?
 
 ## Background & Context
 

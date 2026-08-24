@@ -85,4 +85,28 @@ describe('Reveal Gate & Consensus Invariants', () => {
     expect(consensus?.total_votes).toBe(2);
     expect(consensus?.suggested_points).toBe('3');
   });
+
+  it('emits HighOutlier when outlier vote is numerically higher than mode', () => {
+    const participants = [
+      { id: 'p-1', name: 'Alice', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '5' },
+      { id: 'p-2', name: 'Bob', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '5' },
+      { id: 'p-3', name: 'Charlie', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '8' },
+    ];
+
+    const consensus = computeConsensus(participants);
+    expect(consensus?.category).toBe('HighOutlier');
+    expect(consensus?.suggested_points).toBe('5');
+  });
+
+  it('emits LowOutlier when outlier vote is numerically lower than mode', () => {
+    const participants = [
+      { id: 'p-1', name: 'Alice', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '5' },
+      { id: 'p-2', name: 'Bob', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '5' },
+      { id: 'p-3', name: 'Charlie', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '2' },
+    ];
+
+    const consensus = computeConsensus(participants);
+    expect(consensus?.category).toBe('LowOutlier');
+    expect(consensus?.suggested_points).toBe('5');
+  });
 });

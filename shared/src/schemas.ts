@@ -103,6 +103,71 @@ export const removeStorySchema = z.object({
   storyId: z.string().optional(),
 });
 
+export const trackerConfigSchema = z.union([
+  z.object({
+    provider: z.literal('Linear'),
+    config: z.object({
+      api_key: z.string(),
+      endpoint: z.string().optional(),
+    }),
+  }),
+  z.object({
+    provider: z.literal('GitHub'),
+    config: z.object({
+      personal_access_token: z.string(),
+      owner: z.string(),
+      repo: z.string(),
+      endpoint: z.string().optional(),
+    }),
+  }),
+  z.object({
+    provider: z.literal('Jira'),
+    config: z.object({
+      domain: z.string(),
+      email: z.string(),
+      api_token: z.string(),
+      project_key: z.string(),
+      endpoint: z.string().optional(),
+      points_field: z.string().optional(),
+    }),
+  }),
+]);
+
+export const connectTrackerSchema = z.object({
+  participant_id: z.string().optional(),
+  participantId: z.string().optional(),
+  config: trackerConfigSchema,
+});
+
+export const testTrackerSchema = z.object({
+  participant_id: z.string().optional(),
+  participantId: z.string().optional(),
+  config: trackerConfigSchema,
+});
+
+export const fetchBacklogSchema = z.object({
+  participant_id: z.string().optional(),
+  participantId: z.string().optional(),
+  query: z.record(z.any()).optional(),
+});
+
+export const syncEstimateSchema = z.object({
+  participant_id: z.string().optional(),
+  participantId: z.string().optional(),
+  story_id: z.string().optional(),
+  storyId: z.string().optional(),
+  points: z.number().optional(),
+  post_comment: z.boolean().optional(),
+});
+
+export const pushSlicesSchema = z.object({
+  participant_id: z.string().optional(),
+  participantId: z.string().optional(),
+  parent_id: z.string().optional(),
+  parentId: z.string().optional(),
+  slices: z.array(z.any()).optional(),
+});
+
 export type JoinRequest = z.infer<typeof joinRequestSchema>;
 export type VoteRequest = z.infer<typeof voteRequestSchema>;
 export type FinalizeRequest = z.infer<typeof finalizeRequestSchema>;
@@ -114,3 +179,8 @@ export type UpdateRoleRequest = z.infer<typeof updateRoleSchema>;
 export type TransferFacilitatorRequest = z.infer<typeof transferFacilitatorSchema>;
 export type ReorderBacklogRequest = z.infer<typeof reorderBacklogSchema>;
 export type RemoveStoryRequest = z.infer<typeof removeStorySchema>;
+export type ConnectTrackerRequest = z.infer<typeof connectTrackerSchema>;
+export type TestTrackerRequest = z.infer<typeof testTrackerSchema>;
+export type FetchBacklogRequest = z.infer<typeof fetchBacklogSchema>;
+export type SyncEstimateRequest = z.infer<typeof syncEstimateSchema>;
+export type PushSlicesRequest = z.infer<typeof pushSlicesSchema>;

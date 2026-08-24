@@ -24,7 +24,7 @@ How should the monorepo workspace (npm workspaces vs. pnpm), shared type package
 
 The repository will be structured as a native **npm workspace** (Node.js 20+ LTS native, requiring zero external monorepo tools):
 
-```
+```text
 scrum-poke-ai/
 ├── package.json              # Root workspace ("workspaces": ["shared", "server", "client"])
 ├── tsconfig.base.json        # Shared compiler defaults (ES2022, bundler module resolution, strict)
