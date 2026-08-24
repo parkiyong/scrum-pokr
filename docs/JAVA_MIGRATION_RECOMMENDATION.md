@@ -1,170 +1,214 @@
 # ☕ Java Migration Architecture & Stack Recommendation
-## Scrum Pokr AI — Backend Stack Modernization Strategy
+## Scrum Pokr AI — Backend Stack Modernization Strategy (SSE + REST Edition)
 
 ---
 
 ## Executive Summary
 
-This document presents a comprehensive, production-grade architectural proposal for migrating the **Scrum Pokr AI** backend from **Rust (Tokio / Axum)** to **Java**.
+This document presents a comprehensive, production-grade architectural proposal for migrating the **Scrum Pokr AI** backend from **Rust (Tokio / Axum)** to **Java**, re-imagined to use **Server-Sent Events (SSE)** + **REST HTTP Endpoints** instead of WebSockets.
 
-When re-imagining the backend architecture in the Java ecosystem, the primary design objectives are:
-1. **Preserving Real-Time Performance & Low Latency**: Seamless sub-millisecond WebSocket fan-out and real-time state broadcasts.
-2. **Protocol-Level Security Invariants**: Strict server-enforced vote masking (**Server Reveal Gate**) before data serialization.
-3. **Modern Java 21 Features**: Leveraging Virtual Threads (Project Loom), Sealed Interfaces, Pattern Matching, and Records for concise, type-safe code.
-4. **First-Class AI & Vector DB Integration**: Out-of-the-box integration with OpenAI models and PostgreSQL `pgvector`.
-5. **Horizontal Scalability**: Evolving from single-node in-memory actor instances to a cluster-ready, horizontally scalable WebSocket architecture using Distributed Pub/Sub.
+### Why Server-Sent Events (SSE) + REST over WebSockets?
+Corporate proxy environments, enterprise firewalls, and Next-Generation Application Firewalls (NGFWs) frequently block, inspect, or abruptly terminate persistent WebSocket (`ws://` / `wss://`) connections due to stateful connection timeouts or strict protocol inspection.
+
+Transitioning to **SSE (`text/event-stream`)** for real-time downstream updates from the server, paired with standard **REST/HTTP POST** requests for client actions (joining, voting, revealing, resetting):
+1. **Bypasses Strict Corporate Firewalls**: Operates transparently over standard HTTP/1.1 and HTTP/2 (ports 80 / 443) as standard chunked HTTP responses.
+2. **Built-in Auto-Reconnect & Event Framing**: Browsers natively auto-reconnect SSE streams (`EventSource`) with backoff and tracking headers (`Last-Event-ID`).
+3. **Stateless Command Processing**: Client interactions are standard REST endpoints, allowing independent authentication, rate-limiting, and standard APM observability.
+4. **Ideal Fit for Java 21 Virtual Threads**: Virtual Threads make handling thousands of concurrent, long-lived SSE HTTP streaming connections virtually overhead-free.
 
 ---
 
 ## 🏆 Recommended Technology Stack
 
-We recommend two distinct architectural options tailored to team priorities: **Option 1 (Spring Boot 3.3+ with Java 21 Virtual Threads)** as the primary recommendation for maximum developer productivity and enterprise ecosystem integration, and **Option 2 (Quarkus 3.x + GraalVM Native)** for maximum resource efficiency and Rust-like binary footprints.
+We recommend two distinct architectural options tailored to team priorities: **Option 1 (Spring Boot 3.3+ with Java 21 Virtual Threads)** as the primary recommendation for maximum developer productivity, and **Option 2 (Quarkus 3.x + Mutiny SSE)** for maximum resource efficiency.
 
 ### Stack Option 1: Enterprise Standard (Recommended)
 **Spring Boot 3.3+ with Java 21 (Virtual Threads)**
 
-| Component | Java Library / Framework | Rust Equivalent | Purpose / Notes |
-| :--- | :--- | :--- | :--- |
-| **Runtime & Language** | **Java 21 LTS** | Rust 1.80+ | Virtual Threads (`Thread.ofVirtual()`), Records, Pattern Matching, Sealed Interfaces. |
-| **Core Framework** | **Spring Boot 3.3+** | Axum / Tower | Web layer, dependency injection, lifecycle management, auto-configuration. |
-| **WebSocket Engine** | **Spring WebFlux WebSockets** (or Spring MVC + Netty/Tomcat WS) | `axum::extract::ws` | High-concurrency binary/text frame handling with non-blocking backpressure support. |
-| **JSON & Protocol** | **Jackson 2.17+** (with Record support) | `serde` / `serde_json` | High-performance JSON serialization with custom masking serializers for Reveal Gate. |
-| **Database & Vector Search** | **Spring Data JPA + Spring AI `PgVectorStore`** / **Flyway** | `sqlx` / `tokio-postgres` | Postgres persistence & 1536-dim IVFFlat nearest-neighbor vector search. |
-| **AI Advisory Engine** | **Spring AI 1.0+** | Custom `reqwest` + OpenAI client | Native abstraction for ChatCompletion, Prompt Templates, and RAG embeddings. |
-| **Issue Tracker Integration** | **Spring `WebClient` / JDK `HttpClient`** | `reqwest` | Async client for Linear GraphQL, GitHub REST, and Jira REST APIs. |
-| **Testing** | **JUnit 5, AssertJ, Testcontainers, Mockito** | `cargo test`, `tokio-test` | Integration testing with real Postgres + pgvector containers via Testcontainers. |
+| Component | Java Library / Framework | Purpose / Notes |
+| :--- | :--- | :--- |
+| **Runtime & Language** | **Java 21 LTS** | Virtual Threads (`Thread.ofVirtual()`), Records, Pattern Matching, Sealed Interfaces. |
+| **Core Framework** | **Spring Boot 3.3+** | Web layer, dependency injection, REST controllers, auto-configuration. |
+| **SSE Real-Time Engine** | **Spring MVC `SseEmitter`** (or Spring WebFlux `Flux<ServerSentEvent>`) | Manages non-blocking long-lived HTTP SSE streams. Works seamlessly through corporate proxies. |
+| **JSON & Protocol** | **Jackson 2.17+** | High-performance JSON serialization with custom masking serializers for Reveal Gate. |
+| **Database & Vector Search** | **Spring Data JPA + Spring AI `PgVectorStore`** / **Flyway** | Postgres persistence & 1536-dim IVFFlat nearest-neighbor vector search. |
+| **AI Advisory Engine** | **Spring AI 1.0+** | Native abstraction for ChatCompletion, Prompt Templates, and RAG embeddings. |
+| **Issue Tracker Integration** | **Spring `WebClient` / JDK `HttpClient`** | Async client for Linear GraphQL, GitHub REST, and Jira REST APIs. |
+| **Testing** | **JUnit 5, AssertJ, Testcontainers** | Integration testing with real Postgres + pgvector containers via Testcontainers. |
 
 ---
 
-### Stack Option 2: Cloud-Native & Low Footprint
-**Quarkus 3.x with GraalVM Native Image**
+### Stack Option 2: Cloud-Native & Reactive
+**Quarkus 3.x with Mutiny SSE & GraalVM Native Image**
 
 | Component | Java Library / Framework |
 | :--- | :--- |
 | **Framework** | **Quarkus 3.12+** |
-| **Reactive Engine** | **SmallRye Mutiny / Vert.x WebSockets** |
+| **Reactive SSE Engine** | **RESTEasy Reactive `Multi<OutboundSseEvent>`** |
 | **AI Engine** | **LangChain4j Quarkus Extension** |
-| **Compilation** | **GraalVM Native Image** (produces standalone, instantaneous-boot native binaries ~50MB RAM) |
+| **Compilation** | **GraalVM Native Image** (produces standalone native binaries ~50MB RAM) |
 
 ---
 
-## 🏗️ Re-Imagined System Architecture
+## 🏗️ Re-Imagined System Architecture (SSE + REST)
 
 ```
-                                  ┌──────────────────────────────────────────────┐
-                                  │           React Client (WebSockets)          │
-                                  └──────────────────────┬───────────────────────┘
-                                                         │ WSS / JSON-RPC
-                                                         ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                     Java 21 / Spring Boot 3 Backend                                     │
-│                                                                                                         │
-│  ┌─────────────────────────────────┐   ┌──────────────────────────────────┐   ┌──────────────────────┐  │
-│  │   WebSocket Connection Handler  │   │     Spring AI Advisory Engine    │   │  Tracker Integration │  │
-│  │   - Virtual Thread per Socket   │   │   - Story Doctor (INVEST + Edge) │   │  - Linear GraphQL    │  │
-│  │   - Client Session Lifecycle    │   │   - SPIDR Vertical Slicer        │   │  - GitHub & Jira REST│  │
-│  └────────────────┬────────────────┘   └──────────────────┬───────────────┘   └──────────┬───────────┘  │
-│                   │                                       │                              │              │
-│                   ▼                                       │                              │              │
-│  ┌─────────────────────────────────┐                      │                              │              │
-│  │      Room State Management      │                      │                              │              │
-│  │  ┌───────────────────────────┐  │                      │                              │              │
-│  │  │ Room State Machine        │  │                      │                              │              │
-│  │  │ (Virtual Thread / Lock)   │  │                      │                              │              │
-│  │  └─────────────┬─────────────┘  │                      │                              │              │
-│  │                │                │                      │                              │              │
-│  │  ┌─────────────▼─────────────┐  │                      │                              │              │
-│  │  │ Server Reveal Gate Filter │  │                      │                              │              │
-│  │  │ (State Masking per Peer)  │  │                      │                              │              │
-│  │  └───────────────────────────┘  │                      │                              │              │
-│  └────────────────┬────────────────┘                      │                              │              │
-└───────────────────┼───────────────────────────────────────┼──────────────────────────────┼──────────────┘
-                    │                                       │                              │
-                    │ Optional Scale-Out                    │                              │
-                    ▼                                       ▼                              ▼
-┌───────────────────────────────────────┐   ┌─────────────────────────────────────────────────────────────┐
-│          Redis Pub/Sub (Optional)     │   │               PostgreSQL + pgvector Database                │
-│ - Multi-Node WebSocket Event Fan-Out  │   │ - Historical Stories & 1536-dim IVFFlat Vector Index        │
-│ - Global Room State Synchronization   │   │ - Team Estimation Profiles & Calibration Weights            │
-└───────────────────────────────────────┘   └─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                           React Web Client (SPA)                                         │
+│                                                                                                          │
+│    ┌───────────────────────────────────┐               ┌──────────────────────────────────────────┐      │
+│    │  Command Client (REST / HTTP POST)│               │ Event Listener (SSE / EventSource W3C)   │      │
+│    └─────────────────┬─────────────────┘               └────────────────────▲─────────────────────┘      │
+└──────────────────────┼──────────────────────────────────────────────────────┼────────────────────────────┘
+                       │ HTTP POST /api/rooms/{code}/vote                     │ HTTP GET /api/rooms/{code}/events
+                       │ HTTP POST /api/rooms/{code}/reveal                   │ (text/event-stream)
+                       ▼                                                      │
+┌─────────────────────────────────────────────────────────────────────────────┼────────────────────────────┐
+│                                    Java 21 / Spring Boot 3 Backend          │                            │
+│                                                                             │                            │
+│  ┌───────────────────────────────────┐                            ┌─────────┴────────────────────────┐   │
+│  │    REST Controller Layer          │                            │     SSE Stream Emitter Registry  │   │
+│  │  - POST /api/rooms                │                            │  - Room code event dispatchers   │   │
+│  │  - POST /api/rooms/{code}/join    │                            │  - Heartbeat / Keep-Alive timer  │   │
+│  │  - POST /api/rooms/{code}/vote    │                            │  - Last-Event-ID catchup replay  │   │
+│  └─────────────────┬─────────────────┘                            └─────────▲────────────────────────┘   │
+│                    │                                                        │                            │
+│                    ▼                                                        │                            │
+│  ┌──────────────────────────────────────────────────────────────────────────┴────────────────────────┐   │
+│  │                                 Room State Manager & Event Bus                                    │   │
+│  │  ┌──────────────────────────────┐              ┌──────────────────────────────────────────────┐   │   │
+│  │  │ Room State Machine           │              │ Server Reveal Gate Filter                    │   │   │
+│  │  │ (Virtual Threads / Locks)    │ ───────────► │ (State Masking per Requesting Participant)  │   │   │
+│  │  └──────────────────────────────┘              └──────────────────────────────────────────────┘   │   │
+│  └─────────────────┬────────────────────────────────────────────────────────┬────────────────────────┘   │
+└────────────────────┼────────────────────────────────────────────────────────┼────────────────────────────┘
+                     │                                                        │
+                     │ Optional Multi-Node Scale-Out                          │ Vector Search & Persistence
+                     ▼                                                        ▼
+┌───────────────────────────────────────────┐             ┌────────────────────────────────────────────────┐
+│         Redis Pub/Sub (Optional)          │             │         PostgreSQL + pgvector Database         │
+│ - Broadcaster across SSE cluster nodes    │             │ - Historical Stories & Vector Index            │
+└───────────────────────────────────────────┘             └────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🧠 Room Concurrency Model Comparison: Rust vs. Java
+## 🔁 Communication Protocol: SSE + REST Spec
 
-In Rust, the room engine uses Tokio `mpsc` actors with `broadcast` channels. In Java, we can model this with cleaner, highly maintainable patterns using Java 21 Virtual Threads or an Actor framework.
+Instead of bidirectional JSON-RPC frames over a single WebSocket, the architecture splits downstream notifications and upstream commands cleanly.
 
-### Comparison Matrix
+### 1. Downstream: Real-Time SSE Stream (`GET /api/rooms/{code}/events`)
+Clients establish a single, read-only SSE stream.
 
-| Aspect | Rust (Current) | Java Option A: Virtual Thread + Concurrent State | Java Option B: Apache Pekko / Akka Actors |
+* **HTTP Method & Headers**:
+  `GET /api/rooms/SWB-42/events?participant_id=p-123`
+  `Accept: text/event-stream`
+* **Server Heartbeat**:
+  To keep corporate proxies from killing idle connections, the server sends a periodic `: heartbeat\n\n` comment every 15 seconds.
+* **Server Events (Payload Format)**:
+  ```http
+  event: room_state
+  id: 1042
+  data: {"slug":"SWB-42","phase":"VOTING","participants":[{"id":"p-123","name":"Alice","has_voted":true,"vote":null}]}
+
+  event: story_updated
+  id: 1043
+  data: {"id":"s-1","title":"Migrate to Java","estimate":null}
+  ```
+
+### 2. Upstream: REST Command Endpoints
+Clients execute actions via standard HTTP POST endpoints with JSON bodies.
+
+| Endpoint | Method | Request Body | Description |
 | :--- | :--- | :--- | :--- |
-| **Concurrency Control** | Tokio Task + `mpsc` receiver loop | Virtual Thread per Room with `ReentrantLock` / `StampedLock` | Actor per Room with Message Queue |
-| **Event Broadcast** | `tokio::sync::broadcast` | `java.util.concurrent.CopyOnWriteArrayList` / Flow API or Redis Pub/Sub | Pekko EventStream / Distributed PubSub |
-| **Complexity** | Medium (channel lifecycle, select loops) | Low (Idiomatic Object-Oriented Java code) | Medium-High (Actor lifecycle, supervision) |
-| **Horizontal Scalability** | Single-node in-memory | Easily clusterable via Spring Redis PubSub | Clusterable via Pekko Cluster |
-
-### Recommendation for Room State Management
-We recommend **Option A (Virtual Threads + Thread-Safe Room Manager)** for the Java implementation. Because Virtual Threads in Java 21 are extremely lightweight (millions can run concurrently), each Room can safely maintain its state with fine-grained synchronization without thread exhaustion or lock contention blocking OS threads.
+| `/api/rooms` | `POST` | `{}` | Creates a new room and returns slug/shortCode. |
+| `/api/rooms/{code}/join` | `POST` | `{"name":"Alice","role":"VOTER"}` | Joins a room, returns session participant token. |
+| `/api/rooms/{code}/vote` | `POST` | `{"participant_id":"p-123","vote":"5"}` | Casts a vote; triggers broadcast of masked `room_state` via SSE. |
+| `/api/rooms/{code}/reveal` | `POST` | `{"participant_id":"p-123"}` | Reveals votes; broadcasts unmasked `room_state` via SSE. |
+| `/api/rooms/{code}/reset` | `POST` | `{"participant_id":"p-123"}` | Resets voting for the current story. |
 
 ---
 
-## 🛡️ Protocol Security: Server Reveal Gate in Java
+## 🛠️ Java Implementation Details (Spring Boot 3 + Virtual Threads)
 
-The core invariant of Scrum Pokr AI is that **votes are never sent to clients until the Reveal phase**, preventing browser DevTools inspection.
+### 1. SSE Stream Controller with Virtual Threads
+```java
+@RestController
+@RequestMapping("/api/rooms")
+public class RoomSseController {
 
-In Java, this is implemented cleanly using **Java 21 Records** and projection methods:
+    private final RoomRegistryService roomRegistry;
+
+    @GetMapping(path = "/{code}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamEvents(
+        @PathVariable String code,
+        @RequestParam String participantId
+    ) {
+        // Emitter timeout: set to 0 or negative for indefinite corporate stream duration
+        SseEmitter emitter = new SseEmitter(-1L);
+
+        RoomHandle room = roomRegistry.getOrCreate(code);
+        room.subscribe(participantId, emitter);
+
+        emitter.onCompletion(() -> room.unsubscribe(participantId, emitter));
+        emitter.onTimeout(() -> room.unsubscribe(participantId, emitter));
+        emitter.onError(ex -> room.unsubscribe(participantId, emitter));
+
+        return emitter;
+    }
+}
+```
+
+### 2. Protocol Security: Server Reveal Gate in SSE Broadcasts
+When broadcasting state updates to all connected SSE clients in a room, the server passes each client's `SseEmitter` a uniquely masked view:
 
 ```java
-public record RoomState(
-    String slug,
-    String shortCode,
-    Phase phase,
-    List<ParticipantState> participants,
-    Story currentStory
-) {
-    public RoomState toMaskedState(String requestingParticipantId) {
-        boolean isRevealed = this.phase == Phase.REVEALED;
+public class RoomHandle {
+    private final Map<String, List<SseEmitter>> participantEmitters = new ConcurrentHashMap<>();
+    private final RoomDomainModel stateMachine;
 
-        List<ParticipantState> maskedParticipants = participants.stream()
-            .map(p -> p.toMasked(isRevealed, p.id().equals(requestingParticipantId)))
-            .toList();
+    public void broadcastState() {
+        RoomState currentState = stateMachine.getState();
 
-        return new RoomState(
-            slug,
-            shortCode,
-            phase,
-            maskedParticipants,
-            currentStory
-        );
+        participantEmitters.forEach((participantId, emitters) -> {
+            RoomState maskedState = currentState.toMaskedState(participantId);
+
+            for (SseEmitter emitter : emitters) {
+                try {
+                    emitter.send(SseEmitter.event()
+                        .name("room_state")
+                        .data(maskedState));
+                } catch (IOException e) {
+                    // Handle client disconnect gracefully
+                }
+            }
+        });
     }
 }
 ```
 
 ---
 
-## 🔄 Feature Parity & Module Mapping
+## 🛡️ Corporate Enterprise Proxy Considerations
 
-| Rust Architecture Component | Proposed Java Implementation |
-| :--- | :--- |
-| `server/src/domain/slug.rs` | `RoomCodeGenerator.java` using SecureRandom & 6-character Crockford Base32 formatting |
-| `server/src/actor/room_actor.rs` | `RoomDomainModel.java` managing 7-phase state transitions |
-| `server/src/actor/registry.rs` | `RoomRegistryService.java` with ConcurrentHashMap backing |
-| `server/src/ws/` | `ScrumPokerWebSocketHandler.java` mapping JSON-RPC protocol commands |
-| `server/src/domain/tracker/` | `LinearTrackerAdapter.java`, `GitHubTrackerAdapter.java`, `JiraTrackerAdapter.java` via Spring WebClient |
-| `server/src/domain/ai/` | `StoryDoctorService.java` using Spring AI ChatClient with structured JSON outputs |
+1. **HTTP/2 Support**:
+   By serving over **HTTP/2** (via NGINX/Envoy or Spring Boot embedded Tomcat/Netty with ALPN), browser connection limits per domain (6 sockets in HTTP/1.1) are eliminated since all SSE streams multiplex over a single TCP connection.
+2. **Buffering Disabled (`X-Accel-Buffering: no`)**:
+   Reverse proxies like NGINX must disable response buffering for SSE endpoints so that event chunks are flushed instantly to clients.
+3. **Keep-Alive Heartbeats**:
+   Periodic `: heartbeat` frames every 15s ensure cloud load balancers (AWS ALB, Azure App Gateway, Cloudflare) do not close idle connections after default 60s timeouts.
 
 ---
 
-## 🚀 Migration Roadmap
+## 🚀 Migration Roadmap (SSE + REST)
 
-1. **Phase 1: Core Domain & Room State Engine**
-   - Implement Java 21 domain Records, `Phase` state machine, and unit tests.
-2. **Phase 2: WebSocket Server & Reveal Gate Filter**
-   - Implement WebSocket endpoints, JSON-RPC frame serialization/deserialization, and payload masking.
+1. **Phase 1: REST API & SSE Controller Infrastructure**
+   - Implement Spring Boot REST controllers for room actions and `/events` SSE streaming endpoint.
+2. **Phase 2: Room State Engine & Masked SSE Fan-Out**
+   - Implement thread-safe `RoomDomainModel`, Reveal Gate masking, and `SseEmitter` event dispatcher.
 3. **Phase 3: Database & Vector Search Migration**
    - Configure Spring Data JPA, Flyway migrations for Postgres + `pgvector`, and Spring AI embeddings repository.
-4. **Phase 4: Tracker Adapters & AI Advisory Service**
-   - Re-implement Linear, GitHub, and Jira integration clients and OpenAI prompt pipelines.
-5. **Phase 5: End-to-End Verification & Load Testing**
-   - Execute frontend integration testing with the new Java backend and verify zero-regression protocol compliance.
+4. **Phase 4: Issue Tracker & AI Advisory Integration**
+   - Implement Spring `WebClient` integrations for Linear, GitHub, Jira, and OpenAI story doctor prompts.
+5. **Phase 5: React Client SSE Adapter & E2E Verification**
+   - Update client `useRoomSocket` hook to use W3C `EventSource` + `fetch()` REST calls and verify zero-regression functionality through corporate proxy simulation.
