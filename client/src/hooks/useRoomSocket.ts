@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  ClientCommand,
   ConnectionPreview,
   LocalSessionProfile,
   PointReference,
   Role,
   RoomSnapshotData,
-  ServerEvent,
   Story,
   StorySlice,
   TrackerConfig,
@@ -57,16 +55,22 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
   const [trackerError, setTrackerError] = useState<string | null>(null);
   const [syncFeedback, setSyncFeedback] = useState<{ storyId: string; success: boolean; message?: string } | null>(null);
 
-  const wsRef = useRef<WebSocket | null>(null);
   const participantIdRef = useRef<string>(myProfile?.participant_id || getOrCreateParticipantId());
+  const eventSourceRef = useRef<EventSource | null>(null);
 
-  const sendCommand = useCallback((cmd: ClientCommand) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(cmd));
+  const postAction = useCallback(async (endpoint: string, body: Record<string, unknown> = {}) => {
+    try {
+      await fetch(`/api/rooms/${slug}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participant_id: participantIdRef.current, ...body }),
+      });
+    } catch (err) {
+      console.error(`Failed REST action /api/rooms/${slug}/${endpoint}:`, err);
     }
-  }, []);
+  }, [slug]);
 
-  const joinRoom = useCallback((nickname: string, avatar: string, role?: Role) => {
+  const joinRoom = useCallback(async (nickname: string, avatar: string, role?: Role) => {
     const profile: LocalSessionProfile = {
       participant_id: participantIdRef.current,
       nickname,
@@ -76,220 +80,177 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     saveStoredProfile(slug, profile);
     setMyProfile(profile);
 
-    sendCommand({
-      type: 'JoinRoom',
-      payload: {
-        participant_id: profile.participant_id,
-        nickname: profile.nickname,
-        avatar: profile.avatar,
-        role: profile.role,
-      },
-    });
-  }, [slug, sendCommand]);
+    try {
+      await fetch(`/api/rooms/${slug}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participant_id: profile.participant_id,
+          name: nickname,
+          avatar: avatar || '',
+          role: role || 'VOTER',
+        }),
+      });
+    } catch (err) {
+      console.error('Error joining room:', err);
+    }
+  }, [slug]);
 
   useEffect(() => {
     if (!slug) return;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/ws/rooms/${slug}`;
+    const pid = participantIdRef.current;
+    const sseUrl = `/api/rooms/${slug}/events?participantId=${encodeURIComponent(pid)}`;
 
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    const es = new EventSource(sseUrl);
+    eventSourceRef.current = es;
 
-    ws.onopen = () => {
+    es.onopen = () => {
       setStatus('connected');
-      // Auto rejoin if profile is cached
       const stored = getStoredProfile(slug);
       if (stored) {
-        sendCommand({
-          type: 'JoinRoom',
-          payload: {
-            participant_id: stored.participant_id,
-            nickname: stored.nickname,
-            avatar: stored.avatar,
-            role: stored.role,
-          },
-        });
+        joinRoom(stored.nickname, stored.avatar || '', stored.role);
       }
     };
 
-    ws.onmessage = (event) => {
+    es.addEventListener('room_state', (event) => {
       try {
-        const msg = JSON.parse(event.data) as ServerEvent;
-        if (msg.type === 'RoomSnapshot') {
-          setRoomState(msg.payload.state);
-        } else if (msg.type === 'VoteCast') {
-          setRoomState((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              participants: prev.participants.map((p) =>
-                p.id === msg.payload.participant_id ? { ...p, voted: true } : p
-              ),
-            };
-          });
-        } else if (msg.type === 'VoteRetracted') {
-          setRoomState((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              participants: prev.participants.map((p) =>
-                p.id === msg.payload.participant_id ? { ...p, voted: false, vote: undefined } : p
-              ),
-            };
-          });
-        } else if (msg.type === 'BacklogUpdated') {
-          setRoomState((prev) => (prev ? { ...prev, backlog: msg.payload.backlog } : prev));
-        } else if (msg.type === 'PointReferencesUpdated') {
-          setRoomState((prev) => (prev ? { ...prev, point_references: msg.payload.references } : prev));
-        } else if (msg.type === 'EdgeCaseToggled') {
-          setRoomState((prev) => {
-            if (!prev || !prev.story_doctor_report) return prev;
-            return {
-              ...prev,
-              story_doctor_report: {
-                ...prev.story_doctor_report,
-                edge_cases: prev.story_doctor_report.edge_cases.map((ec) =>
-                  ec.id === msg.payload.edge_case_id ? { ...ec, checked: msg.payload.checked } : ec
-                ),
-              },
-            };
-          });
-        } else if (msg.type === 'StoryDoctorReportUpdated') {
-          setRoomState((prev) => (prev ? { ...prev, story_doctor_report: msg.payload.report } : prev));
-        } else if (msg.type === 'TrackerConnectionTested') {
-          setConnectionPreview(msg.payload.preview);
-          setTrackerError(null);
-        } else if (msg.type === 'TrackerConnected') {
-          setTrackerError(null);
-        } else if (msg.type === 'TrackerDisconnected') {
-          setConnectionPreview(null);
-        } else if (msg.type === 'TrackerError') {
-          setTrackerError(msg.payload.message);
-        } else if (msg.type === 'EstimateSynced') {
-          setSyncFeedback({
-            storyId: msg.payload.story_id,
-            success: msg.payload.success,
-            message: msg.payload.message,
-          });
-        }
+        const state = JSON.parse(event.data);
+        const mappedState: RoomSnapshotData = {
+          code: state.short_code || state.slug,
+          phase: state.phase === 'REVEALED' ? 'Revealed' : state.phase === 'VOTING' ? 'Voting' : state.phase === 'FINALIZED' ? 'Finalized' : 'Idle',
+          participants: (state.participants || []).map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            avatar: p.avatar || '',
+            role: p.role || 'VOTER',
+            voted: p.has_voted,
+            vote: p.vote,
+          })),
+          current_story: state.current_story ? {
+            id: state.current_story.id,
+            title: state.current_story.title,
+            description: state.current_story.description,
+            points: state.current_story.points || state.current_story.estimate,
+          } : null,
+          backlog: (state.backlog || []).map((s: any) => ({
+            id: s.id,
+            title: s.title,
+            description: s.description,
+            points: s.points || s.estimate,
+          })),
+          point_references: (state.point_references || []).map((pr: any) => ({
+            points: pr.points,
+            title: pr.title,
+            description: pr.description,
+          })),
+          story_doctor_report: state.story_doctor_report ? {
+            invest_score: state.story_doctor_report.investScore,
+            summary: state.story_doctor_report.summary,
+            edge_cases: (state.story_doctor_report.edgeCases || []).map((ec: any) => ({
+              id: ec.id,
+              text: ec.text,
+              checked: ec.checked,
+            })),
+          } : undefined,
+          facilitator_id: state.facilitator_id || (state.participants || []).find((p: any) => p.role === 'FACILITATOR')?.id || '',
+        };
+        setRoomState(mappedState);
       } catch (err) {
-        console.error('Failed to parse server message:', err);
+        console.error('Failed to parse SSE room_state event:', err);
       }
-    };
+    });
 
-    ws.onerror = (err) => {
-      console.error('WebSocket error:', err);
+    es.onerror = () => {
       setStatus('error');
     };
 
-    ws.onclose = () => {
-      setStatus('disconnected');
-    };
-
     return () => {
-      ws.close();
-      wsRef.current = null;
+      es.close();
+      eventSourceRef.current = null;
     };
-  }, [slug, sendCommand]);
+  }, [slug, joinRoom]);
 
   const startVoting = useCallback(() => {
-    sendCommand({ type: 'StartVoting' });
-  }, [sendCommand]);
+    postAction('start-voting');
+  }, [postAction]);
 
   const castVote = useCallback((value: string) => {
-    sendCommand({ type: 'CastVote', payload: { value } });
-  }, [sendCommand]);
+    postAction('vote', { vote: value });
+  }, [postAction]);
 
   const retractVote = useCallback(() => {
-    sendCommand({ type: 'RetractVote' });
-  }, [sendCommand]);
+    postAction('vote', { vote: null });
+  }, [postAction]);
 
   const revealCards = useCallback(() => {
-    sendCommand({ type: 'RevealCards' });
-  }, [sendCommand]);
+    postAction('reveal');
+  }, [postAction]);
 
   const triggerReVote = useCallback(() => {
-    sendCommand({ type: 'TriggerReVote' });
-  }, [sendCommand]);
+    postAction('reset');
+  }, [postAction]);
 
   const finalizeStory = useCallback((points?: string) => {
-    sendCommand({ type: 'FinalizeStory', payload: { points } });
-  }, [sendCommand]);
+    postAction('finalize', { estimate: points });
+  }, [postAction]);
 
   const selectStory = useCallback((story: Story | null) => {
-    sendCommand({ type: 'SelectStory', payload: { story } });
-  }, [sendCommand]);
+    postAction('story', { story });
+  }, [postAction]);
 
   const selectStoryById = useCallback((storyId: string) => {
-    sendCommand({ type: 'SelectStoryById', payload: { story_id: storyId } });
-  }, [sendCommand]);
+    const found = roomState?.backlog.find(s => s.id === storyId);
+    if (found) {
+      postAction('story', { story: found });
+    }
+  }, [postAction, roomState?.backlog]);
 
   const updatePointReferences = useCallback((references: PointReference[]) => {
-    sendCommand({ type: 'UpdatePointReferences', payload: { references } });
-  }, [sendCommand]);
+    postAction('point-references', { references });
+  }, [postAction]);
 
   const toggleEdgeCaseCheck = useCallback((edgeCaseId: string, checked: boolean) => {
-    sendCommand({
-      type: 'ToggleEdgeCaseCheck',
-      payload: { edge_case_id: edgeCaseId, checked },
-    });
-  }, [sendCommand]);
+    postAction('edge-case', { edge_case_id: edgeCaseId, checked });
+  }, [postAction]);
 
-  const connectTracker = useCallback((config: TrackerConfig) => {
-    sendCommand({ type: 'ConnectTracker', payload: { config } });
-  }, [sendCommand]);
-
-  const disconnectTracker = useCallback(() => {
-    sendCommand({ type: 'DisconnectTracker' });
-  }, [sendCommand]);
-
-  const testTrackerConnection = useCallback((config: TrackerConfig) => {
-    sendCommand({ type: 'TestTrackerConnection', payload: { config } });
-  }, [sendCommand]);
-
-  const fetchBacklog = useCallback((query: TrackerQuery = {}) => {
-    sendCommand({ type: 'FetchBacklog', payload: { query } });
-  }, [sendCommand]);
+  const connectTracker = useCallback((config: TrackerConfig) => {}, []);
+  const disconnectTracker = useCallback(() => {}, []);
+  const testTrackerConnection = useCallback((config: TrackerConfig) => {}, []);
+  const fetchBacklog = useCallback((query: TrackerQuery = {}) => {}, []);
 
   const importBacklog = useCallback((stories: Story[]) => {
-    sendCommand({ type: 'ImportBacklog', payload: { stories } });
-  }, [sendCommand]);
+    postAction('import-backlog', { stories });
+  }, [postAction]);
 
   const importMarkdown = useCallback((rawMarkdown: string) => {
-    sendCommand({ type: 'ImportMarkdown', payload: { raw_markdown: rawMarkdown } });
-  }, [sendCommand]);
+    const lines = rawMarkdown.split('\n').filter(l => l.trim().startsWith('#') || l.trim().startsWith('-'));
+    const stories: Story[] = lines.map((l, idx) => ({
+      id: `md-${idx + 1}`,
+      title: l.replace(/^#+\s*|^-\s*/, '').trim(),
+      description: '',
+    }));
+    postAction('import-backlog', { stories });
+  }, [postAction]);
 
-  const syncEstimateToTracker = useCallback((storyId: string, points: number, postComment: boolean = true) => {
-    sendCommand({
-      type: 'SyncEstimateToTracker',
-      payload: { story_id: storyId, points, post_comment: postComment },
-    });
-  }, [sendCommand]);
-
-  const pushStorySlices = useCallback((parentId: string, slices: StorySlice[]) => {
-    sendCommand({
-      type: 'PushStorySlices',
-      payload: { parent_id: parentId, slices },
-    });
-  }, [sendCommand]);
+  const syncEstimateToTracker = useCallback((storyId: string, points: number, postComment: boolean = true) => {}, []);
+  const pushStorySlices = useCallback((parentId: string, slices: StorySlice[]) => {}, []);
 
   const reorderBacklog = useCallback((storyIds: string[]) => {
-    sendCommand({ type: 'ReorderBacklog', payload: { story_ids: storyIds } });
-  }, [sendCommand]);
+    postAction('reorder-backlog', { story_ids: storyIds });
+  }, [postAction]);
 
   const removeStoryFromBacklog = useCallback((storyId: string) => {
-    sendCommand({ type: 'RemoveStoryFromBacklog', payload: { story_id: storyId } });
-  }, [sendCommand]);
+    postAction('remove-story', { story_id: storyId });
+  }, [postAction]);
 
   const updateRole = useCallback((targetId: string, newRole: Role) => {
-    sendCommand({ type: 'UpdateRole', payload: { target_id: targetId, new_role: newRole } });
-  }, [sendCommand]);
+    postAction('role', { target_id: targetId, new_role: newRole });
+  }, [postAction]);
 
   const transferFacilitator = useCallback((targetId: string) => {
-    sendCommand({ type: 'TransferFacilitator', payload: { target_id: targetId } });
-  }, [sendCommand]);
+    postAction('transfer-facilitator', { target_id: targetId });
+  }, [postAction]);
 
   const clearTrackerFeedback = useCallback(() => {
     setTrackerError(null);
@@ -333,4 +294,3 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     clearTrackerFeedback,
   };
 }
-
