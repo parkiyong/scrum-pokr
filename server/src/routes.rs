@@ -6,7 +6,6 @@ use crate::domain::reveal_gate::RoomSnapshotData;
 use crate::domain::slug::validate_slug;
 use crate::domain::tracker::{StorySlice, TrackerConfig, TrackerQuery};
 use crate::sse::handler::sse_room_handler;
-use crate::ws::handler::ws_room_handler;
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{delete, get, patch, post, put};
@@ -662,7 +661,6 @@ pub fn create_router(registry: RoomRegistry) -> Router {
         .route("/api/rooms/:slug/tracker/fetch", post(fetch_backlog))
         .route("/api/rooms/:slug/tracker/sync", post(sync_estimate))
         .route("/api/rooms/:slug/tracker/slices", post(push_story_slices))
-        .route("/ws/rooms/:slug", get(ws_room_handler))
         .with_state(registry);
 
     let client_dist = PathBuf::from("client/dist");

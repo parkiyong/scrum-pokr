@@ -107,8 +107,8 @@ cargo test --test reveal_gate_tests
 cargo test --test tracker_adapter_tests
 cargo test --test tracker_room_actor_tests
 
-# Run WebSocket integration tests
-cargo test --test websocket_integration_tests
+# Run REST & SSE integration tests
+cargo test --test rest_sse_integration_tests
 ```
 
 ### 4.2 Frontend React Tests
@@ -146,12 +146,11 @@ scrum-poke-ai/
 ├── server/                     # Rust backend crate (Tokio / Axum)
 │   ├── src/
 │   │   ├── actor/              # RoomActor, RoomRegistry, and state machine transitions
-│   │   ├── domain/             # Domain entities, Reveal Gate, Tracker Adapters, Markdown Parser
-│   │   ├── ws/                 # Axum WebSocket handlers & broadcast dispatchers
+│   │   ├── sse/                # Axum SSE handlers & event broadcast dispatchers
 │   │   ├── routes.rs           # REST route definitions & SPA fallback handler
 │   │   ├── lib.rs              # Library exports for unit/integration testing
 │   │   └── main.rs             # Application entrypoint
-│   └── tests/                  # Integration tests (WebSockets, Reveal Gate, Tracker Adapters)
+│   └── tests/                  # Integration tests (REST & SSE, Reveal Gate, Tracker Adapters)
 │
 ├── client/                     # React frontend application (EXP Light Mode)
 │   ├── src/
