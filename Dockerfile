@@ -7,7 +7,7 @@ COPY client/ ./
 RUN npm run build
 
 # 2. Build Java Spring Boot server JAR
-FROM maven:3.9.6-eclipse-temurin-25-alpine AS server-builder
+FROM maven:3-eclipse-temurin-25-alpine AS server-builder
 WORKDIR /app/server
 COPY server/pom.xml .
 COPY server/src ./src
