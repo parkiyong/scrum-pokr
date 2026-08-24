@@ -16,6 +16,7 @@ export type RoomAction =
   | { type: 'RESET_ROUND' }
   | { type: 'FINALIZE_STORY'; payload: { estimate?: string | null } }
   | { type: 'SET_STORY'; payload: { story: Story | null } }
+  | { type: 'NEXT_STORY' }
   | { type: 'IMPORT_BACKLOG'; payload: { stories: Story[] } }
   | { type: 'UPDATE_POINT_REFERENCES'; payload: { references: PointReference[] } }
   | { type: 'TOGGLE_EDGE_CASE'; payload: { edgeCaseId: string; checked: boolean } }
@@ -53,14 +54,23 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
     }
 
     case 'START_VOTING': {
+      const shouldResetVotes = state.phase === 'Revealed' || state.phase === 'Finalized';
       return {
         ...state,
         phase: 'Voting',
         consensus: null,
+        participants: shouldResetVotes
+          ? state.participants.map((p) => ({ ...p, vote: null, has_voted: false }))
+          : state.participants,
       };
     }
 
     case 'CAST_VOTE': {
+      // Invariant: Cards are locked once voting phase has concluded
+      if (state.phase !== 'Voting' && state.phase !== 'Idle') {
+        return state;
+      }
+
       const { participantId, vote } = action.payload;
       const hasVoted = vote !== null && vote !== undefined && vote !== '';
       const updatedParticipants = state.participants.map((p) =>
@@ -122,6 +132,30 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
         current_story: action.payload.story,
         phase: 'Idle',
         consensus: null,
+        participants: state.participants.map((p) => ({
+          ...p,
+          vote: null,
+          has_voted: false,
+        })),
+      };
+    }
+
+    case 'NEXT_STORY': {
+      let nextStory: Story | null = null;
+      let updatedBacklog = state.backlog;
+
+      if (state.backlog.length > 0) {
+        nextStory = state.backlog[0];
+        updatedBacklog = state.backlog.slice(1);
+      }
+
+      return {
+        ...state,
+        phase: 'Idle',
+        current_story: nextStory,
+        backlog: updatedBacklog,
+        consensus: null,
+        story_doctor_report: null,
         participants: state.participants.map((p) => ({
           ...p,
           vote: null,

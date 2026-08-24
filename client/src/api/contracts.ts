@@ -76,6 +76,13 @@ export const roomApp = new Hono()
     }
   )
   .post(
+    '/api/rooms/:code/next-story',
+    validator('json', (v) => v as { participant_id: string }),
+    async (c) => {
+      return c.json({ success: true });
+    }
+  )
+  .post(
     '/api/rooms/:code/point-references',
     validator('json', (v) => v as { participant_id: string; references: PointReference[] }),
     async (c) => {

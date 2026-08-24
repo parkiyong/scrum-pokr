@@ -75,8 +75,9 @@ describe('FacilitatorBar component', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders sync estimate button in Finalized phase when active story exists', () => {
+  it('renders sync estimate and next story button in Finalized phase', () => {
     const handleSync = vi.fn();
+    const handleNextStory = vi.fn();
     render(
       <FacilitatorBar
         phase="Finalized"
@@ -92,6 +93,7 @@ describe('FacilitatorBar component', () => {
         onRevealCards={vi.fn()}
         onTriggerReVote={vi.fn()}
         onFinalize={vi.fn()}
+        onNextStory={handleNextStory}
         onSyncEstimate={handleSync}
         isFacilitator={true}
       />
@@ -101,6 +103,11 @@ describe('FacilitatorBar component', () => {
     expect(syncBtn).toBeInTheDocument();
     fireEvent.click(syncBtn);
     expect(handleSync).toHaveBeenCalled();
+
+    const nextBtn = screen.getByRole('button', { name: /Next Story/i });
+    expect(nextBtn).toBeInTheDocument();
+    fireEvent.click(nextBtn);
+    expect(handleNextStory).toHaveBeenCalled();
   });
 
   it('renders SPIDR slices button in Revealed phase', () => {
@@ -129,4 +136,3 @@ describe('FacilitatorBar component', () => {
     expect(handleDecompose).toHaveBeenCalled();
   });
 });
-

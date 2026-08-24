@@ -91,6 +91,29 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     expect(revealedAlice.vote).toBe('5'); // Unmasked!
     expect(revealedBob.vote).toBe('8'); // Unmasked!
     expect(revealedState.consensus).toBeDefined();
+
+    // 9. Verify that voting after reveal is strictly rejected (400 Bad Request)
+    const postRevealVoteRes = await app.request(`/api/rooms/${slug}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participantId: bobId, vote: '13' }),
+    });
+    expect(postRevealVoteRes.status).toBe(400);
+
+    // 10. Advance to Next Story
+    const nextStoryRes = await app.request(`/api/rooms/${slug}/next-story`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participantId: aliceId }),
+    });
+    expect(nextStoryRes.status).toBe(200);
+
+    const nextRoundStateRes = await app.request(`/api/rooms/${slug}?participantId=${bobId}`);
+    const nextRoundState = await nextRoundStateRes.json();
+    expect(nextRoundState.phase).toBe('Idle');
+    expect(nextRoundState.consensus).toBeNull();
+    expect(nextRoundState.participants[0].vote).toBeNull();
+    expect(nextRoundState.participants[0].has_voted).toBe(false);
   });
 
   it('gating check: rejects divergence analysis during Voting phase', async () => {

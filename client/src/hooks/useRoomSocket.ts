@@ -31,6 +31,7 @@ export interface UseRoomSocketReturn {
   revealCards: () => void;
   triggerReVote: () => void;
   finalizeStory: (points?: string) => void;
+  nextStory: () => void;
   selectStory: (story: Story | null) => void;
   selectStoryById: (storyId: string) => void;
   updatePointReferences: (references: PointReference[]) => void;
@@ -338,6 +339,17 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     }
   }, [slug]);
 
+  const nextStory = useCallback(async () => {
+    try {
+      await api.api.rooms[':code']['next-story'].$post({
+        param: { code: slug },
+        json: { participant_id: participantIdRef.current },
+      });
+    } catch (err) {
+      console.error('[RPC] Error advancing next story:', err);
+    }
+  }, [slug]);
+
   const selectStory = useCallback(async (story: Story | null) => {
     try {
       await api.api.rooms[':code'].story.$post({
@@ -569,6 +581,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     revealCards,
     triggerReVote,
     finalizeStory,
+    nextStory,
     selectStory,
     selectStoryById,
     updatePointReferences,

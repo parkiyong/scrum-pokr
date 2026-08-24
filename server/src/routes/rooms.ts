@@ -67,6 +67,11 @@ export const roomRoutes = new Hono()
     const participantId = body.participant_id || body.participantId || '';
 
     const room = roomRegistry.getOrCreate(code);
+    const phase = room.getState().phase;
+    if (phase !== 'Voting' && phase !== 'Idle') {
+      return c.json({ error: 'Voting is closed for this round' }, 400);
+    }
+
     room.dispatch({
       type: 'CAST_VOTE',
       payload: { participantId, vote: body.vote || null },
@@ -202,5 +207,13 @@ export const roomRoutes = new Hono()
       type: 'REMOVE_STORY',
       payload: { storyId },
     });
+    return c.json({ success: true });
+  })
+
+  // 17. Advance to Next Story in Backlog
+  .post('/api/rooms/:code/next-story', zValidator('json', participantActionSchema), async (c) => {
+    const code = c.req.param('code');
+    const room = roomRegistry.getOrCreate(code);
+    room.dispatch({ type: 'NEXT_STORY' });
     return c.json({ success: true });
   });

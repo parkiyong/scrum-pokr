@@ -3,7 +3,7 @@
 # 02: "Next Story" Fails to Advance Backlog and Reset Previous Round Votes
 
 **Category:** `bug`
-**Status:** `ready-for-agent`
+**Status:** `closed`
 **Blocked by:** none
 
 ## Problem Statement
