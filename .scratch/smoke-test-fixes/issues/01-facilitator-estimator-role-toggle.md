@@ -3,7 +3,7 @@
 # 01: Facilitator Can Participate as Estimator or Observer
 
 **Category:** `bug`
-**Status:** `ready-for-agent`
+**Status:** `closed`
 **Blocked by:** none
 
 ## Problem Statement
