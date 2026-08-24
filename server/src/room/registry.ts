@@ -62,6 +62,9 @@ export class RoomRegistry {
       this.sweeperInterval = setInterval(() => {
         this.evictInactiveRooms();
       }, 10 * 60 * 1000); // 10 minutes
+      if (this.sweeperInterval.unref) {
+        this.sweeperInterval.unref();
+      }
     }
   }
 
