@@ -597,6 +597,26 @@ pub async fn push_story_slices(
     Ok(Json(GenericActionResponse { success: true }))
 }
 
+pub async fn leave_room(
+    Path(slug): Path<String>,
+    headers: HeaderMap,
+    State(registry): State<RoomRegistry>,
+) -> Result<Json<GenericActionResponse>, StatusCode> {
+    let sender_id = get_participant_id(&headers);
+    let handle = registry.get_or_create(&slug).await;
+    if handle
+        .tx
+        .send(RoomCommand::Disconnect {
+            participant_id: sender_id,
+        })
+        .await
+        .is_err()
+    {
+        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+    }
+    Ok(Json(GenericActionResponse { success: true }))
+}
+
 pub fn create_router(registry: RoomRegistry) -> Router {
     let mut router = Router::new()
         .route("/api/health", get(health_check))
@@ -610,6 +630,7 @@ pub fn create_router(registry: RoomRegistry) -> Router {
             patch(update_participant_role),
         )
         .route("/api/rooms/:slug/facilitator", post(transfer_facilitator))
+        .route("/api/rooms/:slug/leave", post(leave_room))
         .route("/api/rooms/:slug/voting/start", post(start_voting))
         .route("/api/rooms/:slug/voting/vote", post(cast_vote))
         .route("/api/rooms/:slug/voting/retract", post(retract_vote))

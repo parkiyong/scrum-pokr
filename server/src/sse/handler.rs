@@ -7,11 +7,34 @@ use futures::Stream;
 use serde::Deserialize;
 use std::convert::Infallible;
 use std::time::Duration;
+use tokio::sync::mpsc;
 use tracing::debug;
 
 #[derive(Debug, Deserialize)]
 pub struct SseParams {
     pub participant_id: Option<String>,
+}
+
+struct DisconnectGuard {
+    participant_id: Option<String>,
+    room_tx: mpsc::Sender<RoomCommand>,
+}
+
+impl Drop for DisconnectGuard {
+    fn drop(&mut self) {
+        if let Some(ref pid) = self.participant_id {
+            debug!("SSE connection dropped for participant {}", pid);
+            let tx = self.room_tx.clone();
+            let pid = pid.clone();
+            tokio::spawn(async move {
+                let _ = tx
+                    .send(RoomCommand::Disconnect {
+                        participant_id: pid,
+                    })
+                    .await;
+            });
+        }
+    }
 }
 
 pub async fn sse_room_handler(
@@ -25,6 +48,11 @@ pub async fn sse_room_handler(
     let pid = params.participant_id;
 
     let stream = async_stream::stream! {
+        let _guard = DisconnectGuard {
+            participant_id: pid.clone(),
+            room_tx: room_tx.clone(),
+        };
+
         let target_pid = pid.clone().unwrap_or_else(|| "anonymous".to_string());
 
         // 1. Send initial room snapshot with Reveal Gate projection
@@ -74,16 +102,6 @@ pub async fn sse_room_handler(
             if let Ok(json_str) = serde_json::to_string(&msg_to_send) {
                 yield Ok(Event::default().event(event_name).data(json_str));
             }
-        }
-
-        // 3. Disconnect cleanup on SSE stream drop
-        if let Some(ref p) = pid {
-            debug!("SSE stream closed for participant {}", p);
-            let _ = room_tx
-                .send(RoomCommand::Disconnect {
-                    participant_id: p.clone(),
-                })
-                .await;
         }
     };
 
