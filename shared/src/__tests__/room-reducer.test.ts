@@ -24,7 +24,7 @@ describe('Room Reducer State Transitions', () => {
           id: 'p-1',
           name: 'Alice',
           avatar: '',
-          role: 'Facilitator',
+          role: 'Estimator',
           connected: true,
           has_voted: false,
           vote: null,
@@ -34,6 +34,7 @@ describe('Room Reducer State Transitions', () => {
 
     expect(s1.participants).toHaveLength(1);
     expect(s1.facilitator_id).toBe('p-1');
+    expect(s1.participants[0].role).toBe('Estimator');
 
     const s2 = roomReducer(s1, {
       type: 'JOIN',
@@ -42,7 +43,7 @@ describe('Room Reducer State Transitions', () => {
           id: 'p-2',
           name: 'Bob',
           avatar: '',
-          role: 'Estimator',
+          role: 'Observer',
           connected: true,
           has_voted: false,
           vote: null,
@@ -52,6 +53,34 @@ describe('Room Reducer State Transitions', () => {
 
     expect(s2.participants).toHaveLength(2);
     expect(s2.facilitator_id).toBe('p-1');
+    expect(s2.participants[1].role).toBe('Observer');
+  });
+
+  it('allows facilitator to toggle between Estimator and Observer without losing authority', () => {
+    const s1 = roomReducer(initial, {
+      type: 'JOIN',
+      payload: {
+        participant: { id: 'p-1', name: 'Alice', avatar: '', role: 'Estimator', connected: true, has_voted: false, vote: null },
+      },
+    });
+    expect(s1.facilitator_id).toBe('p-1');
+    expect(s1.participants[0].role).toBe('Estimator');
+
+    // Facilitator switches to Observer
+    const s2 = roomReducer(s1, {
+      type: 'UPDATE_ROLE',
+      payload: { targetId: 'p-1', newRole: 'Observer' },
+    });
+    expect(s2.facilitator_id).toBe('p-1');
+    expect(s2.participants[0].role).toBe('Observer');
+
+    // Facilitator switches back to Estimator
+    const s3 = roomReducer(s2, {
+      type: 'UPDATE_ROLE',
+      payload: { targetId: 'p-1', newRole: 'Estimator' },
+    });
+    expect(s3.facilitator_id).toBe('p-1');
+    expect(s3.participants[0].role).toBe('Estimator');
   });
 
   it('transitions from Idle to Voting on CAST_VOTE', () => {

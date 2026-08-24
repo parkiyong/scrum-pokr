@@ -182,7 +182,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           id: p.id,
           nickname: p.name || p.nickname || '',
           avatar: p.avatar || '',
-          role: (p.role === 'FACILITATOR' || p.role === 'VOTER' || p.role === 'Estimator') ? 'Estimator' : 'Observer',
+          role: p.role === 'Observer' ? 'Observer' : 'Estimator',
           connected: p.connected !== undefined ? p.connected : true,
           voted: p.has_voted !== undefined ? p.has_voted : Boolean(p.voted || p.vote),
           vote: p.vote !== undefined ? p.vote : null,

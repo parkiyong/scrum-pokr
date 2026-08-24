@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const roleSchema = z.enum(['Facilitator', 'Estimator', 'Observer']);
+export const roleSchema = z.enum(['Estimator', 'Observer']);
 
 export const storySchema = z.object({
   id: z.string(),

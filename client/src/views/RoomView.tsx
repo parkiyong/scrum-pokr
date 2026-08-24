@@ -388,7 +388,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
         isOpen={isJoinModalOpen}
         initialNickname={myProfile?.nickname}
         initialAvatar={myProfile?.avatar}
-        initialRole={myProfile?.role}
+        initialRole={myParticipant?.role || myProfile?.role}
         onJoin={handleJoinModalSubmit}
         onClose={() => setIsJoinModalOpen(false)}
       />

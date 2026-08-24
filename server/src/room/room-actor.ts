@@ -86,7 +86,7 @@ export class RoomActor {
       : `p-${Math.random().toString(36).substring(2, 10)}`;
 
     const isFirst = this.state.participants.length === 0 || !this.state.facilitator_id;
-    const assignedRole: Role = isFirst ? 'Facilitator' : (role || 'Estimator');
+    const assignedRole: Role = role || 'Estimator';
 
     const participant: Participant = {
       id: pid,

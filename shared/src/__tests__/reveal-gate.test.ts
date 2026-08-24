@@ -14,9 +14,9 @@ describe('Reveal Gate & Consensus Invariants', () => {
     story_doctor_report: null,
     consensus: null,
     participants: [
-      { id: 'p-1', name: 'Alice', avatar: '', role: 'Facilitator', connected: true, has_voted: true, vote: '5' },
+      { id: 'p-1', name: 'Alice', avatar: '', role: 'Estimator', connected: true, has_voted: true, vote: '5' },
       { id: 'p-2', name: 'Bob', avatar: '', role: 'Estimator', connected: true, has_voted: true, vote: '8' },
-      { id: 'p-3', name: 'Charlie', avatar: '', role: 'Estimator', connected: true, has_voted: false, vote: null },
+      { id: 'p-3', name: 'Charlie', avatar: '', role: 'Observer', connected: true, has_voted: false, vote: null },
     ],
   };
 
@@ -58,11 +58,11 @@ describe('Reveal Gate & Consensus Invariants', () => {
     expect(masked.consensus?.total_votes).toBe(2);
   });
 
-  it('correctly calculates 100% consensus', () => {
+  it('correctly calculates 100% consensus including voting facilitator', () => {
     const participants = [
-      { id: 'p-1', name: 'Alice', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '5' },
+      { id: 'p-1', name: 'Alice (Facilitator)', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '5' },
       { id: 'p-2', name: 'Bob', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '5' },
-      { id: 'p-3', name: 'Charlie', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '5' },
+      { id: 'p-3', name: 'Charlie', avatar: '', role: 'Observer' as const, connected: true, has_voted: false, vote: null },
     ];
 
     const consensus = computeConsensus(participants);
@@ -70,5 +70,19 @@ describe('Reveal Gate & Consensus Invariants', () => {
     expect(consensus?.category).toBe('Consensus');
     expect(consensus?.consensus_pct).toBe(100);
     expect(consensus?.suggested_points).toBe('5');
+    expect(consensus?.total_votes).toBe(2);
+  });
+
+  it('handles non-voting observer facilitator cleanly', () => {
+    const participants = [
+      { id: 'p-1', name: 'Alice (Observer Facilitator)', avatar: '', role: 'Observer' as const, connected: true, has_voted: false, vote: null },
+      { id: 'p-2', name: 'Bob', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '3' },
+      { id: 'p-3', name: 'Charlie', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: '3' },
+    ];
+
+    const consensus = computeConsensus(participants);
+    expect(consensus).not.toBeNull();
+    expect(consensus?.total_votes).toBe(2);
+    expect(consensus?.suggested_points).toBe('3');
   });
 });

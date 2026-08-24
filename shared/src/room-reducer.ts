@@ -184,9 +184,6 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
       return {
         ...state,
         facilitator_id: action.payload.targetId,
-        participants: state.participants.map((p) =>
-          p.id === action.payload.targetId ? { ...p, role: 'Facilitator' } : p
-        ),
       };
     }
 

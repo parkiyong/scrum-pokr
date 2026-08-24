@@ -26,7 +26,7 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     const joinAliceRes = await app.request(`/api/rooms/${slug}/join`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Alice', role: 'Facilitator' }),
+      body: JSON.stringify({ name: 'Alice', role: 'Estimator' }),
     });
     expect(joinAliceRes.status).toBe(200);
     const { participant_id: aliceId } = await joinAliceRes.json();

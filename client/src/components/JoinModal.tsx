@@ -31,6 +31,14 @@ export const JoinModal: React.FC<JoinModalProps> = ({
   const [avatar, setAvatar] = useState(initialAvatar || 'indigo');
   const [role, setRole] = useState<Role>(initialRole || 'Estimator');
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setNickname(initialNickname || '');
+      setAvatar(initialAvatar || 'indigo');
+      setRole(initialRole || 'Estimator');
+    }
+  }, [isOpen, initialNickname, initialAvatar, initialRole]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {

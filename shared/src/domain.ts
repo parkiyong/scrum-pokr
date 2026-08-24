@@ -1,4 +1,4 @@
-export type Role = 'Facilitator' | 'Estimator' | 'Observer';
+export type Role = 'Estimator' | 'Observer';
 
 export type EstimationPhase =
   | 'Idle'
