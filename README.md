@@ -1,8 +1,8 @@
 # 🃏 Scrum Pokr AI
 
-> A real-time, zero-auth Planning Poker estimation platform featuring a high-performance **Rust (Tokio / Axum)** backend, **React 18 + TypeScript + Tailwind CSS** frontend, and a **server-enforced reveal gate** that eliminates cognitive anchoring bias.
+> A real-time, zero-auth Planning Poker estimation platform featuring a high-performance **Java 25 (Spring Boot 4.1+)** backend with **Server-Sent Events (SSE) + REST**, **React 18 + TypeScript + Tailwind CSS** frontend, and a **server-enforced reveal gate** that eliminates cognitive anchoring bias.
 
-📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🧠 [OKF Knowledge Bundle](.okf/index.md) · 🌐 [Product Spec](.scratch/scrum-poker/spec.md)
+📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🌐 [Product Spec](.scratch/scrum-poker/spec.md)
 
 ---
 
@@ -28,14 +28,14 @@
 │   │  & INVEST Scorecard  │ & 3D Card Flipping   │ & Reference Deck  │  │
 │   └──────────────────────┴──────────────────────┴───────────────────┘  │
 └───────────────────────────────────▲────────────────────────────────────┘
-                                    │ WebSocket (JSON RPC)
+                                    │ SSE (GET /events) + REST (POST)
 ┌───────────────────────────────────▼────────────────────────────────────┐
-│                       Rust Backend (Tokio / Axum)                      │
+│                  Java 25 Backend (Spring Boot 4.1+)                    │
 │  ┌─────────────────────────┐ ┌──────────────────────────────────────┐  │
-│  │   In-Memory Room Actors │ │    AI Advisory Engine                │  │
-│  │   - 7-Phase State Mach. │ │    - Story Doctor (INVEST + Edge)    │  │
-│  │   - Reveal Gate Filter  │ │    - Divergence Analyzer (Spread)    │  │
-│  │   - Socket Reconnection │ │    - SPIDR Vertical Slicer           │  │
+│  │   In-Memory Room State  │ │    SSE Emitter Registry & Broadcast  │  │
+│  │   - 4-Phase State Mach. │ │    - Masked Room State Fanout        │  │
+│  │   - Reveal Gate Filter  │ │    - Heartbeat & Keep-Alive Emitter  │  │
+│  │   - Thread-Safe Handles │ │    - Reconnection & Session Recovery │  │
 │  └────────────┬────────────┘ └──────────────────┬───────────────────┘  │
 └───────────────┼─────────────────────────────────┼──────────────────────┘
                 │ Async Persistence               │ Nearest-Neighbor Vector Lookups
@@ -51,7 +51,7 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
-* **Rust**: `1.80+` (`cargo`)
+* **Java**: `25+` & **Maven**: `3.9+`
 * **Node.js**: `v20+` & `npm`
 * **Docker & Docker Compose**
 
@@ -100,29 +100,21 @@ cd client && npm test
 ## 📂 Project Structure
 
 ```
-├── server/               # Rust (Tokio / Axum) server
-│   ├── src/
-│   │   ├── actor/        # In-memory RoomActor state machine & RoomRegistry
-│   │   ├── domain/       # Models, 6-char Room Code, Reveal Gate, Tracker Adapters & Markdown Parser
-│   │   ├── ws/           # Axum WebSocket connection & broadcast dispatchers
-│   │   ├── routes.rs     # REST endpoints & static frontend asset serving
-│   │   └── main.rs       # Server entrypoint
-│   └── tests/            # Automated unit, integration, and tracker adapter test suites
+├── server/               # Spring Boot Java 25 backend
+│   ├── pom.xml           # Maven build configuration
+│   └── src/
+│       ├── main/java/    # REST controllers, SSE streaming endpoints, models & services
+│       ├── main/resources/# application.properties & static assets
+│       └── test/java/    # Reveal Gate & Spring Boot integration test suites
 │
 ├── client/               # React 18 + TypeScript + Tailwind CSS client (EXP Light Mode)
 │   ├── src/
 │   │   ├── components/   # Felt Poker Arena, 3D Flip Cards, Backlog Drawer, Connect Modal, SPIDR Slicer
-│   │   ├── hooks/        # useRoomSocket hook with zero-auth session recovery
+│   │   ├── hooks/        # useRoomSocket hook (SSE + REST) with session recovery
 │   │   ├── views/        # LobbyView (Home) & RoomView (Live Poker Arena)
+│   │   ├── types/        # TypeScript types and data models
 │   │   └── utils/        # localStorage session management
 │   └── src/__tests__/    # Vitest component and hook test suites
-│
-├── .okf/                 # Open Knowledge Format (v0.2) knowledge bundle
-│   ├── architecture/     # Tokio actor model & multi-room registry concepts
-│   ├── domain/           # Estimation phases, roles, room codes & consensus engine
-│   ├── security/         # Server reveal gate & zero-auth session recovery
-│   ├── protocol/         # Tagged JSON RPC WebSocket schemas
-│   └── decisions/        # Architectural Decision Records (ADRs)
 │
 ├── USER_GUIDE.md         # Comprehensive user & facilitator guide
 ├── DEVELOPER_GUIDE.md    # Developer setup, architecture & testing guide
@@ -137,7 +129,7 @@ cd client && npm test
 * 📖 **[User Guide](USER_GUIDE.md)** — Step-by-step facilitator and estimator workflows, room code routing, and multi-user testing.
 * 🛠️ **[Developer Guide](DEVELOPER_GUIDE.md)** — Deep dive into system architecture, environment configuration, testing, and security invariants.
 * 🤝 **[Contributing Guidelines](CONTRIBUTING.md)** — Branching, commit conventions, TDD practices, and the Two-Axis review checklist.
-* 🧠 **[OKF Knowledge Bundle](.okf/index.md)** — Architectural decision records, domain definitions, and protocol specifications.
+* 🌐 **[Product Spec](.scratch/scrum-poker/spec.md)** — Technical product specification and roadmap.
 * 🛡️ **[Security Policy](SECURITY.md)** — Vulnerability disclosure process and Server Reveal Gate security invariants.
 * 📋 **[Changelog](CHANGELOG.md)** — Release notes and milestone progress.
 * 📜 **[Code of Conduct](CODE_OF_CONDUCT.md)** — Community standards and enforcement guidelines.

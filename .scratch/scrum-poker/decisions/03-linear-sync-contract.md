@@ -2,7 +2,7 @@
 
 Type: research
 Status: closed
-Superseded by: .okf/decisions/ADR-005-unified-issue-tracker-sync.md
+Superseded by: docs/JAVA_MIGRATION_RECOMMENDATION.md
 Blocked by: 01
 
 ## Question

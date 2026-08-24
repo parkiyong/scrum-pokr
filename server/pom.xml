@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.4</version>
+        <version>4.1.1</version>
         <relativePath/>
     </parent>
 
@@ -15,10 +15,10 @@
     <artifactId>server</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <name>Scrum Pokr Server</name>
-    <description>Spring Boot Java 21 Backend for Scrum Pokr AI using SSE and REST</description>
+    <description>Spring Boot Java 25 Backend for Scrum Pokr AI using SSE and REST</description>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
     </properties>
 
     <dependencies>
@@ -41,6 +41,15 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <spring.classformat.ignore>true</spring.classformat.ignore>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

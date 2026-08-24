@@ -24,7 +24,7 @@ Default triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-f
 
 ### Domain docs
 
-Single-context (`CONTEXT.md` at root, ADRs in `.okf/decisions/` and `docs/adr/`). See `docs/agents/domain.md`.
+Single-context (`CONTEXT.md` at root and ADRs in `docs/adr/`). See `docs/agents/domain.md`.
 
 ---
 
@@ -34,41 +34,18 @@ This repository organizes documentation following standard open-source framework
 
 ### 1. Diátaxis Documentation Framework
 
-Documentation is strictly separated across the 4 Diátaxis quadrants:
+Documentation is separated across the 4 Diátaxis quadrants:
 
 * **Tutorials (Learning-Oriented)**:
   * [`README.md`](README.md): Project overview, core highlights, and 3-step quick start.
 * **How-To Guides (Task/Operation-Oriented)**:
   * [`USER_GUIDE.md`](USER_GUIDE.md): End-user and Facilitator room creation, voting, and multi-browser testing recipes.
-  * [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md): Developer operational workflows (Docker `pgvector` provisioning, Cargo/Vite servers, test execution, linting).
+  * [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md): Developer operational workflows (Docker provisioning, Spring Boot / Vite servers, test execution, linting).
 * **Reference (Information/Contract-Oriented)**:
-  * [`.okf/protocol/`](.okf/protocol/index.md): WebSocket tagged JSON RPC message schemas and payload contracts.
-  * [`.okf/architecture/`](.okf/architecture/index.md): Technical subsystem models (Tokio actors, React client, Docker stack).
+  * [`docs/JAVA_MIGRATION_RECOMMENDATION.md`](docs/JAVA_MIGRATION_RECOMMENDATION.md): SSE + REST message schemas, endpoints, and architecture.
 * **Explanation (Understanding/Rationale-Oriented)**:
   * [`CONTEXT.md`](CONTEXT.md): Authoritative domain glossary and terminology boundaries.
-  * [`.okf/domain/`](.okf/domain/index.md): Estimation phases, consensus calculations, and participant role models.
-  * [`.okf/decisions/`](.okf/decisions/index.md): Architectural Decision Records (ADRs).
-
----
-
-### 2. Open Knowledge Format (OKF v0.2) Standard
-
-The [`.okf/`](.okf/index.md) bundle serves as the **canonical single source of truth** for all architectural and domain concepts.
-
-* **Hard Conformance Rule**: Every non-reserved `.md` file must contain valid YAML frontmatter with a non-empty `type` field.
-* **Standard Metadata**: Use `title`, `description`, `status` (`draft` | `stable` | `deprecated`), `generated` (`by`, `at`), `sources` (`id`, `resource`, `title`), and `tags`.
-* **Reserved Files**:
-  * `index.md`: Directory tree navigation (bundle root includes `okf_version: "0.2"`).
-  * `log.md`: ISO-dated chronological change history (newest first).
-* **Anti-Drift Rule**: Operational guides (`DEVELOPER_GUIDE.md`, `USER_GUIDE.md`) must link to `.okf/` concepts rather than inlining duplicate architectural or protocol explanations.
-
----
-
-### 3. Markdown Architectural Decision Records (MADR)
-
-Significant technical decisions and trade-offs are documented under [`.okf/decisions/`](.okf/decisions/index.md) using the MADR standard:
-* **Naming**: `ADR-XXX-<short-slug>.md`
-* **Structure**: `Context` → `Decision` → `Consequences` (Positive & Negative) → `Sources & Invariants`.
+  * [`.scratch/scrum-poker/decisions/`](.scratch/scrum-poker/decisions/): Architectural Decision Records (ADRs).
 
 ---
 
