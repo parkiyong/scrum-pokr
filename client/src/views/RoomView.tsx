@@ -116,7 +116,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
       />
 
       {/* Main Content Arena */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 py-3 flex flex-col">
+      <main className="flex-1 max-w-[90%] mx-auto w-full px-2 sm:px-4 py-3 flex flex-col">
         {/* Active Story Banner */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 mb-2 shadow-[0_4px_20px_rgba(15,23,42,0.04)]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -216,7 +216,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
         {/* 3-Column Responsive Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 items-start mt-1">
           {/* Left Column: Story Doctor Quality Gate */}
-          <div className="hidden lg:block lg:col-span-4">
+          <div className="hidden lg:block lg:col-span-3 xl:col-span-3">
             <StoryDoctorPanel
               story={activeStory || { id: 'sample-1', title: 'Sample User Story', description: 'As a user, I want to estimate user stories collaboratively so that our team aligns on effort.', acceptance_criteria: ['Collaborative estimation', 'Consensus detection'] }}
               report={storyDoctorReport}
@@ -228,7 +228,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
           </div>
 
           {/* Center Column: Virtual Poker Table + Docked Card Deck */}
-          <div className="col-span-1 lg:col-span-5 flex flex-col items-center justify-between">
+          <div className="col-span-1 lg:col-span-6 xl:col-span-6 flex flex-col items-center justify-between">
             <PokerTableArena
               participants={participants.length > 0 ? participants : [
                 {
@@ -258,7 +258,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
           </div>
 
           {/* Right Column: Point Reference Library */}
-          <div className="hidden lg:block lg:col-span-3">
+          <div className="hidden lg:block lg:col-span-3 xl:col-span-3">
             <PointReferenceLibrary
               references={pointReferences}
               isFacilitator={isFacilitator}
