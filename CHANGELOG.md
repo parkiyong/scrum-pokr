@@ -27,4 +27,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Session Continuity**: Automatic `localStorage` participant session recovery on disconnect or page refresh.
 - **Facilitator Failover**: Automatic authority promotion to senior connected estimator on facilitator disconnect.
 - **Local Infrastructure**: Docker Compose configuration for PostgreSQL with `pgvector` extension and multi-stage container build.
-- **Documentation Suite**: Standardized `README.md`, `USER_GUIDE.md`, `DEVELOPER_GUIDE.md`, `CONTRIBUTING.md`, and Open Knowledge Format (`.okf/`) bundle.
+- **Documentation Suite**: Standardized `README.md`, `USER_GUIDE.md`, `DEVELOPER_GUIDE.md`, and `CONTRIBUTING.md`.

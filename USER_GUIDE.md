@@ -1,8 +1,8 @@
 # Scrum Pokr AI — User Guide
 
-> A real-time, zero-auth Planning Poker estimation platform designed for agile teams, featuring a high-performance **Rust (Tokio / Axum)** backend, **React 18 + TypeScript + Tailwind CSS** frontend, and a **server-enforced reveal gate** that eliminates anchoring bias.
+> A real-time, zero-auth Planning Poker estimation platform designed for agile teams, featuring a high-performance **Java 25 (Spring Boot 4.1+)** backend with **Server-Sent Events (SSE) + REST**, **React 18 + TypeScript + Tailwind CSS** frontend, and a **server-enforced reveal gate** that eliminates anchoring bias.
 
-📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🧠 [OKF Knowledge Bundle](.okf/index.md) · 🌐 [Product Spec](.scratch/scrum-poker/spec.md)
+📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🌐 [Product Spec](.scratch/scrum-poker/spec.md)
 
 ---
 

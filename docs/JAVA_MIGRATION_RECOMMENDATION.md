@@ -14,21 +14,21 @@ Transitioning to **SSE (`text/event-stream`)** for real-time downstream updates 
 1. **Bypasses Strict Corporate Firewalls**: Operates transparently over standard HTTP/1.1 and HTTP/2 (ports 80 / 443) as standard chunked HTTP responses.
 2. **Built-in Auto-Reconnect & Event Framing**: Browsers natively auto-reconnect SSE streams (`EventSource`) with backoff and tracking headers (`Last-Event-ID`).
 3. **Stateless Command Processing**: Client interactions are standard REST endpoints, allowing independent authentication, rate-limiting, and standard APM observability.
-4. **Ideal Fit for Java 21 Virtual Threads**: Virtual Threads make handling thousands of concurrent, long-lived SSE HTTP streaming connections virtually overhead-free.
+4. **Ideal Fit for Java 25 Virtual Threads**: Virtual Threads make handling thousands of concurrent, long-lived SSE HTTP streaming connections virtually overhead-free.
 
 ---
 
 ## 🏆 Recommended Technology Stack
 
-We recommend two distinct architectural options tailored to team priorities: **Option 1 (Spring Boot 3.3+ with Java 21 Virtual Threads)** as the primary recommendation for maximum developer productivity, and **Option 2 (Quarkus 3.x + Mutiny SSE)** for maximum resource efficiency.
+We recommend two distinct architectural options tailored to team priorities: **Option 1 (Spring Boot 4.1+ with Java 25 Virtual Threads)** as the primary recommendation for maximum developer productivity, and **Option 2 (Quarkus 3.x + Mutiny SSE)** for maximum resource efficiency.
 
 ### Stack Option 1: Enterprise Standard (Recommended)
-**Spring Boot 3.3+ with Java 21 (Virtual Threads)**
+**Spring Boot 4.1+ with Java 25 (Virtual Threads)**
 
 | Component | Java Library / Framework | Purpose / Notes |
 | :--- | :--- | :--- |
-| **Runtime & Language** | **Java 21 LTS** | Virtual Threads (`Thread.ofVirtual()`), Records, Pattern Matching, Sealed Interfaces. |
-| **Core Framework** | **Spring Boot 3.3+** | Web layer, dependency injection, REST controllers, auto-configuration. |
+| **Runtime & Language** | **Java 25 LTS** | Virtual Threads (`Thread.ofVirtual()`), Records, Pattern Matching, Sealed Interfaces. |
+| **Core Framework** | **Spring Boot 4.1+** | Web layer, dependency injection, REST controllers, auto-configuration. |
 | **SSE Real-Time Engine** | **Spring MVC `SseEmitter`** (or Spring WebFlux `Flux<ServerSentEvent>`) | Manages non-blocking long-lived HTTP SSE streams. Works seamlessly through corporate proxies. |
 | **JSON & Protocol** | **Jackson 2.17+** | High-performance JSON serialization with custom masking serializers for Reveal Gate. |
 | **Database & Vector Search** | **Spring Data JPA + Spring AI `PgVectorStore`** / **Flyway** | Postgres persistence & 1536-dim IVFFlat nearest-neighbor vector search. |
@@ -64,7 +64,7 @@ We recommend two distinct architectural options tailored to team priorities: **O
                        │ HTTP POST /api/rooms/{code}/reveal                   │ (text/event-stream)
                        ▼                                                      │
 ┌─────────────────────────────────────────────────────────────────────────────┼────────────────────────────┐
-│                                    Java 21 / Spring Boot 3 Backend          │                            │
+│                                    Java 25 / Spring Boot 4 Backend          │                            │
 │                                                                             │                            │
 │  ┌───────────────────────────────────┐                            ┌─────────┴────────────────────────┐   │
 │  │    REST Controller Layer          │                            │     SSE Stream Emitter Registry  │   │
@@ -129,7 +129,7 @@ Clients execute actions via standard HTTP POST endpoints with JSON bodies.
 
 ---
 
-## 🛠️ Java Implementation Details (Spring Boot 3 + Virtual Threads)
+## 🛠️ Java Implementation Details (Spring Boot 4 + Virtual Threads)
 
 ### 1. SSE Stream Controller with Virtual Threads
 ```java

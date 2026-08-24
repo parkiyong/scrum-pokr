@@ -2,7 +2,7 @@
 
 > Development workflows, coding standards, issue tracker conventions, and pull request procedures for **Scrum Pokr AI**.
 
-📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🧠 [OKF Knowledge Bundle](.okf/index.md) · 🌐 [Product Spec](.scratch/scrum-poker/spec.md)
+📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🌐 [Product Spec](.scratch/scrum-poker/spec.md)
 
 ---
 
@@ -115,7 +115,7 @@ All PRs are reviewed against two independent axes before merging:
 ## 6. Architectural Decisions (ADRs)
 
 If a change introduces a significant architectural shift, new dependency, or protocol alteration:
-1. Propose and document the decision in `.okf/decisions/` or `.scratch/scrum-poker/decisions/`.
+1. Propose and document the decision in `.scratch/scrum-poker/decisions/` or `docs/adr/`.
 2. Follow the established ADR format (Context, Decision, Consequences, Invariants).
 3. Update [spec.md](.scratch/scrum-poker/spec.md) and [CONTEXT.md](CONTEXT.md) accordingly.
 

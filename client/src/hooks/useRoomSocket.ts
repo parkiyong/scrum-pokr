@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ConnectionPreview,
+  ConsensusCategory,
+  ConsensusSummary,
   LocalSessionProfile,
   PointReference,
   Role,
@@ -51,7 +53,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
   const [roomState, setRoomState] = useState<RoomSnapshotData | null>(null);
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
   const [myProfile, setMyProfile] = useState<LocalSessionProfile | null>(() => getStoredProfile(slug));
-  const [connectionPreview, setConnectionPreview] = useState<ConnectionPreview | null>(null);
+  const [connectionPreview] = useState<ConnectionPreview | null>(null);
   const [trackerError, setTrackerError] = useState<string | null>(null);
   const [syncFeedback, setSyncFeedback] = useState<{ storyId: string; success: boolean; message?: string } | null>(null);
 
@@ -88,7 +90,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           participant_id: profile.participant_id,
           name: nickname,
           avatar: avatar || '',
-          role: role || 'VOTER',
+          role: role || 'Estimator',
         }),
       });
     } catch (err) {
@@ -113,47 +115,137 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       }
     };
 
+function computeConsensusFromParticipants(participants: { vote?: string; role: string }[]): ConsensusSummary | null {
+  const votes = participants
+    .filter((p) => p.vote !== undefined && p.vote !== null && p.vote !== '' && p.vote !== '?')
+    .map((p) => String(p.vote));
+
+  if (votes.length === 0) return null;
+
+  const counts: Record<string, number> = {};
+  votes.forEach((v) => {
+    counts[v] = (counts[v] || 0) + 1;
+  });
+
+  let mode = votes[0];
+  let maxCount = 0;
+  Object.entries(counts).forEach(([val, count]) => {
+    if (count > maxCount) {
+      maxCount = count;
+      mode = val;
+    }
+  });
+
+  const consensusPct = Math.round((maxCount / votes.length) * 100);
+
+  const numVotes = votes.map((v) => parseFloat(v)).filter((n) => !isNaN(n));
+  let minVote: string | undefined;
+  let maxVote: string | undefined;
+  let spread: number | undefined;
+
+  if (numVotes.length > 0) {
+    const minN = Math.min(...numVotes);
+    const maxN = Math.max(...numVotes);
+    minVote = String(minN);
+    maxVote = String(maxN);
+    spread = maxN - minN;
+  }
+
+  let category: ConsensusCategory = 'Consensus';
+  if (consensusPct === 100) {
+    category = 'Consensus';
+  } else if (spread !== undefined && spread > 5) {
+    category = 'WideSpread';
+  } else if (consensusPct >= 60) {
+    category = 'HighOutlier';
+  } else {
+    category = 'BimodalSplit';
+  }
+
+  return {
+    category,
+    suggested_points: mode,
+    consensus_pct: consensusPct,
+    agreement_count: maxCount,
+    total_votes: votes.length,
+    min_vote: minVote,
+    max_vote: maxVote,
+  };
+}
+
     es.addEventListener('room_state', (event) => {
       try {
         const state = JSON.parse(event.data);
+        const computedPhase: RoomSnapshotData['phase'] =
+          state.phase === 'REVEALED' ? 'Revealed' :
+          state.phase === 'VOTING' ? 'Voting' :
+          state.phase === 'FINALIZED' ? 'Finalized' : 'Idle';
+
+        const mappedParticipants = (state.participants || []).map((p: any) => ({
+          id: p.id,
+          nickname: p.name,
+          avatar: p.avatar || '',
+          role: (p.role === 'FACILITATOR' || p.role === 'VOTER' || p.role === 'Estimator') ? 'Estimator' : 'Observer',
+          connected: true,
+          voted: p.has_voted,
+          vote: p.vote,
+        }));
+
+        const mappedConsensus = (computedPhase === 'Revealed' || computedPhase === 'Finalized')
+          ? computeConsensusFromParticipants(mappedParticipants)
+          : null;
+
         const mappedState: RoomSnapshotData = {
-          code: state.short_code || state.slug,
-          phase: state.phase === 'REVEALED' ? 'Revealed' : state.phase === 'VOTING' ? 'Voting' : state.phase === 'FINALIZED' ? 'Finalized' : 'Idle',
-          participants: (state.participants || []).map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            avatar: p.avatar || '',
-            role: p.role || 'VOTER',
-            voted: p.has_voted,
-            vote: p.vote,
-          })),
-          current_story: state.current_story ? {
+          slug: state.slug,
+          short_code: state.short_code || state.slug,
+          phase: computedPhase,
+          round_number: 1,
+          active_tracker_provider: undefined,
+          tracker_connected: false,
+          consensus: mappedConsensus,
+          participants: mappedParticipants,
+          active_story: state.current_story ? {
             id: state.current_story.id,
             title: state.current_story.title,
             description: state.current_story.description,
+            acceptance_criteria: state.current_story.acceptance_criteria || [],
             points: state.current_story.points || state.current_story.estimate,
           } : null,
           backlog: (state.backlog || []).map((s: any) => ({
             id: s.id,
             title: s.title,
             description: s.description,
+            acceptance_criteria: s.acceptance_criteria || [],
             points: s.points || s.estimate,
           })),
           point_references: (state.point_references || []).map((pr: any) => ({
-            points: pr.points,
+            points: Number(pr.points) || 1,
             title: pr.title,
             description: pr.description,
           })),
           story_doctor_report: state.story_doctor_report ? {
-            invest_score: state.story_doctor_report.investScore,
-            summary: state.story_doctor_report.summary,
-            edge_cases: (state.story_doctor_report.edgeCases || []).map((ec: any) => ({
+            story_id: state.current_story?.id || '',
+            scorecard: {
+              overall_score: state.story_doctor_report.invest_score || state.story_doctor_report.investScore || 85,
+              criteria: [],
+              summary: state.story_doctor_report.summary || '',
+              issues: [],
+            },
+            complexity: {
+              data_models: 'Low',
+              dependencies_apis: 'None',
+              blast_radius: 'Isolated',
+            },
+            edge_cases: (state.story_doctor_report.edge_cases || state.story_doctor_report.edgeCases || []).map((ec: any) => ({
               id: ec.id,
-              text: ec.text,
+              category: 'NetworkTimeouts',
+              category_name: 'Edge Case',
+              title: ec.text,
+              description: ec.text,
               checked: ec.checked,
             })),
-          } : undefined,
-          facilitator_id: state.facilitator_id || (state.participants || []).find((p: any) => p.role === 'FACILITATOR')?.id || '',
+          } : null,
+          facilitator_id: state.facilitator_id || (state.participants || [])[0]?.id || '',
         };
         setRoomState(mappedState);
       } catch (err) {
@@ -214,10 +306,10 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     postAction('edge-case', { edge_case_id: edgeCaseId, checked });
   }, [postAction]);
 
-  const connectTracker = useCallback((config: TrackerConfig) => {}, []);
+  const connectTracker = useCallback((_config: TrackerConfig) => {}, []);
   const disconnectTracker = useCallback(() => {}, []);
-  const testTrackerConnection = useCallback((config: TrackerConfig) => {}, []);
-  const fetchBacklog = useCallback((query: TrackerQuery = {}) => {}, []);
+  const testTrackerConnection = useCallback((_config: TrackerConfig) => {}, []);
+  const fetchBacklog = useCallback((_query: TrackerQuery = {}) => {}, []);
 
   const importBacklog = useCallback((stories: Story[]) => {
     postAction('import-backlog', { stories });
@@ -229,12 +321,13 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       id: `md-${idx + 1}`,
       title: l.replace(/^#+\s*|^-\s*/, '').trim(),
       description: '',
+      acceptance_criteria: [],
     }));
     postAction('import-backlog', { stories });
   }, [postAction]);
 
-  const syncEstimateToTracker = useCallback((storyId: string, points: number, postComment: boolean = true) => {}, []);
-  const pushStorySlices = useCallback((parentId: string, slices: StorySlice[]) => {}, []);
+  const syncEstimateToTracker = useCallback((_storyId: string, _points: number, _postComment: boolean = true) => {}, []);
+  const pushStorySlices = useCallback((_parentId: string, _slices: StorySlice[]) => {}, []);
 
   const reorderBacklog = useCallback((storyIds: string[]) => {
     postAction('reorder-backlog', { story_ids: storyIds });

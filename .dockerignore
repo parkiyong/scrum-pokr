@@ -3,7 +3,6 @@ client/node_modules/
 client/dist/
 .git/
 .scratch/
-.okf/
 .gemini/
 *.log
 .DS_Store
