@@ -1,5 +1,6 @@
 use crate::actor::registry::RoomRegistry;
 use crate::domain::slug::validate_slug;
+use crate::sse::handler::sse_room_handler;
 use crate::ws::handler::ws_room_handler;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -70,6 +71,7 @@ pub fn create_router(registry: RoomRegistry) -> Router {
         .route("/api/health", get(health_check))
         .route("/api/rooms", post(create_room))
         .route("/api/rooms/:slug/validate", get(validate_room))
+        .route("/api/rooms/:slug/events", get(sse_room_handler))
         .route("/ws/rooms/:slug", get(ws_room_handler))
         .with_state(registry);
 

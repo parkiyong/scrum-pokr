@@ -160,3 +160,32 @@ pub enum ServerEvent {
     },
     Pong,
 }
+
+impl ServerEvent {
+    pub fn event_type(&self) -> &'static str {
+        match self {
+            ServerEvent::RoomSnapshot { .. } => "RoomSnapshot",
+            ServerEvent::ParticipantJoined { .. } => "ParticipantJoined",
+            ServerEvent::ParticipantLeft { .. } => "ParticipantLeft",
+            ServerEvent::VoteCast { .. } => "VoteCast",
+            ServerEvent::VoteRetracted { .. } => "VoteRetracted",
+            ServerEvent::CardsRevealed { .. } => "CardsRevealed",
+            ServerEvent::RoundReset { .. } => "RoundReset",
+            ServerEvent::StoryFinalized { .. } => "StoryFinalized",
+            ServerEvent::PointReferencesUpdated { .. } => "PointReferencesUpdated",
+            ServerEvent::EdgeCaseToggled { .. } => "EdgeCaseToggled",
+            ServerEvent::StoryDoctorReportUpdated { .. } => "StoryDoctorReportUpdated",
+            ServerEvent::TrackerConnected { .. } => "TrackerConnected",
+            ServerEvent::TrackerDisconnected => "TrackerDisconnected",
+            ServerEvent::TrackerConnectionTested { .. } => "TrackerConnectionTested",
+            ServerEvent::BacklogUpdated { .. } => "BacklogUpdated",
+            ServerEvent::EstimateSynced { .. } => "EstimateSynced",
+            ServerEvent::SlicesPushed { .. } => "SlicesPushed",
+            ServerEvent::TrackerError { .. } => "TrackerError",
+            ServerEvent::RoleUpdated { .. } => "RoleUpdated",
+            ServerEvent::FacilitatorChanged { .. } => "FacilitatorChanged",
+            ServerEvent::Error { .. } => "Error",
+            ServerEvent::Pong => "Pong",
+        }
+    }
+}
