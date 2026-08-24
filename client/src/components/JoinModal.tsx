@@ -30,6 +30,16 @@ export const JoinModal: React.FC<JoinModalProps> = ({
   const [nickname, setNickname] = useState(initialNickname || '');
   const [avatar, setAvatar] = useState(initialAvatar || 'indigo');
   const [role, setRole] = useState<Role>(initialRole || 'Estimator');
+  const prevOpenRef = React.useRef(isOpen);
+
+  React.useEffect(() => {
+    if (isOpen && !prevOpenRef.current) {
+      setNickname(initialNickname || '');
+      setAvatar(initialAvatar || 'indigo');
+      setRole(initialRole || 'Estimator');
+    }
+    prevOpenRef.current = isOpen;
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

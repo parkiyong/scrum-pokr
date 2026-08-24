@@ -34,6 +34,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
     revealCards,
     triggerReVote,
     finalizeStory,
+    nextStory,
     selectStoryById,
     updatePointReferences,
     toggleEdgeCaseCheck,
@@ -278,6 +279,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
           onRevealCards={revealCards}
           onTriggerReVote={triggerReVote}
           onFinalize={() => finalizeStory()}
+          onNextStory={nextStory}
           onSyncEstimate={handleSyncActiveEstimate}
           onDecomposeSlices={() => setIsSliceModalOpen(true)}
           isFacilitator={isFacilitator}
@@ -333,7 +335,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
         <DeckSelector
           selectedCard={myVote}
           onSelectCard={handleCardClick}
-          disabled={phase !== 'Voting' && phase !== 'Revealed'}
+          disabled={phase !== 'Voting'}
         />
       )}
 
@@ -388,7 +390,7 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave: _onLeave }) =
         isOpen={isJoinModalOpen}
         initialNickname={myProfile?.nickname}
         initialAvatar={myProfile?.avatar}
-        initialRole={myProfile?.role}
+        initialRole={myParticipant?.role || myProfile?.role}
         onJoin={handleJoinModalSubmit}
         onClose={() => setIsJoinModalOpen(false)}
       />

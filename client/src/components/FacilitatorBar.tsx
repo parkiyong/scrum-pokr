@@ -9,6 +9,7 @@ interface FacilitatorBarProps {
   onRevealCards: () => void;
   onTriggerReVote: () => void;
   onFinalize: () => void;
+  onNextStory?: () => void;
   onSyncEstimate?: () => void;
   onDecomposeSlices?: () => void;
   isFacilitator: boolean;
@@ -23,6 +24,7 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
   onRevealCards,
   onTriggerReVote,
   onFinalize,
+  onNextStory,
   onSyncEstimate,
   onDecomposeSlices,
   isFacilitator,
@@ -114,7 +116,7 @@ export const FacilitatorBar: React.FC<FacilitatorBarProps> = ({
               </button>
             )}
             <button
-              onClick={onStartVoting}
+              onClick={onNextStory || onStartVoting}
               className="px-3.5 py-2 text-xs font-bold rounded-full bg-[#edf3fb] hover:bg-[#e2ebf7] text-[#10233f] border border-[#10233f]/15 transition active:scale-95 flex items-center gap-1.5"
             >
               ▶ Next Story

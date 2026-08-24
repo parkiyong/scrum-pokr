@@ -1,6 +1,6 @@
 # Scrum Pokr AI — Developer Guide
 
-> Operational guide for setting up, running, testing, and developing **Scrum Pokr AI**.
+> Operational guide for setting up, running, testing, and developing **Scrum Pokr AI** with a unified Full-Stack TypeScript architecture.
 
 📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🌐 [Product Spec](.scratch/scrum-poker/spec.md)
 
@@ -19,10 +19,9 @@
 
 ## 1. Prerequisites & Toolchain
 
-* **Java**: `25+` (JDK 25)
-* **Maven**: `3.9+`
-* **Node.js**: `v20+` & `npm`
-* **Docker & Docker Compose**: For containerized deployment
+* **Node.js**: `v20+` LTS
+* **npm**: `v10+` (native npm workspaces support)
+* **Docker & Docker Compose**: For containerized deployment (includes PostgreSQL + pgvector)
 
 ---
 
@@ -35,89 +34,78 @@ git clone https://github.com/parkiyong/scrum-poker-ai.git
 cd scrum-poke-ai
 ```
 
-### 2.2 Install Client Dependencies
+### 2.2 Install Monorepo Dependencies
 
 ```bash
-cd client
 npm install
-cd ..
 ```
 
 ---
 
 ## 3. Running the Application
 
-### Option A: Development Mode (Recommended)
+### Option A: Development Mode (Single Command)
 
-Run the backend and frontend in separate terminals with hot reloading:
-
-```bash
-# Terminal 1: Backend Java Spring Boot server (from root or server/)
-./mvnw spring-boot:run
-
-# Terminal 2: Frontend Vite dev server
-cd client && npm run dev
-```
-
-* **Browser Access**: Open **[http://localhost:5173](http://localhost:5173)** in your browser for hot-reloading development.
-* **Backend Port**: `http://localhost:3000` runs headlessly in the background (Vite automatically proxies `/api` calls to port 3000).
-
-> **Note**: You must run **both** terminals simultaneously during development, but you should **only open port 5173** in your browser.
-
-### Option B: Standalone Mode (Packaged JAR)
-
-Build the frontend bundle and serve everything from the Spring Boot JAR:
+Run both the Hono backend server and the Vite React frontend concurrently with hot-reloading:
 
 ```bash
-# 1. Build frontend bundle
-cd client && npm run build && cd ..
-
-# 2. Package and run Spring Boot JAR
-./mvnw clean package && java -jar server/target/server-0.1.0-SNAPSHOT.jar
+npm run dev
 ```
+
+* **Frontend UI**: Open **[http://localhost:5173](http://localhost:5173)** in your browser.
+* **Backend API & SSE**: `http://localhost:3000` (Vite automatically proxies `/api` requests to port 3000).
+
+### Option B: Standalone Production Build
+
+Build the full monorepo and start the unified Node.js server:
+
+```bash
+# 1. Build shared, server, and client bundles
+npm run build
+
+# 2. Start Hono production server (serves API, SSE, and static SPA)
+npm start --workspace=@scrumpokr/server
+```
+
 * **Unified Web App**: [http://localhost:3000](http://localhost:3000)
 
-### Option C: Containerized Stack (Docker)
+### Option C: Containerized Stack (Docker Compose)
 
 ```bash
 docker compose up --build
 ```
+
 * **Unified Web App in Docker**: [http://localhost:3000](http://localhost:3000)
+* **PostgreSQL + pgvector**: `localhost:5432`
 
 ---
 
 ## 4. Testing & Quality Verification
 
-### 4.1 Backend Java Tests
+### 4.1 Run All Tests Across Workspaces
 
-Run all unit, reveal gate, and Spring Boot integration test suites:
-
-```bash
-cd server && mvn test
-```
-
-### 4.2 Frontend React Tests
-
-Run Vitest unit and component tests:
+Run all unit, integration, and Reveal Gate test suites across `shared`, `server`, and `client`:
 
 ```bash
-cd client
 npm test
-
-# Run tests in watch mode
-npm run test:watch
 ```
 
-### 4.3 Formatting & Quality Checks
-
-Before submitting code, ensure all linters and tests pass:
+### 4.2 Run Specific Package Tests
 
 ```bash
-# Backend test verification
-cd server && mvn test
+# Test shared domain models & Reveal Gate invariants
+npm run test:shared
 
-# Frontend TypeScript checking & linting
-cd client
+# Test Hono server REST & SSE routes
+npm run test:server
+
+# Test React client components & useRoomSocket hook
+npm run test:client
+```
+
+### 4.3 Type Checking & Build Verification
+
+```bash
 npm run build
 ```
 
@@ -127,38 +115,43 @@ npm run build
 
 ```
 scrum-poke-ai/
-├── server/                     # Spring Boot Java 25 backend
-│   ├── pom.xml                 # Maven build configuration & Spring Boot parent
-│   └── src/
-│       ├── main/java/com/scrumpokr/server/
-│       │   ├── controller/     # RoomRestController (REST actions & SSE /events stream)
-│       │   ├── model/          # Models (Records, Enums, DTO payloads)
-│       │   ├── service/        # RoomHandle, RoomRegistryService
-│       │   └── util/           # SlugGenerator
-│       ├── main/resources/     # application.properties & static web assets
-│       └── test/java/com/scrumpokr/server/ # ServerApplicationTests (Reveal Gate & Room lifecycle)
+├── package.json                   # Root monorepo workspace manifest
+├── tsconfig.base.json             # Shared TypeScript configuration
+├── vitest.workspace.ts            # Vitest multi-project workspace configuration
 │
-├── client/                     # React frontend application (EXP Light Mode)
-│   ├── src/
-│   │   ├── components/         # Poker Arena, Backlog Drawer, Connect Modal, SPIDR Slicer
-│   │   ├── hooks/              # useRoomSocket (SSE + REST), useSessionStorage
-│   │   ├── views/              # LobbyView (Home) and RoomView (Poker Arena)
-│   │   ├── types/              # TypeScript types and data models
-│   │   └── utils/              # Session persistence and short code formatting
-│   └── src/__tests__/          # Frontend component and integration tests
+├── shared/                        # @scrumpokr/shared (Zero dependencies)
+│   ├── src/domain.ts              # Authoritative domain types (RoomState, Story, Participant)
+│   ├── src/schemas.ts             # Zod validation schemas & inferred types
+│   ├── src/room-reducer.ts        # Pure deterministic state transition functions
+│   ├── src/reveal-gate.ts         # maskRoomStateForParticipant projection function
+│   └── src/__tests__/             # Reveal Gate invariant & Reducer unit tests
 │
-├── .scratch/scrum-poker/       # Local issue tracker & system specifications
-│   ├── map.md                  # Project roadmap
-│   ├── spec.md                 # Product & system technical specification
-│   ├── issues/                 # Individual feature tickets
-│   └── decisions/              # Architectural decision tickets
+├── server/                        # @scrumpokr/server (Hono Node.js backend)
+│   ├── src/index.ts               # App entry point + `export type AppType = typeof routes;`
+│   ├── src/routes/
+│   │   ├── rooms.ts               # REST command endpoints (zValidator)
+│   │   ├── events.ts              # SSE stream endpoint (streamSSE + heartbeats)
+│   │   └── ai.ts                  # Story Doctor, SPIDR, Divergence endpoints
+│   ├── src/room/
+│   │   ├── room-actor.ts          # In-memory Room state actor
+│   │   └── registry.ts            # RoomRegistry with 4h TTL eviction sweeper
+│   ├── src/db/                    # Drizzle ORM + pgvector similarity queries
+│   ├── src/ai/                    # @google/genai SDK advisory integration
+│   └── src/__tests__/             # Hono endpoint & Reveal Gate integration tests
 │
-├── docker-compose.yml          # Local container services
-├── Dockerfile                  # Multi-stage production container build (Node + Maven Java 25)
-├── USER_GUIDE.md               # User & facilitator documentation
-├── DEVELOPER_GUIDE.md          # Developer operational guide (this document)
-├── CONTRIBUTING.md             # Contribution guidelines & workflow
-└── README.md                   # Project overview & quick start
+├── client/                        # @scrumpokr/client (React 18 + Vite SPA)
+│   ├── src/api/contracts.ts       # Typed RPC route contracts
+│   ├── src/api/index.ts           # `export const api = hc<AppType>('');`
+│   ├── src/hooks/useRoomSocket.ts # Native SSE event listener + typed RPC dispatches
+│   ├── src/components/            # 3D Poker Arena, Facilitator Bar, Deck Selector, Story Doctor
+│   └── src/__tests__/             # React component & hook integration tests
+│
+├── docker-compose.yml             # Local Docker services (App + pgvector)
+├── Dockerfile                     # Multi-stage production container build (<100MB Alpine)
+├── USER_GUIDE.md                  # User & facilitator documentation
+├── DEVELOPER_GUIDE.md             # Developer operational guide (this document)
+├── CONTRIBUTING.md                # Contribution guidelines & workflow
+└── README.md                      # Project overview & quick start
 ```
 
 ---
@@ -168,7 +161,7 @@ scrum-poke-ai/
 Key architectural principles, domain definitions, and API specifications are maintained across:
 
 * 🏛️ **Architecture & Backend Specification**:
-  * [Java Migration Architecture & Stack Recommendation](docs/JAVA_MIGRATION_RECOMMENDATION.md)
+  * [Hono Full-Stack Migration Map & Decisions](.scratch/hono-migration/map.md)
   * [Product & System Technical Specification](.scratch/scrum-poker/spec.md)
 * 🧠 **Domain Glossary & Invariants**:
   * [Domain Vocabulary & Rules](CONTEXT.md)
