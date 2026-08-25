@@ -43,9 +43,13 @@ export function computeConsensus(participants: Participant[]): ConsensusSummary 
     category = 'WideSpread';
   } else if (consensusPct >= 60) {
     const modeNum = parseFloat(mode);
-    const nonModeVotes = numVotes.filter((n) => n !== modeNum);
-    const avgOutlier = nonModeVotes.length > 0 ? nonModeVotes.reduce((a, b) => a + b, 0) / nonModeVotes.length : modeNum;
-    category = avgOutlier < modeNum ? 'LowOutlier' : 'HighOutlier';
+    if (!isNaN(modeNum) && numVotes.length > 0) {
+      const nonModeVotes = numVotes.filter((n) => n !== modeNum);
+      const avgOutlier = nonModeVotes.length > 0 ? nonModeVotes.reduce((a, b) => a + b, 0) / nonModeVotes.length : modeNum;
+      category = avgOutlier < modeNum ? 'LowOutlier' : 'HighOutlier';
+    } else {
+      category = 'Consensus';
+    }
   } else {
     category = 'BimodalSplit';
   }
@@ -62,7 +66,7 @@ export function computeConsensus(participants: Participant[]): ConsensusSummary 
 }
 
 export function maskRoomStateForParticipant(state: RoomState, requestingParticipantId: string): RoomState {
-  if (state.phase === 'Revealed' || state.phase === 'Finalized' || state.phase === 'Discussing' || state.phase === 'Slicing') {
+  if (state.phase === 'Revealed' || state.phase === 'Finalized') {
     return {
       ...state,
       consensus: state.consensus || computeConsensus(state.participants),

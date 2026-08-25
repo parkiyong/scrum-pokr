@@ -7,25 +7,20 @@ describe('BacklogDrawer', () => {
   const sampleBacklog: Story[] = [
     {
       id: 'story-1',
-      key: 'ENG-101',
       title: 'Auth Integration',
       description: 'Add OAuth logins',
       acceptance_criteria: ['Google OAuth'],
       points: '5',
-      status: 'Estimated',
-      url: 'https://linear.app/team/ENG-101',
     },
     {
       id: 'story-2',
-      key: 'ENG-102',
       title: 'Payment Flow',
       description: 'Stripe integration',
       acceptance_criteria: ['Credit card support'],
-      status: 'Ready',
     },
   ];
 
-  it('renders story cards with key badges and points', () => {
+  it('renders story cards and points', () => {
     render(
       <BacklogDrawer
         isOpen={true}
@@ -36,11 +31,9 @@ describe('BacklogDrawer', () => {
         onSelectStory={vi.fn()}
         onReorder={vi.fn()}
         onRemove={vi.fn()}
-        onOpenConnectModal={vi.fn()}
       />
     );
 
-    expect(screen.getByText('ENG-101')).toBeDefined();
     expect(screen.getByText('Auth Integration')).toBeDefined();
     expect(screen.getByText('5 pts')).toBeDefined();
     expect(screen.getByText('Payment Flow')).toBeDefined();
@@ -58,7 +51,6 @@ describe('BacklogDrawer', () => {
         onSelectStory={onSelectStory}
         onReorder={vi.fn()}
         onRemove={vi.fn()}
-        onOpenConnectModal={vi.fn()}
       />
     );
 
@@ -79,7 +71,6 @@ describe('BacklogDrawer', () => {
         onSelectStory={vi.fn()}
         onReorder={onReorder}
         onRemove={vi.fn()}
-        onOpenConnectModal={vi.fn()}
       />
     );
 
@@ -100,12 +91,42 @@ describe('BacklogDrawer', () => {
         onSelectStory={vi.fn()}
         onReorder={vi.fn()}
         onRemove={onRemove}
-        onOpenConnectModal={vi.fn()}
       />
     );
 
     const removeButtons = screen.getAllByTitle('Remove from queue');
     fireEvent.click(removeButtons[0]);
     expect(onRemove).toHaveBeenCalledWith('story-1');
+  });
+
+  it('allows adding a story via manual form', async () => {
+    const onAddStory = vi.fn().mockResolvedValue(undefined);
+    render(
+      <BacklogDrawer
+        isOpen={true}
+        onClose={vi.fn()}
+        backlog={sampleBacklog}
+        activeStoryId="story-1"
+        isFacilitator={true}
+        onSelectStory={vi.fn()}
+        onAddStory={onAddStory}
+        onReorder={vi.fn()}
+        onRemove={vi.fn()}
+      />
+    );
+
+    const addBtn = screen.getByRole('button', { name: /Add Story/i });
+    fireEvent.click(addBtn);
+
+    const titleInput = screen.getByPlaceholderText(/Story Title/i);
+    const descInput = screen.getByPlaceholderText(/Description/i);
+
+    fireEvent.change(titleInput, { target: { value: 'New Feature Story' } });
+    fireEvent.change(descInput, { target: { value: 'Feature details' } });
+
+    const saveBtn = screen.getByRole('button', { name: /Save Story/i });
+    await fireEvent.click(saveBtn);
+
+    expect(onAddStory).toHaveBeenCalledWith('New Feature Story', 'Feature details');
   });
 });

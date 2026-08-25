@@ -1,30 +1,23 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  ConnectionPreview,
   ConsensusCategory,
   ConsensusSummary,
+  DeckConfig,
   LocalSessionProfile,
-  PointReference,
   Role,
-  RoomSnapshotData,
+  RoomState,
   Story,
-  StorySlice,
-  TrackerConfig,
-  TrackerQuery,
 } from '../types/room';
 import { getOrCreateParticipantId, getStoredProfile, saveStoredProfile } from '../utils/session';
 import { api } from '../api';
 
 export interface UseRoomSocketReturn {
-  roomState: RoomSnapshotData | null;
+  roomState: RoomState | null;
   status: 'connecting' | 'connected' | 'disconnected' | 'error';
   currentParticipantId: string;
   myProfile: LocalSessionProfile | null;
   isFacilitator: boolean;
-  connectionPreview: ConnectionPreview | null;
-  trackerError: string | null;
-  syncFeedback: { storyId: string; success: boolean; message?: string } | null;
-  joinRoom: (nickname: string, avatar: string, role?: Role) => void;
+  joinRoom: (name: string, avatar: string, role?: Role) => void;
   startVoting: () => void;
   castVote: (value: string) => void;
   retractVote: () => void;
@@ -32,23 +25,15 @@ export interface UseRoomSocketReturn {
   triggerReVote: () => void;
   finalizeStory: (points?: string) => void;
   nextStory: () => void;
+  setDeck: (deck: DeckConfig) => void;
   selectStory: (story: Story | null) => void;
   selectStoryById: (storyId: string) => void;
-  updatePointReferences: (references: PointReference[]) => void;
-  toggleEdgeCaseCheck: (edgeCaseId: string, checked: boolean) => void;
-  connectTracker: (config: TrackerConfig) => void;
-  disconnectTracker: () => void;
-  testTrackerConnection: (config: TrackerConfig) => void;
-  fetchBacklog: (query?: TrackerQuery) => void;
-  importBacklog: (stories: Story[]) => void;
-  importMarkdown: (rawMarkdown: string) => void;
-  syncEstimateToTracker: (storyId: string, points: number, postComment?: boolean) => void;
-  pushStorySlices: (parentId: string, slices: StorySlice[]) => void;
+  addStory: (title: string, description?: string) => Promise<void>;
+  updateStory: (storyId: string, updates: Partial<Omit<Story, 'id'>>) => Promise<void>;
+  removeStory: (storyId: string) => void;
   reorderBacklog: (storyIds: string[]) => void;
-  removeStoryFromBacklog: (storyId: string) => void;
   updateRole: (targetId: string, newRole: Role) => void;
   transferFacilitator: (targetId: string) => void;
-  clearTrackerFeedback: () => void;
 }
 
 /**
@@ -98,7 +83,14 @@ export function computeConsensusFromParticipants(
   } else if (spread !== undefined && spread > 5) {
     category = 'WideSpread';
   } else if (consensusPct >= 60) {
-    category = 'HighOutlier';
+    const modeNum = parseFloat(mode);
+    if (!isNaN(modeNum) && numVotes.length > 0) {
+      const nonModeVotes = numVotes.filter((n) => n !== modeNum);
+      const avgOutlier = nonModeVotes.length > 0 ? nonModeVotes.reduce((a, b) => a + b, 0) / nonModeVotes.length : modeNum;
+      category = avgOutlier < modeNum ? 'LowOutlier' : 'HighOutlier';
+    } else {
+      category = 'Consensus';
+    }
   } else {
     category = 'BimodalSplit';
   }
@@ -115,12 +107,9 @@ export function computeConsensusFromParticipants(
 }
 
 export function useRoomSocket(slug: string): UseRoomSocketReturn {
-  const [roomState, setRoomState] = useState<RoomSnapshotData | null>(null);
+  const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
   const [myProfile, setMyProfile] = useState<LocalSessionProfile | null>(() => getStoredProfile(slug));
-  const [connectionPreview, setConnectionPreview] = useState<ConnectionPreview | null>(null);
-  const [trackerError, setTrackerError] = useState<string | null>(null);
-  const [syncFeedback, setSyncFeedback] = useState<{ storyId: string; success: boolean; message?: string } | null>(null);
 
   const participantIdRef = useRef<string>(myProfile?.participant_id || getOrCreateParticipantId());
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -136,7 +125,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     setMyProfile(profile);
 
     try {
-      await api.api.rooms[':code'].join.$post({
+      const res = await api.api.rooms[':code'].join.$post({
         param: { code: slug },
         json: {
           participant_id: profile.participant_id,
@@ -145,6 +134,19 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           role: role || 'Estimator',
         },
       });
+
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.participant_id || data.participantId) {
+          const assignedPid = data.participant_id || data.participantId;
+          participantIdRef.current = assignedPid;
+          profile.participant_id = assignedPid;
+          saveStoredProfile(slug, profile);
+        }
+        if (data.state) {
+          setRoomState(data.state as RoomState);
+        }
+      }
     } catch (err) {
       console.error(`[RPC] Error joining room ${slug}:`, err);
     }
@@ -153,123 +155,64 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
   useEffect(() => {
     if (!slug) return;
 
-    const pid = participantIdRef.current;
-    const sseUrl = `/api/rooms/${encodeURIComponent(slug)}/events?participantId=${encodeURIComponent(pid)}`;
+    let isAborted = false;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
 
-    const es = new EventSource(sseUrl);
-    eventSourceRef.current = es;
+    const connectSSE = () => {
+      if (isAborted) return;
+      const pid = participantIdRef.current;
+      const sseUrl = `/api/rooms/${encodeURIComponent(slug)}/events?participantId=${encodeURIComponent(pid)}`;
 
-    es.onopen = () => {
-      setStatus('connected');
-      const stored = getStoredProfile(slug);
-      if (stored) {
-        joinRoom(stored.nickname, stored.avatar || '', stored.role);
-      }
+      const es = new EventSource(sseUrl);
+      eventSourceRef.current = es;
+
+      es.onopen = () => {
+        if (isAborted) return;
+        setStatus('connected');
+        const stored = getStoredProfile(slug);
+        if (stored) {
+          joinRoom(stored.nickname, stored.avatar || '', stored.role);
+        }
+      };
+
+      es.addEventListener('room_state', (event) => {
+        if (isAborted) return;
+        try {
+          const state: RoomState = JSON.parse(event.data);
+          setRoomState(state);
+        } catch (err) {
+          console.error('[SSE] Failed to parse room_state event:', err);
+        }
+      });
+
+      es.addEventListener('ping', () => {
+        // Keep-alive heartbeat acknowledgement
+      });
+
+      es.onerror = () => {
+        if (isAborted) return;
+        setStatus('error');
+        es.close();
+        if (!reconnectTimeout) {
+          reconnectTimeout = setTimeout(() => {
+            reconnectTimeout = null;
+            connectSSE();
+          }, 3000);
+        }
+      };
     };
 
-    es.addEventListener('room_state', (event) => {
-      try {
-        const state = JSON.parse(event.data);
-        const rawPhase = state.phase || 'Idle';
-        const computedPhase: RoomSnapshotData['phase'] =
-          rawPhase === 'REVEALED' || rawPhase === 'Revealed' ? 'Revealed' :
-          rawPhase === 'VOTING' || rawPhase === 'Voting' ? 'Voting' :
-          rawPhase === 'FINALIZED' || rawPhase === 'Finalized' ? 'Finalized' :
-          rawPhase === 'DISCUSSING' || rawPhase === 'Discussing' ? 'Discussing' :
-          rawPhase === 'SLICING' || rawPhase === 'Slicing' ? 'Slicing' :
-          rawPhase === 'STORY_DOCTOR_REVIEW' || rawPhase === 'StoryDoctorReview' ? 'StoryDoctorReview' : 'Idle';
-
-        const mappedParticipants = (state.participants || []).map((p: any) => ({
-          id: p.id,
-          nickname: p.name || p.nickname || '',
-          avatar: p.avatar || '',
-          role: p.role === 'Observer' ? 'Observer' : 'Estimator',
-          connected: p.connected !== undefined ? p.connected : true,
-          voted: p.has_voted !== undefined ? p.has_voted : Boolean(p.voted || p.vote),
-          vote: p.vote !== undefined ? p.vote : null,
-        }));
-
-        const mappedConsensus = (computedPhase === 'Revealed' || computedPhase === 'Finalized' || computedPhase === 'Discussing' || computedPhase === 'Slicing')
-          ? computeConsensusFromParticipants(mappedParticipants)
-          : null;
-
-        const mappedState: RoomSnapshotData = {
-          slug: state.slug || slug,
-          short_code: state.short_code || state.shortCode || state.slug || slug,
-          phase: computedPhase,
-          round_number: state.round_number || state.roundNumber || 1,
-          active_tracker_provider: state.active_tracker_provider || state.activeTrackerProvider,
-          tracker_connected: Boolean(state.tracker_connected || state.trackerConnected),
-          consensus: mappedConsensus,
-          participants: mappedParticipants,
-          active_story: state.current_story || state.active_story || state.activeStory ? {
-            id: (state.current_story || state.active_story || state.activeStory).id,
-            title: (state.current_story || state.active_story || state.activeStory).title,
-            description: (state.current_story || state.active_story || state.activeStory).description || '',
-            acceptance_criteria: (state.current_story || state.active_story || state.activeStory).acceptance_criteria || (state.current_story || state.active_story || state.activeStory).acceptanceCriteria || [],
-            points: (state.current_story || state.active_story || state.activeStory).points || (state.current_story || state.active_story || state.activeStory).estimate,
-            key: (state.current_story || state.active_story || state.activeStory).key,
-            url: (state.current_story || state.active_story || state.activeStory).url,
-            tracker_provider: (state.current_story || state.active_story || state.activeStory).tracker_provider || (state.current_story || state.active_story || state.activeStory).trackerProvider,
-            external_id: (state.current_story || state.active_story || state.activeStory).external_id || (state.current_story || state.active_story || state.activeStory).externalId,
-          } : null,
-          backlog: (state.backlog || []).map((s: any) => ({
-            id: s.id,
-            title: s.title,
-            description: s.description || '',
-            acceptance_criteria: s.acceptance_criteria || s.acceptanceCriteria || [],
-            points: s.points || s.estimate,
-            key: s.key,
-            url: s.url,
-            tracker_provider: s.tracker_provider || s.trackerProvider,
-            external_id: s.external_id || s.externalId,
-          })),
-          point_references: (state.point_references || state.pointReferences || []).map((pr: any) => ({
-            points: Number(pr.points) || 1,
-            title: pr.title,
-            description: pr.description || '',
-          })),
-          story_doctor_report: (state.story_doctor_report || state.storyDoctorReport) ? {
-            story_id: state.current_story?.id || state.active_story?.id || '',
-            scorecard: {
-              overall_score: (state.story_doctor_report || state.storyDoctorReport).invest_score || (state.story_doctor_report || state.storyDoctorReport).investScore || 85,
-              criteria: (state.story_doctor_report || state.storyDoctorReport).criteria || [],
-              summary: (state.story_doctor_report || state.storyDoctorReport).summary || '',
-              issues: (state.story_doctor_report || state.storyDoctorReport).issues || [],
-            },
-            complexity: (state.story_doctor_report || state.storyDoctorReport).complexity || {
-              data_models: 'Low',
-              dependencies_apis: 'None',
-              blast_radius: 'Isolated',
-            },
-            edge_cases: ((state.story_doctor_report || state.storyDoctorReport).edge_cases || (state.story_doctor_report || state.storyDoctorReport).edgeCases || []).map((ec: any) => ({
-              id: ec.id,
-              category: ec.category || 'NetworkTimeouts',
-              category_name: ec.category_name || ec.categoryName || 'Edge Case',
-              title: ec.title || ec.text || '',
-              description: ec.description || ec.text || '',
-              checked: Boolean(ec.checked),
-            })),
-          } : null,
-          facilitator_id: state.facilitator_id || state.facilitatorId || (state.participants || [])[0]?.id || '',
-        };
-        setRoomState(mappedState);
-      } catch (err) {
-        console.error('[SSE] Failed to parse room_state event:', err);
-      }
-    });
-
-    es.addEventListener('ping', () => {
-      // Keep-alive heartbeat acknowledgement
-    });
-
-    es.onerror = () => {
-      setStatus('error');
-    };
+    connectSSE();
 
     return () => {
-      es.close();
-      eventSourceRef.current = null;
+      isAborted = true;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
     };
   }, [slug, joinRoom]);
 
@@ -279,7 +222,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
-      if (!res.ok) throw new Error(`Failed to start voting (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to start voting (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error starting voting:', err);
     }
@@ -291,7 +239,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, vote: value },
       });
-      if (!res.ok) throw new Error(`Failed to cast vote (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to cast vote (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error casting vote:', err);
     }
@@ -303,7 +256,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, vote: null },
       });
-      if (!res.ok) throw new Error(`Failed to retract vote (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to retract vote (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error retracting vote:', err);
     }
@@ -315,7 +273,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
-      if (!res.ok) throw new Error(`Failed to reveal cards (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to reveal cards (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error revealing cards:', err);
     }
@@ -327,7 +290,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
-      if (!res.ok) throw new Error(`Failed to reset round (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to reset round (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error triggering revote:', err);
     }
@@ -339,7 +307,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, estimate: points },
       });
-      if (!res.ok) throw new Error(`Failed to finalize story (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to finalize story (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error finalizing story:', err);
     }
@@ -351,9 +324,31 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
-      if (!res.ok) throw new Error(`Failed to advance next story (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to advance next story (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error advancing next story:', err);
+    }
+  }, [slug]);
+
+  const setDeck = useCallback(async (deck: DeckConfig) => {
+    try {
+      const res = await api.api.rooms[':code'].deck.$post({
+        param: { code: slug },
+        json: { participant_id: participantIdRef.current, deck },
+      });
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to configure deck (status ${res.status})`);
+      }
+    } catch (err) {
+      console.error('[RPC] Error configuring deck:', err);
     }
   }, [slug]);
 
@@ -363,7 +358,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, story },
       });
-      if (!res.ok) throw new Error(`Failed to select story (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to select story (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error selecting story:', err);
     }
@@ -376,155 +376,64 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     }
   }, [selectStory, roomState?.backlog]);
 
-  const updatePointReferences = useCallback(async (references: PointReference[]) => {
+  const addStory = useCallback(async (title: string, description: string = '') => {
     try {
-      const res = await api.api.rooms[':code']['point-references'].$post({
-        param: { code: slug },
-        json: { participant_id: participantIdRef.current, references },
-      });
-      if (!res.ok) throw new Error(`Failed to update point references (status ${res.status})`);
-    } catch (err) {
-      console.error('[RPC] Error updating point references:', err);
-    }
-  }, [slug]);
-
-  const toggleEdgeCaseCheck = useCallback(async (edgeCaseId: string, checked: boolean) => {
-    try {
-      const res = await api.api.rooms[':code']['edge-case'].$post({
-        param: { code: slug },
-        json: { participant_id: participantIdRef.current, edge_case_id: edgeCaseId, checked },
-      });
-      if (!res.ok) throw new Error(`Failed to toggle edge case (status ${res.status})`);
-    } catch (err) {
-      console.error('[RPC] Error toggling edge case check:', err);
-    }
-  }, [slug]);
-
-  const connectTracker = useCallback(async (config: TrackerConfig) => {
-    try {
-      const res = await api.api.rooms[':code']['connect-tracker'].$post({
-        param: { code: slug },
-        json: { participant_id: participantIdRef.current, config },
-      });
-      if (!res.ok) throw new Error(`Tracker connection failed (status ${res.status})`);
-    } catch (err) {
-      console.error('[RPC] Error connecting tracker:', err);
-      setTrackerError(err instanceof Error ? err.message : 'Tracker connection failed');
-    }
-  }, [slug]);
-
-  const disconnectTracker = useCallback(async () => {
-    try {
-      const res = await api.api.rooms[':code']['disconnect-tracker'].$post({
-        param: { code: slug },
-        json: { participant_id: participantIdRef.current },
-      });
-      if (!res.ok) throw new Error(`Failed to disconnect tracker (status ${res.status})`);
-    } catch (err) {
-      console.error('[RPC] Error disconnecting tracker:', err);
-    }
-  }, [slug]);
-
-  const testTrackerConnection = useCallback(async (config: TrackerConfig) => {
-    try {
-      const res = await api.api.rooms[':code']['test-tracker'].$post({
-        param: { code: slug },
-        json: { participant_id: participantIdRef.current, config },
-      });
-      if (!res.ok) throw new Error(`Tracker test failed (status ${res.status})`);
-      const data = await res.json();
-      if (data.preview) {
-        setConnectionPreview(data.preview);
-      }
-    } catch (err) {
-      console.error('[RPC] Error testing tracker connection:', err);
-      setTrackerError(err instanceof Error ? err.message : 'Tracker test failed');
-    }
-  }, [slug]);
-
-  const fetchBacklog = useCallback(async (query: TrackerQuery = {}) => {
-    try {
-      const res = await api.api.rooms[':code']['fetch-backlog'].$post({
-        param: { code: slug },
-        json: { participant_id: participantIdRef.current, query },
-      });
-      if (!res.ok) throw new Error(`Failed to fetch backlog (status ${res.status})`);
-    } catch (err) {
-      console.error('[RPC] Error fetching backlog:', err);
-    }
-  }, [slug]);
-
-  const importBacklog = useCallback(async (stories: Story[]) => {
-    try {
-      const res = await api.api.rooms[':code']['import-backlog'].$post({
-        param: { code: slug },
-        json: { participant_id: participantIdRef.current, stories },
-      });
-      if (!res.ok) throw new Error(`Failed to import backlog (status ${res.status})`);
-    } catch (err) {
-      console.error('[RPC] Error importing backlog:', err);
-    }
-  }, [slug]);
-
-  const importMarkdown = useCallback((rawMarkdown: string) => {
-    const lines = rawMarkdown.split('\n').filter((l) => l.trim().startsWith('#') || l.trim().startsWith('-'));
-    const stories: Story[] = lines.map((l, idx) => ({
-      id: `md-${idx + 1}`,
-      title: l.replace(/^#+\s*|^-\s*/, '').trim(),
-      description: '',
-      acceptance_criteria: [],
-    }));
-    importBacklog(stories);
-  }, [importBacklog]);
-
-  const syncEstimateToTracker = useCallback(async (storyId: string, points: number, postComment: boolean = true) => {
-    try {
-      const res = await api.api.rooms[':code']['sync-estimate'].$post({
+      const res = await api.api.rooms[':code'].stories.$post({
         param: { code: slug },
         json: {
           participant_id: participantIdRef.current,
-          story_id: storyId,
-          points,
-          post_comment: postComment,
+          story: {
+            title,
+            description,
+            acceptance_criteria: [],
+          },
         },
       });
       if (res.ok) {
-        const data = await res.json();
-        setSyncFeedback({
-          storyId,
-          success: data.success,
-          message: data.message || `Story estimate ${points} synced successfully!`,
-        });
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
       } else {
-        setSyncFeedback({
-          storyId,
-          success: false,
-          message: 'Failed to sync estimate to tracker.',
-        });
+        throw new Error(`Failed to add story (status ${res.status})`);
       }
     } catch (err) {
-      console.error('[RPC] Error syncing estimate to tracker:', err);
-      setSyncFeedback({
-        storyId,
-        success: false,
-        message: err instanceof Error ? err.message : 'Sync failed',
-      });
+      console.error('[RPC] Error adding story:', err);
     }
   }, [slug]);
 
-  const pushStorySlices = useCallback(async (parentId: string, slices: StorySlice[]) => {
+  const updateStory = useCallback(async (storyId: string, updates: Partial<Omit<Story, 'id'>>) => {
     try {
-      const res = await api.api.rooms[':code']['push-slices'].$post({
-        param: { code: slug },
+      const res = await api.api.rooms[':code'].stories[':storyId'].$put({
+        param: { code: slug, storyId },
         json: {
           participant_id: participantIdRef.current,
-          parent_id: parentId,
-          slices,
+          ...updates,
         },
       });
-      if (!res.ok) throw new Error(`Failed to push story slices (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to update story (status ${res.status})`);
+      }
     } catch (err) {
-      console.error('[RPC] Error pushing story slices:', err);
+      console.error('[RPC] Error updating story:', err);
+    }
+  }, [slug]);
+
+  const removeStory = useCallback(async (storyId: string) => {
+    try {
+      const res = await api.api.rooms[':code'].stories[':storyId'].$delete({
+        param: { code: slug, storyId },
+        query: { participantId: participantIdRef.current },
+      });
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to remove story (status ${res.status})`);
+      }
+    } catch (err) {
+      console.error('[RPC] Error removing story:', err);
     }
   }, [slug]);
 
@@ -534,21 +443,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, story_ids: storyIds },
       });
-      if (!res.ok) throw new Error(`Failed to reorder backlog (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to reorder backlog (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error reordering backlog:', err);
-    }
-  }, [slug]);
-
-  const removeStoryFromBacklog = useCallback(async (storyId: string) => {
-    try {
-      const res = await api.api.rooms[':code']['remove-story'].$post({
-        param: { code: slug },
-        json: { participant_id: participantIdRef.current, story_id: storyId },
-      });
-      if (!res.ok) throw new Error(`Failed to remove story (status ${res.status})`);
-    } catch (err) {
-      console.error('[RPC] Error removing story from backlog:', err);
     }
   }, [slug]);
 
@@ -558,7 +460,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, target_id: targetId, new_role: newRole },
       });
-      if (!res.ok) throw new Error(`Failed to update role (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to update role (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error updating role:', err);
     }
@@ -570,18 +477,22 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, target_id: targetId },
       });
-      if (!res.ok) throw new Error(`Failed to transfer facilitator (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to transfer facilitator (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error transferring facilitator:', err);
     }
   }, [slug]);
 
-  const clearTrackerFeedback = useCallback(() => {
-    setTrackerError(null);
-    setSyncFeedback(null);
-  }, []);
-
-  const isFacilitator = roomState?.facilitator_id === participantIdRef.current;
+  const isFacilitator =
+    roomState?.facilitator_id === participantIdRef.current ||
+    (roomState !== null &&
+      roomState.participants.length === 1 &&
+      roomState.participants[0].id === participantIdRef.current);
 
   return {
     roomState,
@@ -589,9 +500,6 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     currentParticipantId: participantIdRef.current,
     myProfile,
     isFacilitator,
-    connectionPreview,
-    trackerError,
-    syncFeedback,
     joinRoom,
     startVoting,
     castVote,
@@ -600,22 +508,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     triggerReVote,
     finalizeStory,
     nextStory,
+    setDeck,
     selectStory,
     selectStoryById,
-    updatePointReferences,
-    toggleEdgeCaseCheck,
-    connectTracker,
-    disconnectTracker,
-    testTrackerConnection,
-    fetchBacklog,
-    importBacklog,
-    importMarkdown,
-    syncEstimateToTracker,
-    pushStorySlices,
+    addStory,
+    updateStory,
+    removeStory,
     reorderBacklog,
-    removeStoryFromBacklog,
     updateRole,
     transferFacilitator,
-    clearTrackerFeedback,
   };
 }

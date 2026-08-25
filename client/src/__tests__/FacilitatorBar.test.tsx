@@ -22,25 +22,6 @@ describe('FacilitatorBar component', () => {
     expect(handleStart).toHaveBeenCalled();
   });
 
-  it('renders start voting in StoryDoctorReview phase', () => {
-    const handleStart = vi.fn();
-    render(
-      <FacilitatorBar
-        phase="StoryDoctorReview"
-        onStartVoting={handleStart}
-        onRevealCards={vi.fn()}
-        onTriggerReVote={vi.fn()}
-        onFinalize={vi.fn()}
-        isFacilitator={true}
-      />
-    );
-
-    const btn = screen.getByText(/Start Voting/i);
-    expect(btn).toBeInTheDocument();
-    fireEvent.click(btn);
-    expect(handleStart).toHaveBeenCalled();
-  });
-
   it('renders reveal cards in Voting phase', () => {
     const handleReveal = vi.fn();
     render(
@@ -60,6 +41,31 @@ describe('FacilitatorBar component', () => {
     expect(handleReveal).toHaveBeenCalled();
   });
 
+  it('renders revote and finalize buttons in Revealed phase', () => {
+    const handleReVote = vi.fn();
+    const handleFinalize = vi.fn();
+    render(
+      <FacilitatorBar
+        phase="Revealed"
+        onStartVoting={vi.fn()}
+        onRevealCards={vi.fn()}
+        onTriggerReVote={handleReVote}
+        onFinalize={handleFinalize}
+        isFacilitator={true}
+      />
+    );
+
+    const revoteBtn = screen.getByText(/Re-Vote/i);
+    expect(revoteBtn).toBeInTheDocument();
+    fireEvent.click(revoteBtn);
+    expect(handleReVote).toHaveBeenCalled();
+
+    const finalizeBtn = screen.getByText(/Finalize/i);
+    expect(finalizeBtn).toBeInTheDocument();
+    fireEvent.click(finalizeBtn);
+    expect(handleFinalize).toHaveBeenCalled();
+  });
+
   it('renders nothing when not facilitator', () => {
     const { container } = render(
       <FacilitatorBar
@@ -75,34 +81,19 @@ describe('FacilitatorBar component', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders sync estimate and next story button in Finalized phase', () => {
-    const handleSync = vi.fn();
+  it('renders next story button in Finalized phase', () => {
     const handleNextStory = vi.fn();
     render(
       <FacilitatorBar
         phase="Finalized"
-        activeStory={{
-          id: 'story-1',
-          title: 'Implement Auth',
-          description: '',
-          acceptance_criteria: [],
-          key: 'ENG-101',
-        }}
-        hasTracker={true}
         onStartVoting={vi.fn()}
         onRevealCards={vi.fn()}
         onTriggerReVote={vi.fn()}
         onFinalize={vi.fn()}
         onNextStory={handleNextStory}
-        onSyncEstimate={handleSync}
         isFacilitator={true}
       />
     );
-
-    const syncBtn = screen.getByRole('button', { name: /Sync Estimate to Tracker/i });
-    expect(syncBtn).toBeInTheDocument();
-    fireEvent.click(syncBtn);
-    expect(handleSync).toHaveBeenCalled();
 
     const nextBtn = screen.getByRole('button', { name: /Next Story/i });
     expect(nextBtn).toBeInTheDocument();
@@ -110,29 +101,23 @@ describe('FacilitatorBar component', () => {
     expect(handleNextStory).toHaveBeenCalled();
   });
 
-  it('renders SPIDR slices button in Revealed phase', () => {
-    const handleDecompose = vi.fn();
+  it('renders deck config button when onOpenDeckConfig provided', () => {
+    const handleDeck = vi.fn();
     render(
       <FacilitatorBar
-        phase="Revealed"
-        activeStory={{
-          id: 'story-1',
-          title: 'Large Story',
-          description: '',
-          acceptance_criteria: [],
-        }}
+        phase="Idle"
         onStartVoting={vi.fn()}
         onRevealCards={vi.fn()}
         onTriggerReVote={vi.fn()}
         onFinalize={vi.fn()}
-        onDecomposeSlices={handleDecompose}
+        onOpenDeckConfig={handleDeck}
         isFacilitator={true}
       />
     );
 
-    const sliceBtn = screen.getByRole('button', { name: /SPIDR Slices/i });
-    expect(sliceBtn).toBeInTheDocument();
-    fireEvent.click(sliceBtn);
-    expect(handleDecompose).toHaveBeenCalled();
+    const deckBtn = screen.getByText(/Deck/i);
+    expect(deckBtn).toBeInTheDocument();
+    fireEvent.click(deckBtn);
+    expect(handleDeck).toHaveBeenCalled();
   });
 });

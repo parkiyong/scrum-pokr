@@ -6,11 +6,11 @@ import { Participant } from '../types/room';
 describe('PokerCard component', () => {
   const participantVoted: Participant = {
     id: 'user-1',
-    nickname: 'Sarah',
+    name: 'Sarah',
     avatar: 'emerald',
     role: 'Estimator',
     connected: true,
-    voted: true,
+    has_voted: true,
     vote: '5',
   };
 

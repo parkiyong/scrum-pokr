@@ -1,300 +1,28 @@
-export type Role = 'Estimator' | 'Observer';
+import type {
+  ConsensusCategory,
+  ConsensusSummary,
+  DeckConfig,
+  DeckType,
+  EstimationPhase,
+  Participant,
+  Role,
+  RoomState,
+  Story,
+} from '@scrumpokr/shared';
 
-export type EstimationPhase =
-  | 'Idle'
-  | 'StoryDoctorReview'
-  | 'Voting'
-  | 'Revealed'
-  | 'Discussing'
-  | 'Slicing'
-  | 'Finalized';
+export { DEFAULT_DECKS } from '@scrumpokr/shared';
 
-export type TrackerProvider = 'Linear' | 'GitHub' | 'Jira';
-
-export interface Story {
-  id: string;
-  title: string;
-  description: string;
-  acceptance_criteria: string[];
-  key?: string;
-  url?: string;
-  tracker_provider?: string;
-  external_id?: string;
-  points?: string;
-  status?: string;
-}
-
-export interface StorySlice {
-  title: string;
-  description: string;
-  acceptance_criteria: string[];
-  estimated_points?: number;
-}
-
-export type TrackerConfig =
-  | {
-      provider: 'Linear';
-      config: {
-        api_key: string;
-        endpoint?: string;
-      };
-    }
-  | {
-      provider: 'GitHub';
-      config: {
-        personal_access_token: string;
-        owner: string;
-        repo: string;
-        endpoint?: string;
-      };
-    }
-  | {
-      provider: 'Jira';
-      config: {
-        domain: string;
-        email: string;
-        api_token: string;
-        project_key: string;
-        endpoint?: string;
-        points_field?: string;
-      };
-    };
-
-export interface TrackerQuery {
-  team_id?: string;
-  cycle_id?: string;
-  project_id?: string;
-  sprint_id?: string;
-  milestone?: string;
-  labels?: string[];
-  jql?: string;
-}
-
-export interface TrackerEntity {
-  id: string;
-  name: string;
-  extra?: string;
-}
-
-export interface ConnectionPreview {
-  provider: TrackerProvider;
-  authenticated: boolean;
-  user_name?: string;
-  teams: TrackerEntity[];
-  cycles: TrackerEntity[];
-  projects: TrackerEntity[];
-  sprints: TrackerEntity[];
-  milestones: TrackerEntity[];
-}
-
-export interface Participant {
-  id: string;
-  nickname: string;
-  avatar: string;
-  role: Role;
-  connected: boolean;
-  voted: boolean;
-  vote?: string;
-}
-
-export type ConsensusCategory =
-  | 'Consensus'
-  | 'HighOutlier'
-  | 'LowOutlier'
-  | 'BimodalSplit'
-  | 'WideSpread';
-
-export type InvestCriterion =
-  | 'Independent'
-  | 'Negotiable'
-  | 'Valuable'
-  | 'Estimable'
-  | 'Small'
-  | 'Testable';
-
-export interface InvestCriterionResult {
-  criterion: InvestCriterion;
-  name: string;
-  passed: boolean;
-  score: number;
-  observation: string;
-  recommendation?: string;
-}
-
-export interface InvestScorecard {
-  overall_score: number;
-  criteria: InvestCriterionResult[];
-  summary: string;
-  issues: string[];
-}
-
-export interface ComplexitySummary {
-  data_models: string;
-  dependencies_apis: string;
-  blast_radius: string;
-}
-
-export type EdgeCaseCategoryType =
-  | 'NetworkTimeouts'
-  | 'EmptyBoundary'
-  | 'ConcurrencyRaces'
-  | 'PermissionsAccess';
-
-export interface EdgeCaseItem {
-  id: string;
-  category: EdgeCaseCategoryType;
-  category_name: string;
-  title: string;
-  description: string;
-  checked: boolean;
-}
-
-export interface StoryDoctorReport {
-  story_id: string;
-  scorecard: InvestScorecard;
-  complexity: ComplexitySummary;
-  edge_cases: EdgeCaseItem[];
-}
-
-export interface PointReference {
-  points: number;
-  title: string;
-  description: string;
-}
-
-export interface ConsensusSummary {
-  category: ConsensusCategory;
-  consensus_pct: number;
-  agreement_count: number;
-  total_votes: number;
-  suggested_points?: string;
-  min_vote?: string;
-  max_vote?: string;
-}
-
-export interface RoomSnapshotData {
-  slug: string;
-  short_code: string;
-  phase: EstimationPhase;
-  round_number: number;
-  active_story: Story | null;
-  story_doctor_report?: StoryDoctorReport | null;
-  point_references: PointReference[];
-  backlog: Story[];
-  active_tracker_provider?: string;
-  tracker_connected: boolean;
-  participants: Participant[];
-  facilitator_id: string;
-  consensus: ConsensusSummary | null;
-}
-
-export type ClientCommand =
-  | {
-      type: 'JoinRoom';
-      payload: {
-        participant_id: string;
-        nickname: string;
-        avatar: string;
-        role?: Role;
-      };
-    }
-  | { type: 'SelectStory'; payload: { story: Story | null } }
-  | { type: 'SelectStoryById'; payload: { story_id: string } }
-  | {
-      type: 'UpdatePointReferences';
-      payload: { references: PointReference[] };
-    }
-  | {
-      type: 'ToggleEdgeCaseCheck';
-      payload: { edge_case_id: string; checked: boolean };
-    }
-  | { type: 'ConnectTracker'; payload: { config: TrackerConfig } }
-  | { type: 'DisconnectTracker' }
-  | { type: 'TestTrackerConnection'; payload: { config: TrackerConfig } }
-  | { type: 'FetchBacklog'; payload: { query: TrackerQuery } }
-  | { type: 'ImportBacklog'; payload: { stories: Story[] } }
-  | { type: 'ImportMarkdown'; payload: { raw_markdown: string } }
-  | {
-      type: 'SyncEstimateToTracker';
-      payload: { story_id: string; points: number; post_comment?: boolean };
-    }
-  | {
-      type: 'PushStorySlices';
-      payload: { parent_id: string; slices: StorySlice[] };
-    }
-  | { type: 'ReorderBacklog'; payload: { story_ids: string[] } }
-  | { type: 'RemoveStoryFromBacklog'; payload: { story_id: string } }
-  | { type: 'StartVoting' }
-  | { type: 'CastVote'; payload: { value: string } }
-  | { type: 'RetractVote' }
-  | { type: 'RevealCards' }
-  | { type: 'TriggerReVote' }
-  | { type: 'FinalizeStory'; payload: { points?: string } }
-  | { type: 'UpdateRole'; payload: { target_id: string; new_role: Role } }
-  | { type: 'TransferFacilitator'; payload: { target_id: string } }
-  | { type: 'Ping' };
-
-export type ServerEvent =
-  | { type: 'RoomSnapshot'; payload: { state: RoomSnapshotData } }
-  | {
-      type: 'ParticipantJoined';
-      payload: {
-        participant_id: string;
-        nickname: string;
-        avatar: string;
-        role: Role;
-      };
-    }
-  | { type: 'ParticipantLeft'; payload: { participant_id: string } }
-  | { type: 'VoteCast'; payload: { participant_id: string } }
-  | { type: 'VoteRetracted'; payload: { participant_id: string } }
-  | {
-      type: 'CardsRevealed';
-      payload: {
-        votes: Record<string, string>;
-        distribution: ConsensusSummary | null;
-      };
-    }
-  | { type: 'RoundReset'; payload: { round_number: number } }
-  | { type: 'StoryFinalized'; payload: { story_id?: string; points: string } }
-  | {
-      type: 'PointReferencesUpdated';
-      payload: { references: PointReference[] };
-    }
-  | {
-      type: 'EdgeCaseToggled';
-      payload: { edge_case_id: string; checked: boolean };
-    }
-  | {
-      type: 'StoryDoctorReportUpdated';
-      payload: { report: StoryDoctorReport | null };
-    }
-  | { type: 'TrackerConnected'; payload: { provider: string } }
-  | { type: 'TrackerDisconnected' }
-  | {
-      type: 'TrackerConnectionTested';
-      payload: { preview: ConnectionPreview };
-    }
-  | { type: 'BacklogUpdated'; payload: { backlog: Story[] } }
-  | {
-      type: 'EstimateSynced';
-      payload: {
-        story_id: string;
-        external_id: string;
-        points: number;
-        success: boolean;
-        message?: string;
-      };
-    }
-  | {
-      type: 'SlicesPushed';
-      payload: { parent_id: string; created_stories: Story[] };
-    }
-  | { type: 'TrackerError'; payload: { message: string } }
-  | { type: 'RoleUpdated'; payload: { participant_id: string; role: Role } }
-  | { type: 'FacilitatorChanged'; payload: { facilitator_id: string } }
-  | { type: 'Error'; payload: { message: string } }
-  | { type: 'Pong' };
+export type {
+  ConsensusCategory,
+  ConsensusSummary,
+  DeckConfig,
+  DeckType,
+  EstimationPhase,
+  Participant,
+  Role,
+  RoomState,
+  Story,
+};
 
 export interface LocalSessionProfile {
   participant_id: string;
@@ -302,4 +30,3 @@ export interface LocalSessionProfile {
   avatar: string;
   role?: Role;
 }
-

@@ -36,10 +36,10 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             🃏
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-            Scrum Pokr <span className="text-blue-600">AI</span>
+            Scrum Pokr
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 max-w-sm mx-auto font-normal">
-            Zero-auth real-time Planning Poker with server-enforced reveal gates and AI estimation advisory.
+            Zero-auth real-time Planning Poker with server-enforced reveal gates and configurable card decks.
           </p>
         </div>
 
@@ -134,11 +134,13 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             Server Reveal Gate
           </span>
           <span className="bg-white border border-slate-200 px-2.5 py-0.5 rounded-md shadow-xs">
-            AI Story Doctor
+            Configurable Decks
+          </span>
+          <span className="bg-white border border-slate-200 px-2.5 py-0.5 rounded-md shadow-xs">
+            In-Room Backlog
           </span>
         </div>
       </div>
     </div>
   );
 };
-

@@ -1,37 +1,18 @@
 import {
+  DEFAULT_DECKS,
   maskRoomStateForParticipant,
   roomReducer,
 } from '@scrumpokr/shared';
 import type {
+  DeckConfig,
   Participant,
-  PointReference,
   Role,
   RoomAction,
   RoomState,
-  StoryDoctorReport,
+  Story,
 } from '@scrumpokr/shared';
 
 type Subscriber = (maskedState: RoomState) => Promise<void> | void;
-
-const DEFAULT_POINT_REFERENCES: PointReference[] = [
-  { points: '1', title: 'T-Shirt S / Micro task', description: 'Simple, low risk change' },
-  { points: '3', title: 'Medium Story', description: 'Clear requirements, moderate effort' },
-  { points: '5', title: 'Large Story', description: 'Requires decomposition or spike' },
-];
-
-const DEFAULT_STORY_DOCTOR_REPORT: StoryDoctorReport = {
-  invest_score: 85,
-  summary: 'Good story structure with clear persona and outcome.',
-  complexity: {
-    data_models: 'Low - Isolated table update',
-    dependencies_apis: 'None',
-    blast_radius: 'Isolated UI and service boundary',
-  },
-  edge_cases: [
-    { id: 'ec-1', category: 'NetworkTimeouts', title: 'Network Disconnect', description: 'Check network disconnects during voting', checked: false },
-    { id: 'ec-2', category: 'EmptyBoundary', title: 'Empty Payload', description: 'Verify empty vote payload handling', checked: false },
-  ],
-};
 
 export class RoomActor {
   private state: RoomState;
@@ -39,23 +20,29 @@ export class RoomActor {
   public lastActiveAt: number = Date.now();
   private facilitatorFailoverTimer: NodeJS.Timeout | null = null;
 
-  constructor(public readonly slug: string, public readonly shortCode: string) {
+  constructor(
+    public readonly slug: string,
+    public readonly shortCode: string,
+    initialStory?: Story | null,
+    deckConfig?: DeckConfig
+  ) {
     this.state = {
       slug,
       short_code: shortCode,
       phase: 'Idle',
-      participants: [],
-      current_story: {
-        id: 'story-1',
-        title: 'Sample User Story',
-        description: 'As a user, I want to estimate user stories collaboratively so that our team aligns on effort.',
-        acceptance_criteria: ['Cards reveal simultaneously on facilitator trigger', 'Consensus is calculated automatically'],
-        points: null,
-      },
-      backlog: [],
-      point_references: [...DEFAULT_POINT_REFERENCES],
-      story_doctor_report: DEFAULT_STORY_DOCTOR_REPORT,
+      deck: deckConfig || { type: 'fibonacci', cards: [...DEFAULT_DECKS.fibonacci] },
       facilitator_id: '',
+      participants: [],
+      current_story: initialStory !== undefined
+        ? initialStory
+        : {
+            id: 'story-1',
+            title: 'Sample User Story',
+            description: 'As a user, I want to estimate user stories collaboratively so that our team aligns on effort.',
+            acceptance_criteria: ['Cards reveal simultaneously on facilitator trigger', 'Consensus is calculated automatically'],
+            points: null,
+          },
+      backlog: [],
       consensus: null,
     };
   }

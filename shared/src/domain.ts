@@ -1,13 +1,21 @@
 export type Role = 'Estimator' | 'Observer';
 
-export type EstimationPhase =
-  | 'Idle'
-  | 'StoryDoctorReview'
-  | 'Voting'
-  | 'Revealed'
-  | 'Discussing'
-  | 'Slicing'
-  | 'Finalized';
+export type EstimationPhase = 'Idle' | 'Voting' | 'Revealed' | 'Finalized';
+
+export type DeckType = 'fibonacci' | 'modified_fibonacci' | 'tshirt' | 'sequential' | 'custom';
+
+export interface DeckConfig {
+  type: DeckType;
+  cards: string[];
+}
+
+export const DEFAULT_DECKS: Record<DeckType, string[]> = {
+  fibonacci: ['0', '1', '2', '3', '5', '8', '13', '21', '34', '55', '89', '?'],
+  modified_fibonacci: ['0', '0.5', '1', '2', '3', '5', '8', '13', '20', '40', '100', '?'],
+  tshirt: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '?'],
+  sequential: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '?'],
+  custom: ['1', '2', '3', '5', '8', '?'],
+};
 
 export interface Participant {
   id: string;
@@ -25,25 +33,6 @@ export interface Story {
   description: string;
   acceptance_criteria: string[];
   points?: string | null;
-  key?: string;
-  url?: string;
-  tracker_provider?: string;
-  external_id?: string;
-  status?: string;
-}
-
-export interface StorySlice {
-  title: string;
-  description: string;
-  acceptance_criteria: string[];
-  spidr_pattern?: 'Spike' | 'Path' | 'Interface' | 'Data' | 'Rule';
-  suggested_points?: string;
-}
-
-export interface PointReference {
-  points: string | number;
-  title: string;
-  description: string;
 }
 
 export type ConsensusCategory =
@@ -63,59 +52,14 @@ export interface ConsensusSummary {
   max_vote?: string;
 }
 
-export interface InvestCriterionResult {
-  criterion: 'Independent' | 'Negotiable' | 'Valuable' | 'Estimable' | 'Small' | 'Testable';
-  name: string;
-  passed: boolean;
-  score: number;
-  observation: string;
-  recommendation?: string;
-}
-
-export interface InvestScorecard {
-  overall_score: number;
-  criteria: InvestCriterionResult[];
-  summary: string;
-  issues: string[];
-}
-
-export interface ComplexitySummary {
-  data_models: string;
-  dependencies_apis: string;
-  blast_radius: string;
-}
-
-export type EdgeCaseCategory =
-  | 'NetworkTimeouts'
-  | 'EmptyBoundary'
-  | 'ConcurrencyRaces'
-  | 'PermissionsAccess';
-
-export interface EdgeCaseItem {
-  id: string;
-  category: EdgeCaseCategory;
-  category_name?: string;
-  title: string;
-  description: string;
-  checked: boolean;
-}
-
-export interface StoryDoctorReport {
-  invest_score: number;
-  summary: string;
-  complexity?: ComplexitySummary;
-  edge_cases: EdgeCaseItem[];
-}
-
 export interface RoomState {
   slug: string;
   short_code: string;
   phase: EstimationPhase;
+  deck: DeckConfig;
+  facilitator_id: string;
   participants: Participant[];
   current_story: Story | null;
   backlog: Story[];
-  point_references: PointReference[];
-  story_doctor_report: StoryDoctorReport | null;
-  facilitator_id: string;
   consensus: ConsensusSummary | null;
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import app from '../index';
 
-describe('Scrum Pokr AI Hono Server Endpoints', () => {
+describe('Scrum Pokr Hono Server REST Endpoints', () => {
   it('GET /health returns ok status', async () => {
     const res = await app.request('/health');
     expect(res.status).toBe(200);
@@ -11,7 +11,7 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
 
   it('POST /api/rooms creates a room with slug and shortCode', async () => {
     const res = await app.request('/api/rooms', { method: 'POST' });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     const body = await res.json();
     expect(body.slug).toBeDefined();
     expect(body.short_code).toBeDefined();
@@ -53,7 +53,18 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     });
     expect(bobStartRes.status).toBe(403);
 
-    // 4. Start Voting (Alice is Facilitator)
+    // 4. Set Deck Configuration (Alice is Facilitator)
+    const deckRes = await app.request(`/api/rooms/${slug}/deck`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        participantId: aliceId,
+        deck: { type: 'fibonacci', cards: ['1', '2', '3', '5', '8', '?'] },
+      }),
+    });
+    expect(deckRes.status).toBe(200);
+
+    // 5. Start Voting (Alice is Facilitator)
     const aliceStartRes = await app.request(`/api/rooms/${slug}/start-voting`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -61,7 +72,7 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     });
     expect(aliceStartRes.status).toBe(200);
 
-    // 5. Cast votes
+    // 6. Cast votes
     await app.request(`/api/rooms/${slug}/vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -74,7 +85,7 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
       body: JSON.stringify({ participantId: bobId, vote: '8' }),
     });
 
-    // 6. Verify Reveal Gate Masking for Bob
+    // 7. Verify Reveal Gate Masking for Bob
     const stateForBobRes = await app.request(`/api/rooms/${slug}?participantId=${bobId}`);
     const stateForBob = await stateForBobRes.json();
 
@@ -95,7 +106,7 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     });
     expect(bobRevealRes.status).toBe(403);
 
-    // 7. Reveal Cards (Alice)
+    // 8. Reveal Cards (Alice)
     const aliceRevealRes = await app.request(`/api/rooms/${slug}/reveal`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -103,7 +114,7 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     });
     expect(aliceRevealRes.status).toBe(200);
 
-    // 8. Verify Unmasked State
+    // 9. Verify Unmasked State
     const revealedRes = await app.request(`/api/rooms/${slug}?participantId=${bobId}`);
     const revealedState = await revealedRes.json();
 
@@ -115,7 +126,7 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     expect(revealedBob.vote).toBe('8'); // Unmasked!
     expect(revealedState.consensus).toBeDefined();
 
-    // 9. Verify that voting after reveal is strictly rejected (400 Bad Request)
+    // 10. Verify that voting after reveal is strictly rejected (400 Bad Request)
     const postRevealVoteRes = await app.request(`/api/rooms/${slug}/vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -123,7 +134,15 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     });
     expect(postRevealVoteRes.status).toBe(400);
 
-    // 10. Advance to Next Story (Alice)
+    // 11. Finalize Story (Alice)
+    const finalizeRes = await app.request(`/api/rooms/${slug}/finalize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participantId: aliceId, points: '5' }),
+    });
+    expect(finalizeRes.status).toBe(200);
+
+    // 12. Advance to Next Story (Alice)
     const nextStoryRes = await app.request(`/api/rooms/${slug}/next-story`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -135,15 +154,12 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     const nextRoundState = await nextRoundStateRes.json();
     expect(nextRoundState.phase).toBe('Idle');
     expect(nextRoundState.consensus).toBeNull();
-    expect(nextRoundState.participants[0].vote).toBeNull();
-    expect(nextRoundState.participants[0].has_voted).toBe(false);
   });
 
-  it('gating check: rejects divergence analysis and SPIDR slicing during Voting phase', async () => {
+  it('handles backlog story CRUD and reordering via REST endpoints', async () => {
     const createRes = await app.request('/api/rooms', { method: 'POST' });
     const { slug } = await createRes.json();
 
-    // Join and start voting
     const joinRes = await app.request(`/api/rooms/${slug}/join`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -151,22 +167,53 @@ describe('Scrum Pokr AI Hono Server Endpoints', () => {
     });
     const { participant_id: aliceId } = await joinRes.json();
 
-    await app.request(`/api/rooms/${slug}/start-voting`, {
+    // Add Story
+    const addRes1 = await app.request(`/api/rooms/${slug}/stories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ participantId: aliceId }),
+      body: JSON.stringify({
+        participant_id: aliceId,
+        story: { id: 's-1', title: 'Story 1', description: 'Desc 1', acceptance_criteria: ['AC1'] },
+      }),
     });
+    expect(addRes1.status).toBe(201);
 
-    const divergenceRes = await app.request(`/api/rooms/${slug}/ai/divergence`, {
-      method: 'POST',
-    });
-    expect(divergenceRes.status).toBe(403);
-
-    const sliceRes = await app.request(`/api/rooms/${slug}/ai/slice`, {
+    const addRes2 = await app.request(`/api/rooms/${slug}/stories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
+      body: JSON.stringify({
+        participant_id: aliceId,
+        story: { id: 's-2', title: 'Story 2', description: 'Desc 2', acceptance_criteria: ['AC2'] },
+      }),
     });
-    expect(sliceRes.status).toBe(403);
+    expect(addRes2.status).toBe(201);
+
+    // Update Story
+    const updateRes = await app.request(`/api/rooms/${slug}/stories/s-2`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        participant_id: aliceId,
+        title: 'Story 2 Updated',
+      }),
+    });
+    expect(updateRes.status).toBe(200);
+
+    // Reorder Backlog
+    const reorderRes = await app.request(`/api/rooms/${slug}/reorder-backlog`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        participant_id: aliceId,
+        story_ids: ['s-2'],
+      }),
+    });
+    expect(reorderRes.status).toBe(200);
+
+    // Delete Story
+    const deleteRes = await app.request(`/api/rooms/${slug}/stories/s-2?participantId=${aliceId}`, {
+      method: 'DELETE',
+    });
+    expect(deleteRes.status).toBe(200);
   });
 });

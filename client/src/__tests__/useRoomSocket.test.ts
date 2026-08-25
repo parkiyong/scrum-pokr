@@ -119,12 +119,12 @@ describe('useRoomSocket Hook & Hono RPC Adapter', () => {
     const mockServerState = {
       slug: 'TEST-42',
       short_code: 'T-42',
-      phase: 'VOTING',
-      round_number: 2,
+      phase: 'Voting',
+      deck: { type: 'fibonacci', cards: ['1', '2', '3', '5', '8', '?'] },
       facilitator_id: 'fac-1',
       participants: [
-        { id: 'fac-1', name: 'Facilitator', avatar: 'indigo', role: 'FACILITATOR', has_voted: true, vote: null },
-        { id: 'p2', name: 'Bob', avatar: 'emerald', role: 'VOTER', has_voted: false, vote: null },
+        { id: 'fac-1', name: 'Facilitator', avatar: 'indigo', role: 'Estimator', connected: true, has_voted: true, vote: null },
+        { id: 'p2', name: 'Bob', avatar: 'emerald', role: 'Estimator', connected: true, has_voted: false, vote: null },
       ],
       current_story: {
         id: 'story-1',
@@ -133,7 +133,7 @@ describe('useRoomSocket Hook & Hono RPC Adapter', () => {
         acceptance_criteria: ['Type safe', 'Zero regressions'],
       },
       backlog: [],
-      point_references: [{ points: 3, title: 'Auth Hook', description: 'Simple hook' }],
+      consensus: null,
     };
 
     act(() => {
@@ -143,10 +143,9 @@ describe('useRoomSocket Hook & Hono RPC Adapter', () => {
     expect(result.current.roomState).not.toBeNull();
     expect(result.current.roomState?.slug).toBe('TEST-42');
     expect(result.current.roomState?.phase).toBe('Voting');
-    expect(result.current.roomState?.round_number).toBe(2);
-    expect(result.current.roomState?.active_story?.title).toBe('Implement Hono RPC');
+    expect(result.current.roomState?.current_story?.title).toBe('Implement Hono RPC');
     expect(result.current.roomState?.participants.length).toBe(2);
-    expect(result.current.roomState?.participants[0].voted).toBe(true);
+    expect(result.current.roomState?.participants[0].has_voted).toBe(true);
     expect(result.current.roomState?.participants[0].vote).toBeNull(); // Masked by Reveal Gate
   });
 
@@ -221,13 +220,16 @@ describe('useRoomSocket Hook & Hono RPC Adapter', () => {
     );
 
     await act(async () => {
-      result.current.toggleEdgeCaseCheck('ec-1', true);
+      result.current.setDeck({ type: 'tshirt', cards: ['XS', 'S', 'M', 'L'] });
     });
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/rooms/TEST-42/edge-case'),
+      expect.stringContaining('/api/rooms/TEST-42/deck'),
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ participant_id: pid, edge_case_id: 'ec-1', checked: true }),
+        body: JSON.stringify({
+          participant_id: pid,
+          deck: { type: 'tshirt', cards: ['XS', 'S', 'M', 'L'] },
+        }),
       })
     );
   });
@@ -261,5 +263,49 @@ describe('useRoomSocket Hook & Hono RPC Adapter', () => {
     ]);
     expect(consensus3?.category).toBe('HighOutlier');
     expect(consensus3?.consensus_pct).toBe(67);
+  });
+
+  it('eagerly updates roomState and grants isFacilitator when first user joins as Observer', async () => {
+    const { result } = renderHook(() => useRoomSocket('TEST-OBS'));
+    const pid = result.current.currentParticipantId;
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        participant_id: pid,
+        state: {
+          slug: 'TEST-OBS',
+          short_code: 'TOBS',
+          phase: 'Idle',
+          deck: { type: 'fibonacci', cards: ['1', '2', '3', '5', '8'] },
+          facilitator_id: pid,
+          participants: [
+            {
+              id: pid,
+              name: 'ScrumMaster',
+              avatar: 'indigo',
+              role: 'Observer',
+              connected: true,
+              has_voted: false,
+              vote: null,
+            },
+          ],
+          current_story: null,
+          backlog: [],
+          consensus: null,
+        },
+      }),
+      text: async () => JSON.stringify({ success: true }),
+    } as any);
+
+    await act(async () => {
+      result.current.joinRoom('ScrumMaster', 'indigo', 'Observer');
+    });
+
+    expect(result.current.isFacilitator).toBe(true);
+    expect(result.current.myProfile?.role).toBe('Observer');
+    expect(result.current.roomState?.facilitator_id).toBe(pid);
+    expect(result.current.roomState?.participants[0].role).toBe('Observer');
   });
 });
