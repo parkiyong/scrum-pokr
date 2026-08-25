@@ -2,7 +2,7 @@
 
 > Operational guide for setting up, running, testing, and developing **Scrum Pokr AI** with a unified Full-Stack TypeScript architecture.
 
-📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🌐 [Product Spec](.scratch/scrum-poker/spec.md)
+📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 📋 [Product Spec](.scratch/basic-scrum-poker/spec.md)
 
 ---
 
@@ -21,7 +21,7 @@
 
 * **Node.js**: `v20+` LTS
 * **npm**: `v10+` (native npm workspaces support)
-* **Docker & Docker Compose**: For containerized deployment (includes PostgreSQL + pgvector)
+* **Docker & Docker Compose** (optional, for containerized execution)
 
 ---
 
@@ -30,8 +30,8 @@
 ### 2.1 Clone Repository
 
 ```bash
-git clone https://github.com/parkiyong/scrum-poker-ai.git
-cd scrum-poke-ai
+git clone https://github.com/parkiyong/scrum-pokr.git
+cd scrum-pokr
 ```
 
 ### 2.2 Install Monorepo Dependencies
@@ -76,7 +76,6 @@ docker compose up --build
 ```
 
 * **Unified Web App in Docker**: [http://localhost:3000](http://localhost:3000)
-* **PostgreSQL + pgvector**: `localhost:5432`
 
 ---
 
@@ -93,13 +92,13 @@ npm test
 ### 4.2 Run Specific Package Tests
 
 ```bash
-# Test shared domain models & Reveal Gate invariants
+# Test shared domain models, schemas, and Reveal Gate invariants
 npm run test:shared
 
-# Test Hono server REST & SSE routes
+# Test Hono server REST & SSE routes and RoomActor state machine
 npm run test:server
 
-# Test React client components & useRoomSocket hook
+# Test React client components and useRoomSocket hook
 npm run test:client
 ```
 
@@ -114,7 +113,7 @@ npm run build
 ## 5. Project Directory Layout
 
 ```
-scrum-poke-ai/
+scrum-pokr/
 ├── package.json                   # Root monorepo workspace manifest
 ├── tsconfig.base.json             # Shared TypeScript configuration
 ├── vitest.workspace.ts            # Vitest multi-project workspace configuration
@@ -122,7 +121,7 @@ scrum-poke-ai/
 ├── shared/                        # @scrumpokr/shared (Zero dependencies)
 │   ├── src/domain.ts              # Authoritative domain types (RoomState, Story, Participant)
 │   ├── src/schemas.ts             # Zod validation schemas & inferred types
-│   ├── src/room-reducer.ts        # Pure deterministic state transition functions
+│   ├── src/room-reducer.ts        # Pure deterministic state transition functions (16 actions)
 │   ├── src/reveal-gate.ts         # maskRoomStateForParticipant projection function
 │   └── src/__tests__/             # Reveal Gate invariant & Reducer unit tests
 │
@@ -130,24 +129,24 @@ scrum-poke-ai/
 │   ├── src/index.ts               # App entry point + `export type AppType = typeof routes;`
 │   ├── src/routes/
 │   │   ├── rooms.ts               # REST command endpoints (zValidator)
-│   │   ├── events.ts              # SSE stream endpoint (streamSSE + heartbeats)
-│   │   └── ai.ts                  # Story Doctor, SPIDR, Divergence endpoints
+│   │   └── events.ts              # SSE stream endpoint (streamSSE + heartbeats)
 │   ├── src/room/
-│   │   ├── room-actor.ts          # In-memory Room state actor
+│   │   ├── room-actor.ts          # In-memory Room state actor & subscriptions
 │   │   └── registry.ts            # RoomRegistry with 4h TTL eviction sweeper
-│   ├── src/db/                    # Drizzle ORM + pgvector similarity queries
-│   ├── src/ai/                    # @google/genai SDK advisory integration
-│   └── src/__tests__/             # Hono endpoint & Reveal Gate integration tests
+│   ├── src/util/
+│   │   └── slug.ts                # Memorable 6-char slug & short code generator
+│   └── src/__tests__/             # Hono endpoint & SSE integration tests
 │
 ├── client/                        # @scrumpokr/client (React 18 + Vite SPA)
 │   ├── src/api/contracts.ts       # Typed RPC route contracts
-│   ├── src/api/index.ts           # `export const api = hc<AppType>('');`
+│   ├── src/api/index.ts           # Typed Hono RPC client `hc<AppType>('')`
 │   ├── src/hooks/useRoomSocket.ts # Native SSE event listener + typed RPC dispatches
-│   ├── src/components/            # 3D Poker Arena, Facilitator Bar, Deck Selector, Story Doctor
+│   ├── src/components/            # PokerTableArena, FacilitatorBar, DeckSelector, DeckConfigModal, BacklogDrawer
+│   ├── src/utils/session.ts       # LocalStorage session identity helpers
 │   └── src/__tests__/             # React component & hook integration tests
 │
-├── docker-compose.yml             # Local Docker services (App + pgvector)
-├── Dockerfile                     # Multi-stage production container build (<100MB Alpine)
+├── docker-compose.yml             # Local Docker service (Unified App)
+├── Dockerfile                     # Multi-stage production container build (Alpine)
 ├── USER_GUIDE.md                  # User & facilitator documentation
 ├── DEVELOPER_GUIDE.md             # Developer operational guide (this document)
 ├── CONTRIBUTING.md                # Contribution guidelines & workflow
@@ -161,9 +160,9 @@ scrum-poke-ai/
 Key architectural principles, domain definitions, and API specifications are maintained across:
 
 * 🏛️ **Architecture & Backend Specification**:
-  * [Hono Full-Stack Migration Map & Decisions](.scratch/hono-migration/map.md)
-  * [Product & System Technical Specification](.scratch/scrum-poker/spec.md)
-* 🧠 **Domain Glossary & Invariants**:
+  * [Basic Scrum Poker Specification](.scratch/basic-scrum-poker/spec.md)
+  * [Basic Scrum Poker Map & Decisions](.scratch/basic-scrum-poker/map.md)
+* 📖 **Domain Glossary & Invariants**:
   * [Domain Vocabulary & Rules](CONTEXT.md)
 * 🛡️ **Security Invariants**:
   * Server-enforced Reveal Gate masking unrevealed votes across REST/SSE state broadcasts.

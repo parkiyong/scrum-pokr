@@ -1,6 +1,6 @@
 # Scrum Pokr AI
 
-A real-time, zero-auth, standalone Scrum Poker estimation platform with a Spring Boot 4 Java 25 backend and an advisory AI layer for backlog refinement, divergence analysis, and team calibration.
+A real-time, zero-auth, standalone Scrum Poker estimation platform featuring a Full-Stack TypeScript architecture (Hono + React) and a pure in-memory state engine.
 
 ## Language
 
@@ -21,47 +21,21 @@ _Avoid_: Spectator, watcher, guest
 ### Room & Estimation Domain
 
 **Room**:
-An ephemeral or persistent real-time session space identified by a unique slug or code where team members gather to estimate stories without account login.
+An ephemeral real-time session space identified by a unique slug and 6-character code (`AAA-99`) where team members gather to estimate stories without account login.
 _Avoid_: Game, lobby, meeting, channel
 
 **Story**:
-An individual backlog work item synced from an external issue tracker (Linear, Jira, GitHub) or created for estimation during a session.
-_Avoid_: Task, issue, work item, ticket
+An individual work item with an ID, title, optional description, acceptance criteria list, and points estimate.
+_Avoid_: Task, ticket, issue item
 
 **Deck**:
-The configured scale of estimate values (e.g. Fibonacci: 1, 2, 3, 5, 8, 13, 21, ?) used by estimators in a room.
+The configured scale of estimate card values (e.g. Fibonacci, Modified Fibonacci, T-Shirt Sizes, Powers of 2, or custom scale) used by estimators in a room.
 _Avoid_: Scale, card set, point list
 
 **Reveal Gate**:
-A server-enforced state barrier preventing the display of submitted votes, AI suggestions, or divergence analyses until all votes are cast or the facilitator triggers a reveal.
+A server-enforced state barrier preventing the display of submitted peer votes until the facilitator triggers a reveal. During voting, peer votes are masked as boolean flags (`has_voted: bool`).
 _Avoid_: Flip lock, reveal event, privacy barrier
 
-### AI Capabilities (Advisory Layer)
-
-**Story Doctor**:
-A pre-vote quality analysis tool that audits story descriptions against INVEST criteria, generates potential edge cases, and summarizes technical complexity.
-_Avoid_: Ticket analyzer, INVEST auditor, pre-checker
-
-**Reference Matcher**:
-An embedding-based similarity engine that retrieves historically resolved stories from past sessions with their agreed point values, staying locked behind the Reveal Gate until cards are flipped.
-_Avoid_: AI baseline, similarity search, point predictor
-
-**Divergence Analyzer**:
-A post-reveal analytical prompt engine that identifies spread patterns among votes and synthesizes likely axes of disagreement to guide team discussion.
-_Avoid_: Outlier detector, spread analyzer, debate prompt
-
-**Vertical Slicer**:
-An advisory decomposition tool using the SPIDR method to suggest 2–4 smaller, independently estimable story slices when consensus is high or split.
-_Avoid_: Task splitter, story sub-divider, slicer
-
-**Point Reference Library**:
-A team-configured reference table linking concrete benchmark stories to point values, accessible in the room sidebar to ground calibration.
-_Avoid_: Cheat sheet, reference examples, calibration guide
-
-**Team Estimation Profile**:
-Aggregate team-level velocity, consistency, and category estimation trends tracked strictly at the team level without individual scoring surfaces.
-_Avoid_: Leaderboard, developer metrics, performance tracker
-
-**Calibration Model**:
-A rolling longitudinal model that learns the team's historical estimation accuracy against delivery outcomes to refine reference matching over time.
-_Avoid_: ML model, weight adjuster, calibration curve
+**Backlog**:
+The in-room ordered queue of upcoming user stories that can be activated for estimation or exported to Markdown / CSV.
+_Avoid_: Ticket queue, issue list, backlog column

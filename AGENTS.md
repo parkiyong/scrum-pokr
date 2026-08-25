@@ -40,12 +40,12 @@ Documentation is separated across the 4 Diátaxis quadrants:
   * [`README.md`](README.md): Project overview, core highlights, and 3-step quick start.
 * **How-To Guides (Task/Operation-Oriented)**:
   * [`USER_GUIDE.md`](USER_GUIDE.md): End-user and Facilitator room creation, voting, and multi-browser testing recipes.
-  * [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md): Developer operational workflows (Docker provisioning, Spring Boot / Vite servers, test execution, linting).
+  * [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md): Developer operational workflows (Docker provisioning, Hono / Vite servers, test execution, linting).
 * **Reference (Information/Contract-Oriented)**:
-  * [`docs/JAVA_MIGRATION_RECOMMENDATION.md`](docs/JAVA_MIGRATION_RECOMMENDATION.md): SSE + REST message schemas, endpoints, and architecture.
+  * [`docs/JAVA_MIGRATION_RECOMMENDATION.md`](docs/JAVA_MIGRATION_RECOMMENDATION.md): Reference evaluation for SSE + REST message schemas, endpoints, and architecture.
 * **Explanation (Understanding/Rationale-Oriented)**:
   * [`CONTEXT.md`](CONTEXT.md): Authoritative domain glossary and terminology boundaries.
-  * [`.scratch/scrum-poker/decisions/`](.scratch/scrum-poker/decisions/): Architectural Decision Records (ADRs).
+  * [`.scratch/basic-scrum-poker/decisions/`](.scratch/basic-scrum-poker/decisions/): Architectural Decision Records (ADRs).
 
 ---
 
@@ -70,7 +70,7 @@ This project uses **Herdr** as the terminal multiplexer for managing concurrent 
 
 ### 2. Long-Running Processes & Watchers
 * **Externalize Servers and Watchers**: Do not run blocking servers (e.g. dev servers, file watchers, continuous test runners) as background CLI tasks in the primary session.
-* **Pane Recommendations**: Prompt the user to start long-running services in a separate Herdr pane (e.g., `cargo watch`, `npm run dev`, or `docker compose logs -f`) so Herdr can monitor process health and idle/active states directly.
+* **Pane Recommendations**: Prompt the user to start long-running services in a separate Herdr pane (e.g., `npm run dev`, `npm test`, or `docker compose logs -f`) so Herdr can monitor process health and idle/active states directly.
 
 ### 3. Worktree & File Safety
 * Whenever advising parallel agent sessions in separate Herdr panes, always specify separate Git worktrees (e.g., `.worktrees/<feature-name>`) to prevent concurrent file editing conflicts.
