@@ -7,7 +7,7 @@ interface PokerTableArenaProps {
   currentUserId: string;
   facilitatorId?: string;
   phase: EstimationPhase;
-  roundNumber: number;
+  roundNumber?: number;
   consensus?: ConsensusSummary | null;
 }
 
@@ -16,11 +16,11 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
   currentUserId,
   facilitatorId,
   phase,
-  roundNumber,
+  roundNumber = 1,
   consensus,
 }) => {
-  const isRevealed = phase === 'Revealed' || phase === 'Finalized' || phase === 'Discussing' || phase === 'Slicing';
-  const votedCount = participants.filter((p) => p.role === 'Estimator' && p.voted).length;
+  const isRevealed = phase === 'Revealed' || phase === 'Finalized';
+  const votedCount = participants.filter((p) => p.role === 'Estimator' && (p.has_voted || p.vote !== null)).length;
   const totalEstimators = participants.filter((p) => p.role === 'Estimator').length;
 
   // Order participants so current user is index 0 (seated at the bottom center)
@@ -90,12 +90,6 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
           {phase === 'Idle' && (
             <p className="text-xs text-slate-600 font-medium">
               Waiting for Facilitator to start voting...
-            </p>
-          )}
-
-          {phase === 'StoryDoctorReview' && (
-            <p className="text-xs text-slate-600 font-medium">
-              Reviewing INVEST criteria &amp; edge cases...
             </p>
           )}
 
@@ -188,4 +182,3 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
     </div>
   );
 };
-

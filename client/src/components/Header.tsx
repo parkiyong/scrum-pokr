@@ -40,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
           </a>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-bold text-sm tracking-tight text-slate-900">Scrum Pokr AI</h1>
+              <h1 className="font-bold text-sm tracking-tight text-slate-900">Scrum Pokr</h1>
               <span className="px-2 py-0.2 rounded-md text-[11px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
                 {slug}
               </span>
@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
                 }`}
               />
               <span className="font-bold text-slate-800">
-                {myParticipant.nickname}{' '}
+                {myParticipant.name}{' '}
                 {isFacilitator
                   ? myParticipant.role === 'Observer'
                     ? '(Facilitator • Observer)'
@@ -90,4 +90,3 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
-

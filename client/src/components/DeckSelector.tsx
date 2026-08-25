@@ -1,18 +1,21 @@
 import React from 'react';
+import { DeckConfig, DEFAULT_DECKS } from '../types/room';
 
 interface DeckSelectorProps {
-  selectedCard?: string;
+  deck?: DeckConfig;
+  selectedCard?: string | null;
   onSelectCard: (val: string) => void;
   disabled?: boolean;
 }
 
-const FIBONACCI_DECK = ['0', '0.5', '1', '2', '3', '5', '8', '13', '21', '?'];
-
 export const DeckSelector: React.FC<DeckSelectorProps> = ({
+  deck,
   selectedCard,
   onSelectCard,
   disabled = false,
 }) => {
+  const cards = deck?.cards || DEFAULT_DECKS.fibonacci;
+
   return (
     <div className="w-full mt-3 flex flex-col items-center">
       <div className="flex flex-wrap items-center justify-center gap-2 p-1.5 max-w-full">
@@ -20,7 +23,7 @@ export const DeckSelector: React.FC<DeckSelectorProps> = ({
           PICK CARD:
         </span>
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center">
-          {FIBONACCI_DECK.map((val) => {
+          {cards.map((val) => {
             const isSelected = selectedCard === val;
             return (
               <button
@@ -42,4 +45,3 @@ export const DeckSelector: React.FC<DeckSelectorProps> = ({
     </div>
   );
 };
-

@@ -10,12 +10,24 @@ describe('DeckSelector component', () => {
     const card5 = screen.getAllByRole('button', { name: /5/i })[0];
     expect(card5).toBeInTheDocument();
 
-    const cardHalf = screen.getByRole('button', { name: '0.5' });
-    expect(cardHalf).toBeInTheDocument();
-
     const card8 = screen.getByRole('button', { name: '8' });
+    expect(card8).toBeInTheDocument();
     fireEvent.click(card8);
 
     expect(handleSelect).toHaveBeenCalledWith('8');
+  });
+
+  it('renders custom deck cards when provided', () => {
+    const handleSelect = vi.fn();
+    render(
+      <DeckSelector
+        deck={{ type: 'tshirt', cards: ['XS', 'S', 'M', 'L', 'XL'] }}
+        selectedCard="M"
+        onSelectCard={handleSelect}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'XS' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'M' })).toBeInTheDocument();
   });
 });

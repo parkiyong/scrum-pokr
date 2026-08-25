@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import { BacklogDrawer } from '../components/BacklogDrawer';
-import { ConnectTrackerModal } from '../components/ConnectTrackerModal';
+import { DeckConfigModal } from '../components/DeckConfigModal';
 import { DeckSelector } from '../components/DeckSelector';
 import { FacilitatorBar } from '../components/FacilitatorBar';
 import { Header } from '../components/Header';
 import { JoinModal } from '../components/JoinModal';
-import { PointReferenceLibrary } from '../components/PointReferenceLibrary';
 import { PokerTableArena } from '../components/PokerTableArena';
-import { SPIDRSliceModal } from '../components/SPIDRSliceModal';
-import { StoryDoctorPanel } from '../components/StoryDoctorPanel';
 import { useRoomSocket } from '../hooks/useRoomSocket';
 import { Role } from '../types/room';
 
@@ -24,9 +21,6 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
     currentParticipantId,
     myProfile,
     isFacilitator,
-    connectionPreview,
-    trackerError,
-    syncFeedback,
     joinRoom,
     startVoting,
     castVote,
@@ -35,28 +29,16 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
     triggerReVote,
     finalizeStory,
     nextStory,
+    setDeck,
     selectStoryById,
-    updatePointReferences,
-    toggleEdgeCaseCheck,
-    connectTracker,
-    disconnectTracker,
-    testTrackerConnection,
-    fetchBacklog,
-    importBacklog,
-    importMarkdown,
-    syncEstimateToTracker,
-    pushStorySlices,
+    addStory,
+    removeStory,
     reorderBacklog,
-    removeStoryFromBacklog,
-    clearTrackerFeedback,
   } = useRoomSocket(slug);
 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(!myProfile);
   const [isBacklogOpen, setIsBacklogOpen] = useState(false);
-  const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
-  const [isSliceModalOpen, setIsSliceModalOpen] = useState(false);
-  const [isDoctorDrawerOpen, setIsDoctorDrawerOpen] = useState(false);
-  const [isRefLibraryDrawerOpen, setIsRefLibraryDrawerOpen] = useState(false);
+  const [isDeckConfigOpen, setIsDeckConfigOpen] = useState(false);
 
   const myParticipant = roomState?.participants.find((p) => p.id === currentParticipantId);
   const myVote = myParticipant?.vote;
@@ -86,22 +68,11 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
   }
 
   const phase = roomState?.phase || 'Idle';
-  const roundNumber = roomState?.round_number || 1;
   const participants = roomState?.participants || [];
   const consensus = roomState?.consensus;
-  const activeStory = roomState?.active_story;
-  const storyDoctorReport = roomState?.story_doctor_report;
-  const pointReferences = roomState?.point_references || [];
+  const currentStory = roomState?.current_story;
   const backlog = roomState?.backlog || [];
-  const activeTrackerProvider = roomState?.active_tracker_provider;
-  const trackerConnected = roomState?.tracker_connected || false;
-
-  const handleSyncActiveEstimate = () => {
-    if (!activeStory) return;
-    const suggested = consensus?.suggested_points || '5';
-    const numericPoints = parseInt(suggested, 10) || 5;
-    syncEstimateToTracker(activeStory.id, numericPoints, true);
-  };
+  const deck = roomState?.deck;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#dce8f5] text-slate-900 pb-12">
@@ -116,11 +87,10 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
       />
 
       {/* Main Content Arena */}
-      <main className="flex-1 max-w-[90%] mx-auto w-full px-2 sm:px-4 py-3 flex flex-col">
-        {/* Active Story Banner */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 mb-2 shadow-[0_4px_20px_rgba(15,23,42,0.04)]">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-3 sm:px-4 py-4 flex flex-col">
+        {/* Active Story Card */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 mb-3 shadow-[0_4px_20px_rgba(15,23,42,0.04)]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {/* Story Info Left */}
             <div className="flex items-start gap-3 flex-1 min-w-0">
               <button
                 onClick={onLeave}
@@ -139,223 +109,119 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
                     ACTIVE STORY
                   </span>
 
-                  {activeStory?.key && (
-                    <span className="text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.2 rounded-md">
-                      {activeStory.key}
+                  {currentStory?.points && (
+                    <span className="text-xs font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.2 rounded-md">
+                      {currentStory.points} pts
                     </span>
                   )}
 
                   <h2 className="text-sm sm:text-base font-bold text-slate-900 truncate">
-                    {activeStory?.title || 'Sample User Story'}
+                    {currentStory?.title || 'No Active Story Selected'}
                   </h2>
                 </div>
 
                 <p className="text-xs text-slate-500 font-normal leading-relaxed">
-                  {activeStory?.description ||
-                    'As a user, I want to estimate user stories collaboratively so that our team aligns on effort.'}
+                  {currentStory?.description || 'Use the backlog queue to select or create user stories for estimation.'}
                 </p>
               </div>
             </div>
 
-            {/* Story Banner Right Action Buttons */}
+            {/* Quick Actions */}
             <div className="flex items-center gap-2 self-start sm:self-center flex-shrink-0">
-              {/* Mobile Quick Toggles */}
-              <button
-                onClick={() => setIsDoctorDrawerOpen(true)}
-                className="lg:hidden px-3 py-1.5 bg-white hover:bg-slate-50 text-blue-600 border border-blue-200 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1"
-              >
-                🩺 Story Doctor
-              </button>
-
-              <button
-                onClick={() => setIsRefLibraryDrawerOpen(true)}
-                className="lg:hidden px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1"
-              >
-                📚 References
-              </button>
+              {isFacilitator && (
+                <button
+                  onClick={() => setIsDeckConfigOpen(true)}
+                  className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1"
+                  title="Configure Deck"
+                >
+                  ⚙️ Deck ({deck?.type || 'fibonacci'})
+                </button>
+              )}
 
               <button
                 onClick={() => setIsBacklogOpen(true)}
                 className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5"
               >
-                Backlog ({backlog.length})
+                📋 Backlog ({backlog.length})
               </button>
-
-              {isFacilitator && (
-                <button
-                  onClick={() => setIsTrackerModalOpen(true)}
-                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 ${
-                    trackerConnected
-                      ? 'bg-emerald-50 border border-emerald-300 text-emerald-800'
-                      : 'bg-[#3b82f6] hover:bg-[#2563eb] text-white'
-                  }`}
-                >
-                  {activeTrackerProvider ? `${activeTrackerProvider} Connected` : 'Connect Tracker'}
-                </button>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Facilitator Controls Row */}
+        {/* Facilitator Controls Bar */}
         <FacilitatorBar
           phase={phase}
-          activeStory={activeStory}
-          hasTracker={trackerConnected}
+          activeStory={currentStory}
           onStartVoting={startVoting}
           onRevealCards={revealCards}
           onTriggerReVote={triggerReVote}
           onFinalize={() => finalizeStory()}
           onNextStory={nextStory}
-          onSyncEstimate={handleSyncActiveEstimate}
-          onDecomposeSlices={() => setIsSliceModalOpen(true)}
+          onOpenDeckConfig={() => setIsDeckConfigOpen(true)}
           isFacilitator={isFacilitator}
-          syncFeedback={syncFeedback}
         />
 
-        {/* 3-Column Responsive Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 items-start mt-1">
-          {/* Left Column: Story Doctor Quality Gate */}
-          <div className="hidden lg:block lg:col-span-3 xl:col-span-3">
-            <StoryDoctorPanel
-              story={activeStory || { id: 'sample-1', title: 'Sample User Story', description: 'As a user, I want to estimate user stories collaboratively so that our team aligns on effort.', acceptance_criteria: ['Collaborative estimation', 'Consensus detection'] }}
-              report={storyDoctorReport}
-              phase={phase}
-              isFacilitator={isFacilitator}
-              onStartVoting={startVoting}
-              onToggleEdgeCase={toggleEdgeCaseCheck}
-            />
-          </div>
-
-          {/* Center Column: Virtual Poker Table + Docked Card Deck */}
-          <div className="col-span-1 lg:col-span-6 xl:col-span-6 flex flex-col items-center justify-between">
-            <PokerTableArena
-              participants={participants.length > 0 ? participants : [
-                {
-                  id: currentParticipantId,
-                  nickname: myProfile?.nickname || 'Jaka',
-                  avatar: myProfile?.avatar || 'indigo',
-                  role: myProfile?.role || 'Estimator',
-                  connected: true,
-                  voted: false,
-                },
-              ]}
-              currentUserId={currentParticipantId}
-              facilitatorId={roomState?.facilitator_id || currentParticipantId}
-              phase={phase}
-              roundNumber={roundNumber}
-              consensus={consensus}
-            />
-
-            {/* Pick Card Bar docked directly under poker table */}
-            {myParticipant?.role !== 'Observer' && (
-              <DeckSelector
-                selectedCard={myVote}
-                onSelectCard={handleCardClick}
-                disabled={phase !== 'Voting'}
-              />
-            )}
-          </div>
-
-          {/* Right Column: Point Reference Library */}
-          <div className="hidden lg:block lg:col-span-3 xl:col-span-3">
-            <PointReferenceLibrary
-              references={pointReferences}
-              isFacilitator={isFacilitator}
-              onUpdateReferences={updatePointReferences}
-            />
-          </div>
+        {/* Virtual Poker Table Arena */}
+        <div className="w-full flex flex-col items-center justify-center my-2">
+          <PokerTableArena
+            participants={participants.length > 0 ? participants : [
+              {
+                id: currentParticipantId,
+                name: myProfile?.nickname || 'Estimator',
+                avatar: myProfile?.avatar || '',
+                role: myProfile?.role || 'Estimator',
+                connected: true,
+                has_voted: false,
+                vote: null,
+              },
+            ]}
+            currentUserId={currentParticipantId}
+            facilitatorId={roomState?.facilitator_id || currentParticipantId}
+            phase={phase}
+            consensus={consensus}
+          />
         </div>
+
+        {/* Pick Card Deck Docked directly under the table */}
+        {myParticipant?.role !== 'Observer' && (
+          <DeckSelector
+            deck={deck}
+            selectedCard={myVote}
+            onSelectCard={handleCardClick}
+            disabled={phase !== 'Voting'}
+          />
+        )}
       </main>
-
-      {/* Mobile Story Doctor Modal */}
-      {isDoctorDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm lg:hidden animate-fade-in">
-          <div className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <StoryDoctorPanel
-              story={activeStory || { id: 'sample-1', title: 'Sample User Story', description: 'As a user, I want to estimate user stories collaboratively.', acceptance_criteria: ['Collaborative estimation'] }}
-              report={storyDoctorReport}
-              phase={phase}
-              isFacilitator={isFacilitator}
-              onStartVoting={() => {
-                startVoting();
-                setIsDoctorDrawerOpen(false);
-              }}
-              onToggleEdgeCase={toggleEdgeCaseCheck}
-              onClose={() => setIsDoctorDrawerOpen(false)}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Mobile Point Reference Library Modal */}
-      {isRefLibraryDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm lg:hidden animate-fade-in">
-          <div className="max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="relative">
-              <button
-                onClick={() => setIsRefLibraryDrawerOpen(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 z-10 text-sm font-bold p-1"
-              >
-                ✕
-              </button>
-              <PointReferenceLibrary
-                references={pointReferences}
-                isFacilitator={isFacilitator}
-                onUpdateReferences={updatePointReferences}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Backlog Drawer */}
       <BacklogDrawer
         isOpen={isBacklogOpen}
         onClose={() => setIsBacklogOpen(false)}
         backlog={backlog}
-        activeStoryId={activeStory?.id}
+        activeStoryId={currentStory?.id}
         isFacilitator={isFacilitator}
-        activeTrackerProvider={activeTrackerProvider}
         onSelectStory={(id) => {
           selectStoryById(id);
           setIsBacklogOpen(false);
         }}
-        onReorder={reorderBacklog}
-        onRemove={removeStoryFromBacklog}
-        onOpenConnectModal={() => {
-          setIsBacklogOpen(false);
-          setIsTrackerModalOpen(true);
+        onAddStory={async (title, desc) => {
+          await addStory(title, desc);
         }}
+        onReorder={reorderBacklog}
+        onRemove={removeStory}
       />
 
-      {/* Connect Issue Tracker & Import Modal */}
-      <ConnectTrackerModal
-        isOpen={isTrackerModalOpen}
-        slug={slug}
-        isFacilitator={isFacilitator}
-        activeProvider={activeTrackerProvider}
-        connectionPreview={connectionPreview}
-        trackerError={trackerError}
-        onConnect={connectTracker}
-        onDisconnect={disconnectTracker}
-        onTestConnection={testTrackerConnection}
-        onFetchBacklog={fetchBacklog}
-        onImportMarkdown={importMarkdown}
-        onImportBacklog={importBacklog}
-        onClose={() => setIsTrackerModalOpen(false)}
-        onClearFeedback={clearTrackerFeedback}
-      />
+      {/* Deck Configuration Modal */}
+      {deck && (
+        <DeckConfigModal
+          isOpen={isDeckConfigOpen}
+          onClose={() => setIsDeckConfigOpen(false)}
+          currentDeck={deck}
+          onSelectDeck={setDeck}
+        />
+      )}
 
-      {/* SPIDR Vertical Slice Modal */}
-      <SPIDRSliceModal
-        isOpen={isSliceModalOpen}
-        onClose={() => setIsSliceModalOpen(false)}
-        activeStory={activeStory || null}
-        onPushSlices={pushStorySlices}
-      />
-
-      {/* Onboarding / Profile Join Modal */}
+      {/* Profile Join Modal */}
       <JoinModal
         isOpen={isJoinModalOpen}
         initialNickname={myProfile?.nickname}
@@ -367,5 +233,3 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
     </div>
   );
 };
-
-

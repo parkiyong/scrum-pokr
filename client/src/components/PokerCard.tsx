@@ -18,8 +18,10 @@ export const PokerCard: React.FC<PokerCardProps> = ({
   isConsensus,
   isOutlier,
 }) => {
-  const isRevealed = phase === 'Revealed' || phase === 'Finalized' || phase === 'Discussing' || phase === 'Slicing';
+  const isRevealed = phase === 'Revealed' || phase === 'Finalized';
   const hasVote = participant.vote !== undefined && participant.vote !== null;
+  const isVoted = participant.has_voted || hasVote;
+  const displayName = participant.name || (participant as any).nickname || 'Estimator';
 
   const avatarColors: Record<string, { from: string; to: string; bg: string; text: string }> = {
     indigo: { from: '#3b82f6', to: '#1d4ed8', bg: 'bg-blue-100', text: 'text-blue-700' },
@@ -68,20 +70,20 @@ export const PokerCard: React.FC<PokerCardProps> = ({
             className="w-full h-full rounded-full flex items-center justify-center text-sm font-bold text-white shadow-inner"
             style={{ background: `linear-gradient(135deg, ${col.from}, ${col.to})` }}
           >
-            {participant.nickname ? participant.nickname.charAt(0).toUpperCase() : '?'}
+            {displayName.charAt(0).toUpperCase()}
           </div>
         </div>
       </div>
 
-      {/* Nickname */}
+      {/* Name */}
       <div className="text-xs font-bold text-slate-800 flex items-center gap-1 drop-shadow-sm">
-        <span>{participant.nickname}</span>
+        <span>{displayName}</span>
         {isSelf && <span className="font-semibold text-slate-600">(You)</span>}
       </div>
 
       {/* Status Badge below name */}
       <div>
-        {participant.voted ? (
+        {isVoted ? (
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0] shadow-sm flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]" />
             <span>Voted</span>
@@ -96,4 +98,3 @@ export const PokerCard: React.FC<PokerCardProps> = ({
     </div>
   );
 };
-
