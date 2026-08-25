@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { roomReducer } from '../room-reducer';
 import type { RoomState, Story } from '../domain';
+import { DEFAULT_DECKS } from '../domain';
 
 describe('Room Reducer State Transitions', () => {
   const initial: RoomState = {
     slug: 'swift-badger-42',
     short_code: 'SWB-42',
     phase: 'Idle',
+    deck: { type: 'fibonacci', cards: [...DEFAULT_DECKS.fibonacci] },
     facilitator_id: '',
     current_story: null,
     backlog: [],
-    point_references: [],
-    story_doctor_report: null,
     consensus: null,
     participants: [],
   };
@@ -83,6 +83,17 @@ describe('Room Reducer State Transitions', () => {
     expect(s3.participants[0].role).toBe('Estimator');
   });
 
+  it('updates deck configuration with SET_DECK', () => {
+    const s1 = roomReducer(initial, {
+      type: 'SET_DECK',
+      payload: { deck: { type: 'tshirt', cards: [...DEFAULT_DECKS.tshirt] } },
+    });
+
+    expect(s1.deck.type).toBe('tshirt');
+    expect(s1.deck.cards).toContain('XS');
+    expect(s1.deck.cards).toContain('XXL');
+  });
+
   it('transitions from Idle to Voting on CAST_VOTE', () => {
     const state: RoomState = {
       ...initial,
@@ -119,22 +130,69 @@ describe('Room Reducer State Transitions', () => {
     expect(s1.participants[0].vote).toBe('5');
   });
 
-  it('handles IMPORT_BACKLOG on empty current_story and advances on NEXT_STORY', () => {
+  it('handles ADD_STORY on empty room and appends to backlog when current_story exists', () => {
     const storyA: Story = { id: 's-A', title: 'Story A', description: '', acceptance_criteria: [] };
     const storyB: Story = { id: 's-B', title: 'Story B', description: '', acceptance_criteria: [] };
 
     const s1 = roomReducer(initial, {
-      type: 'IMPORT_BACKLOG',
-      payload: { stories: [storyA, storyB] },
+      type: 'ADD_STORY',
+      payload: { story: storyA },
     });
 
     expect(s1.current_story?.id).toBe('s-A');
-    expect(s1.backlog).toHaveLength(1);
-    expect(s1.backlog[0].id).toBe('s-B');
+    expect(s1.backlog).toHaveLength(0);
 
-    const s2 = roomReducer(s1, { type: 'NEXT_STORY' });
-    expect(s2.current_story?.id).toBe('s-B');
-    expect(s2.backlog).toHaveLength(0);
+    const s2 = roomReducer(s1, {
+      type: 'ADD_STORY',
+      payload: { story: storyB },
+    });
+
+    expect(s2.current_story?.id).toBe('s-A');
+    expect(s2.backlog).toHaveLength(1);
+    expect(s2.backlog[0].id).toBe('s-B');
+  });
+
+  it('updates story in current_story or backlog via UPDATE_STORY', () => {
+    const story1: Story = { id: 's-1', title: 'Story 1', description: 'Desc 1', acceptance_criteria: [] };
+    const story2: Story = { id: 's-2', title: 'Story 2', description: 'Desc 2', acceptance_criteria: [] };
+
+    const state: RoomState = {
+      ...initial,
+      current_story: story1,
+      backlog: [story2],
+    };
+
+    // Update current story
+    const s1 = roomReducer(state, {
+      type: 'UPDATE_STORY',
+      payload: { storyId: 's-1', updates: { title: 'Updated Story 1' } },
+    });
+    expect(s1.current_story?.title).toBe('Updated Story 1');
+
+    // Update backlog story
+    const s2 = roomReducer(s1, {
+      type: 'UPDATE_STORY',
+      payload: { storyId: 's-2', updates: { description: 'Updated Desc 2' } },
+    });
+    expect(s2.backlog[0].description).toBe('Updated Desc 2');
+  });
+
+  it('removes story from backlog with REMOVE_STORY', () => {
+    const story1: Story = { id: 's-1', title: 'Story 1', description: '', acceptance_criteria: [] };
+    const story2: Story = { id: 's-2', title: 'Story 2', description: '', acceptance_criteria: [] };
+
+    const state: RoomState = {
+      ...initial,
+      backlog: [story1, story2],
+    };
+
+    const s1 = roomReducer(state, {
+      type: 'REMOVE_STORY',
+      payload: { storyId: 's-1' },
+    });
+
+    expect(s1.backlog).toHaveLength(1);
+    expect(s1.backlog[0].id).toBe('s-2');
   });
 
   it('validates strict permutation on REORDER_BACKLOG and ignores invalid reorders', () => {

@@ -1,31 +1,29 @@
 import type {
+  DeckConfig,
   Participant,
-  PointReference,
   Role,
   RoomState,
   Story,
-  StoryDoctorReport,
 } from './domain';
 import { computeConsensus } from './reveal-gate';
 
 export type RoomAction =
   | { type: 'JOIN'; payload: { participant: Participant } }
+  | { type: 'SET_CONNECTED'; payload: { participantId: string; connected: boolean } }
+  | { type: 'UPDATE_ROLE'; payload: { targetId: string; newRole: Role } }
+  | { type: 'TRANSFER_FACILITATOR'; payload: { targetId: string } }
+  | { type: 'SET_DECK'; payload: { deck: DeckConfig } }
   | { type: 'START_VOTING' }
   | { type: 'CAST_VOTE'; payload: { participantId: string; vote: string | null } }
   | { type: 'REVEAL_CARDS' }
   | { type: 'RESET_ROUND' }
   | { type: 'FINALIZE_STORY'; payload: { estimate?: string | null } }
   | { type: 'SET_STORY'; payload: { story: Story | null } }
-  | { type: 'NEXT_STORY' }
-  | { type: 'IMPORT_BACKLOG'; payload: { stories: Story[] } }
-  | { type: 'UPDATE_POINT_REFERENCES'; payload: { references: PointReference[] } }
-  | { type: 'TOGGLE_EDGE_CASE'; payload: { edgeCaseId: string; checked: boolean } }
-  | { type: 'SET_STORY_DOCTOR_REPORT'; payload: { report: StoryDoctorReport | null } }
-  | { type: 'UPDATE_ROLE'; payload: { targetId: string; newRole: Role } }
-  | { type: 'TRANSFER_FACILITATOR'; payload: { targetId: string } }
-  | { type: 'REORDER_BACKLOG'; payload: { storyIds: string[] } }
+  | { type: 'ADD_STORY'; payload: { story: Story } }
+  | { type: 'UPDATE_STORY'; payload: { storyId: string; updates: Partial<Omit<Story, 'id'>> } }
   | { type: 'REMOVE_STORY'; payload: { storyId: string } }
-  | { type: 'SET_CONNECTED'; payload: { participantId: string; connected: boolean } };
+  | { type: 'REORDER_BACKLOG'; payload: { storyIds: string[] } }
+  | { type: 'NEXT_STORY' };
 
 export function roomReducer(state: RoomState, action: RoomAction): RoomState {
   switch (action.type) {
@@ -37,7 +35,7 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
       if (existsIndex >= 0) {
         updatedParticipants = state.participants.map((p, idx) =>
           idx === existsIndex
-            ? { ...p, name: participant.name, avatar: participant.avatar, connected: true }
+            ? { ...p, name: participant.name, avatar: participant.avatar, role: participant.role || p.role, connected: true }
             : p
         );
       } else {
@@ -50,6 +48,40 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
         ...state,
         facilitator_id: facilitatorId,
         participants: updatedParticipants,
+      };
+    }
+
+    case 'SET_CONNECTED': {
+      return {
+        ...state,
+        participants: state.participants.map((p) =>
+          p.id === action.payload.participantId
+            ? { ...p, connected: action.payload.connected }
+            : p
+        ),
+      };
+    }
+
+    case 'UPDATE_ROLE': {
+      return {
+        ...state,
+        participants: state.participants.map((p) =>
+          p.id === action.payload.targetId ? { ...p, role: action.payload.newRole } : p
+        ),
+      };
+    }
+
+    case 'TRANSFER_FACILITATOR': {
+      return {
+        ...state,
+        facilitator_id: action.payload.targetId,
+      };
+    }
+
+    case 'SET_DECK': {
+      return {
+        ...state,
+        deck: action.payload.deck,
       };
     }
 
@@ -114,7 +146,7 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
     }
 
     case 'FINALIZE_STORY': {
-      const estimate = action.payload.estimate;
+      const estimate = action.payload.estimate || state.consensus?.suggested_points || null;
       const updatedStory = state.current_story
         ? { ...state.current_story, points: estimate }
         : null;
@@ -140,86 +172,46 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
       };
     }
 
-    case 'NEXT_STORY': {
-      let nextStory: Story | null = null;
-      let updatedBacklog = state.backlog;
+    case 'ADD_STORY': {
+      const newStory = action.payload.story;
+      const hasNoStories = !state.current_story && state.backlog.length === 0;
 
-      if (state.backlog.length > 0) {
-        nextStory = state.backlog[0];
-        updatedBacklog = state.backlog.slice(1);
+      if (hasNoStories) {
+        return {
+          ...state,
+          current_story: newStory,
+        };
       }
 
       return {
         ...state,
-        phase: 'Idle',
-        current_story: nextStory,
-        backlog: updatedBacklog,
-        consensus: null,
-        story_doctor_report: null,
-        participants: state.participants.map((p) => ({
-          ...p,
-          vote: null,
-          has_voted: false,
-        })),
+        backlog: [...state.backlog, newStory],
       };
     }
 
-    case 'IMPORT_BACKLOG': {
-      const stories = action.payload.stories || [];
-      const hasExistingStory = Boolean(state.current_story);
-      const currentStory = state.current_story || (stories.length > 0 ? stories[0] : null);
-      const backlog = hasExistingStory ? stories : stories.slice(1);
+    case 'UPDATE_STORY': {
+      const { storyId, updates } = action.payload;
 
-      return {
-        ...state,
-        backlog,
-        current_story: currentStory,
-      };
-    }
+      let updatedCurrentStory = state.current_story;
+      if (state.current_story && state.current_story.id === storyId) {
+        updatedCurrentStory = { ...state.current_story, ...updates };
+      }
 
-    case 'UPDATE_POINT_REFERENCES': {
-      return {
-        ...state,
-        point_references: action.payload.references || [],
-      };
-    }
-
-    case 'TOGGLE_EDGE_CASE': {
-      if (!state.story_doctor_report) return state;
-
-      const updatedEdgeCases = state.story_doctor_report.edge_cases.map((ec) =>
-        ec.id === action.payload.edgeCaseId ? { ...ec, checked: action.payload.checked } : ec
+      const updatedBacklog = state.backlog.map((s) =>
+        s.id === storyId ? { ...s, ...updates } : s
       );
 
       return {
         ...state,
-        story_doctor_report: {
-          ...state.story_doctor_report,
-          edge_cases: updatedEdgeCases,
-        },
+        current_story: updatedCurrentStory,
+        backlog: updatedBacklog,
       };
     }
 
-    case 'SET_STORY_DOCTOR_REPORT': {
+    case 'REMOVE_STORY': {
       return {
         ...state,
-        story_doctor_report: action.payload.report,
-      };
-    }
-
-    case 'UPDATE_ROLE': {
-      return {
-        ...state,
-        participants: state.participants.map((p) =>
-          p.id === action.payload.targetId ? { ...p, role: action.payload.newRole } : p
-        ),
-      };
-    }
-
-    case 'TRANSFER_FACILITATOR': {
-      return {
-        ...state,
-        facilitator_id: action.payload.targetId,
+        backlog: state.backlog.filter((s) => s.id !== action.payload.storyId),
       };
     }
 
@@ -245,21 +237,26 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
       };
     }
 
-    case 'REMOVE_STORY': {
-      return {
-        ...state,
-        backlog: state.backlog.filter((s) => s.id !== action.payload.storyId),
-      };
-    }
+    case 'NEXT_STORY': {
+      let nextStory: Story | null = null;
+      let updatedBacklog = state.backlog;
 
-    case 'SET_CONNECTED': {
+      if (state.backlog.length > 0) {
+        nextStory = state.backlog[0];
+        updatedBacklog = state.backlog.slice(1);
+      }
+
       return {
         ...state,
-        participants: state.participants.map((p) =>
-          p.id === action.payload.participantId
-            ? { ...p, connected: action.payload.connected }
-            : p
-        ),
+        phase: 'Idle',
+        current_story: nextStory,
+        backlog: updatedBacklog,
+        consensus: null,
+        participants: state.participants.map((p) => ({
+          ...p,
+          vote: null,
+          has_voted: false,
+        })),
       };
     }
 

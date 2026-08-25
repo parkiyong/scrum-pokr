@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { maskRoomStateForParticipant, computeConsensus } from '../reveal-gate';
 import type { RoomState } from '../domain';
+import { DEFAULT_DECKS } from '../domain';
 
 describe('Reveal Gate & Consensus Invariants', () => {
   const baseState: RoomState = {
     slug: 'swift-badger-42',
     short_code: 'SWB-42',
     phase: 'Voting',
+    deck: { type: 'fibonacci', cards: [...DEFAULT_DECKS.fibonacci] },
     facilitator_id: 'p-1',
     current_story: null,
     backlog: [],
-    point_references: [],
-    story_doctor_report: null,
     consensus: null,
     participants: [
       { id: 'p-1', name: 'Alice', avatar: '', role: 'Estimator', connected: true, has_voted: true, vote: '5' },
@@ -108,5 +108,19 @@ describe('Reveal Gate & Consensus Invariants', () => {
     const consensus = computeConsensus(participants);
     expect(consensus?.category).toBe('LowOutlier');
     expect(consensus?.suggested_points).toBe('5');
+  });
+
+  it('handles T-Shirt scale consensus calculation', () => {
+    const participants = [
+      { id: 'p-1', name: 'Alice', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: 'M' },
+      { id: 'p-2', name: 'Bob', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: 'M' },
+      { id: 'p-3', name: 'Charlie', avatar: '', role: 'Estimator' as const, connected: true, has_voted: true, vote: 'L' },
+    ];
+
+    const consensus = computeConsensus(participants);
+    expect(consensus).not.toBeNull();
+    expect(consensus?.suggested_points).toBe('M');
+    expect(consensus?.agreement_count).toBe(2);
+    expect(consensus?.total_votes).toBe(3);
   });
 });
