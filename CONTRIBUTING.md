@@ -1,6 +1,6 @@
-# Contributing to Scrum Pokr AI
+# Contributing to Scrum Pokr
 
-> Development workflows, coding standards, issue tracker conventions, and pull request procedures for **Scrum Pokr AI**.
+> Development workflows, coding standards, issue tracker conventions, and pull request procedures for **Scrum Pokr**.
 
 📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🛡️ [Security](SECURITY.md)
 
