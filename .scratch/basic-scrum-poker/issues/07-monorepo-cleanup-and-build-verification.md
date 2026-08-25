@@ -5,9 +5,9 @@ Complete removal of obsolete database and AI packages from `package.json` files,
 
 **Blocked by:** 06 (Client Hook Refactoring & Typed Hono RPC Integration)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Removed `drizzle-orm`, `drizzle-kit`, `postgres`, `@google/genai` from `server/package.json`.
-- [ ] Removed `db:generate`, `db:migrate`, `db:seed` scripts from root `package.json` and `server/package.json`.
-- [ ] Verified `npm run build` succeeds across `shared`, `server`, and `client` workspaces without TypeScript or bundling errors.
-- [ ] Verified `npm test` runs in Vitest workspace mode and passes 100% across all 3 workspaces without Docker or PostgreSQL running.
+- [x] Removed `drizzle-orm`, `drizzle-kit`, `postgres`, `@google/genai` from `server/package.json`.
+- [x] Removed `db:generate`, `db:migrate`, `db:seed` scripts from root `package.json` and `server/package.json`.
+- [x] Verified `npm run build` succeeds across `shared`, `server`, and `client` workspaces without TypeScript or bundling errors.
+- [x] Verified `npm test` runs in Vitest workspace mode and passes 100% across all 3 workspaces without Docker or PostgreSQL running.
