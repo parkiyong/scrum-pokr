@@ -19,6 +19,9 @@ A complete, clean refactoring plan and architecture specification in `.scratch/b
 
 - [Shared Domain Model & Reducer Slimming](decisions/01-shared-domain-slimming.md): Excised AI/tracker types, 4-phase estimation lifecycle, first-class `DeckConfig` presets, 16 canonical reducer actions, and server-side Reveal Gate masking.
 - [Server Decoupling & Pure In-Memory Room Registry](decisions/02-server-decoupling-inmemory-architecture.md): Zero database/AI dependencies, in-memory RoomActor with participant presence and failover, and 4-hour TTL sweeper eviction.
+- [Minimal REST & SSE API Contract](decisions/03-rest-sse-api-contract.md): Defined 4-category REST command interface, real-time masked SSE event stream contract with 15s heartbeats, and excised 10 AI/tracker endpoints.
+- [Client UI Pruning & Core Poker Experience](decisions/04-client-ui-pruning-and-core-experience.md): Excised 4 AI/tracker modals, streamlined RoomView to single-column arena, dynamic deck selector, in-room backlog manager, and lean useRoomSocket hook.
+- [Test Suite & Migration Strategy](decisions/05-test-suite-and-migration-strategy.md): Unified Vitest workspace testing across shared/server/client with zero infrastructure requirements, invariant verification, and a 5-step migration roadmap.
 
 ## Not yet specified
 
