@@ -1,17 +1,26 @@
-# Java & Maven
-target/
-**/target/
-*.class
-.m2/
-
-# Node & Frontend
+# Node & Dependencies
 node_modules/
+package-lock.json.bak
+
+# Build Outputs
 dist/
 dist-ssr/
+shared/dist/
+server/dist/
+client/dist/
+
+# Test & Coverage
+coverage/
+*.lcov
+
+# Environment & Local Files
+.env
+.env.local
 *.local
 
 # IDE & OS
 .DS_Store
+Thumbs.db
 .vscode/
 .idea/
 *.log
