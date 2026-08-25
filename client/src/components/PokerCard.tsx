@@ -36,20 +36,22 @@ export const PokerCard: React.FC<PokerCardProps> = ({
   const col = avatarColors[participant.avatar] || avatarColors.indigo;
 
   return (
-    <div className="flex flex-col items-center gap-1.5 group select-none">
-      {/* If Revealed with a vote, show the 3D card above avatar */}
+    <div className="flex flex-col items-center gap-1 group select-none">
+      {/* If Revealed with a vote, show the upright, legible card above avatar */}
       {isRevealed && hasVote ? (
-        <div className="w-14 h-20 sm:w-16 sm:h-22 perspective-1000 mb-1">
+        <div className="w-12 h-17 sm:w-14 sm:h-20 mb-0.5 animate-in zoom-in-90 duration-200">
           <div
-            className={`relative w-full h-full transform-style-3d card-flip rounded-xl shadow-lg rotate-y-180 flex items-center justify-center p-2 border ${
+            className={`relative w-full h-full rounded-xl shadow-md flex items-center justify-center p-1.5 border transition-all ${
               isConsensus
-                ? 'bg-gradient-to-b from-emerald-500 to-emerald-700 border-emerald-400 text-white shadow-emerald-500/20'
+                ? 'bg-gradient-to-b from-emerald-500 to-emerald-700 border-emerald-400 text-white shadow-emerald-500/25 ring-2 ring-emerald-300/50'
                 : isOutlier
-                ? 'bg-gradient-to-b from-rose-500 to-rose-700 border-rose-400 text-white shadow-rose-500/20'
-                : 'bg-gradient-to-b from-blue-600 to-blue-800 border-blue-500 text-white shadow-blue-500/20'
+                ? 'bg-gradient-to-b from-rose-500 to-rose-700 border-rose-400 text-white shadow-rose-500/25'
+                : 'bg-gradient-to-b from-blue-600 to-blue-800 border-blue-500 text-white shadow-blue-500/25'
             }`}
           >
-            <span className="text-2xl sm:text-3xl font-black tracking-tight">{participant.vote}</span>
+            <span className="text-xl sm:text-2xl font-black tracking-tight select-none">
+              {participant.vote}
+            </span>
           </div>
         </div>
       ) : null}
@@ -58,16 +60,16 @@ export const PokerCard: React.FC<PokerCardProps> = ({
       <div className="relative flex flex-col items-center">
         {isFacilitator && (
           <div
-            className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-sm drop-shadow-sm pointer-events-none z-10"
+            className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-xs sm:text-sm drop-shadow-xs pointer-events-none z-10"
             title="Facilitator"
           >
             👑
           </div>
         )}
 
-        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white p-0.5 shadow-md border-2 border-blue-200 flex items-center justify-center">
+        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white p-0.5 shadow-sm border-2 border-blue-200 flex items-center justify-center">
           <div
-            className="w-full h-full rounded-full flex items-center justify-center text-sm font-bold text-white shadow-inner"
+            className="w-full h-full rounded-full flex items-center justify-center text-xs sm:text-sm font-bold text-white shadow-inner"
             style={{ background: `linear-gradient(135deg, ${col.from}, ${col.to})` }}
           >
             {displayName.charAt(0).toUpperCase()}
@@ -76,20 +78,20 @@ export const PokerCard: React.FC<PokerCardProps> = ({
       </div>
 
       {/* Name */}
-      <div className="text-xs font-bold text-slate-800 flex items-center gap-1 drop-shadow-sm">
-        <span>{displayName}</span>
-        {isSelf && <span className="font-semibold text-slate-600">(You)</span>}
+      <div className="text-[11px] sm:text-xs font-bold text-slate-800 flex items-center gap-1 drop-shadow-2xs text-center max-w-[100px] truncate">
+        <span className="truncate">{displayName}</span>
+        {isSelf && <span className="font-semibold text-slate-500 text-[10px]">(You)</span>}
       </div>
 
       {/* Status Badge below name */}
       <div>
         {isVoted ? (
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0] shadow-sm flex items-center gap-1">
+          <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0] shadow-2xs flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]" />
             <span>Voted</span>
           </span>
         ) : (
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#fef3c7] text-[#b45309] border border-[#fde68a] shadow-sm flex items-center gap-1">
+          <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider bg-[#fef3c7] text-[#b45309] border border-[#fde68a] shadow-2xs flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-pulse" />
             <span>{participant.role === 'Observer' ? 'Observer' : 'Thinking'}</span>
           </span>

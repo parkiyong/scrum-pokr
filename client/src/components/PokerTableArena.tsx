@@ -23,7 +23,7 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
   const votedCount = participants.filter((p) => p.role === 'Estimator' && (p.has_voted || p.vote !== null)).length;
   const totalEstimators = participants.filter((p) => p.role === 'Estimator').length;
 
-  // Order participants so current user is index 0 (seated at the bottom center)
+  // Order participants so current user is index 0
   const sortedParticipants = [...participants].sort((a, b) => {
     if (a.id === currentUserId) return -1;
     if (b.id === currentUserId) return 1;
@@ -40,18 +40,37 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
       };
     }
     if (total === 2) {
+      // 2 players: position on Left and Right flanks of the stadium table to prevent vertical collision with center hub
+      const positions = [
+        { left: '20%', top: '50%' }, // Self (Left)
+        { left: '80%', top: '50%' }, // Peer (Right)
+      ];
       return {
         position: 'absolute',
-        left: '50%',
-        top: index === 0 ? '80%' : '18%',
+        left: positions[index]?.left || '50%',
+        top: positions[index]?.top || '50%',
         transform: 'translate(-50%, -50%)',
       };
     }
     if (total === 3) {
       const positions = [
         { left: '50%', top: '80%' }, // Bottom center (Self)
-        { left: '78%', top: '24%' }, // Top Right
-        { left: '22%', top: '24%' }, // Top Left
+        { left: '80%', top: '30%' }, // Top Right
+        { left: '20%', top: '30%' }, // Top Left
+      ];
+      return {
+        position: 'absolute',
+        left: positions[index]?.left || '50%',
+        top: positions[index]?.top || '50%',
+        transform: 'translate(-50%, -50%)',
+      };
+    }
+    if (total === 4) {
+      const positions = [
+        { left: '50%', top: '82%' }, // Bottom center (Self)
+        { left: '82%', top: '50%' }, // Right
+        { left: '50%', top: '16%' }, // Top center
+        { left: '18%', top: '50%' }, // Left
       ];
       return {
         position: 'absolute',
@@ -61,11 +80,11 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
       };
     }
 
-    // For N >= 4: distribute around the oval perimeter
+    // For N >= 5: distribute around the oval perimeter
     // Start at bottom (angle = PI/2) for index 0 (Self)
     const angle = (index / total) * 2 * Math.PI + Math.PI / 2;
     const left = 50 + 38 * Math.cos(angle);
-    const top = 50 + 30 * Math.sin(angle);
+    const top = 50 + 33 * Math.sin(angle);
     return {
       position: 'absolute',
       left: `${left}%`,
@@ -77,12 +96,12 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
   return (
     <div className="relative w-full flex flex-col items-center justify-center py-2">
       {/* SKY BLUE OVAL / STADIUM POKER TABLE */}
-      <div className="relative w-full aspect-[16/10] max-h-[460px] min-h-[320px] rounded-[110px] sm:rounded-[150px] bg-gradient-to-b from-[#e3f0fc] via-[#d6e8fa] to-[#c7e0f8] border-[10px] sm:border-[14px] border-[#c0dbf7] shadow-[0_12px_36px_rgba(37,99,235,0.08)] flex items-center justify-center p-4">
+      <div className="relative w-full aspect-[16/10] max-h-[480px] min-h-[350px] rounded-[110px] sm:rounded-[150px] bg-gradient-to-b from-[#e3f0fc] via-[#d6e8fa] to-[#c7e0f8] border-[10px] sm:border-[14px] border-[#c0dbf7] shadow-[0_12px_36px_rgba(37,99,235,0.08)] flex items-center justify-center p-4">
         {/* Inner Table Felt Border & Glow */}
         <div className="absolute inset-2 sm:inset-3 rounded-[95px] sm:rounded-[135px] border border-[#a3c9f3]/70 pointer-events-none shadow-inner" />
 
         {/* Center Table Status Hub */}
-        <div className="z-10 flex flex-col items-center text-center max-w-[280px] sm:max-w-xs px-2 pointer-events-none">
+        <div className="z-10 flex flex-col items-center text-center max-w-[250px] sm:max-w-[280px] px-2 pointer-events-none">
           <span className="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-slate-800 mb-1">
             ROUND {roundNumber} • {phase.toUpperCase()}
           </span>
@@ -108,7 +127,7 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
           )}
 
           {isRevealed && consensus && (
-            <div className="bg-white/95 backdrop-blur-md border border-blue-200/80 rounded-2xl p-3 shadow-lg flex flex-col items-center gap-1 min-w-[170px]">
+            <div className="bg-white/95 backdrop-blur-md border border-blue-200/80 rounded-2xl p-2.5 sm:p-3 shadow-lg flex flex-col items-center gap-1 min-w-[160px]">
               <div className="flex items-center gap-1.5">
                 {consensus.category === 'Consensus' ? (
                   <span className="px-2.5 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold">
@@ -123,7 +142,7 @@ export const PokerTableArena: React.FC<PokerTableArenaProps> = ({
 
               {consensus.suggested_points && (
                 <div className="flex items-baseline gap-1 my-0.5">
-                  <span className="text-3xl font-black text-slate-900">
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900">
                     {consensus.suggested_points}
                   </span>
                   <span className="text-xs font-bold text-slate-500">Story Points</span>
