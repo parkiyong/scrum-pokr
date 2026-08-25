@@ -11,6 +11,9 @@ export const eventRoutes = new Hono().get('/api/rooms/:code/events', async (c) =
     return c.json({ error: 'Room not found' }, 404);
   }
 
+  c.header('X-Accel-Buffering', 'no');
+  c.header('Cache-Control', 'no-cache, no-transform');
+
   return streamSSE(c, async (stream) => {
     // 1. Send Initial State Immediately (Masked for this participant)
     if (participantId) {
