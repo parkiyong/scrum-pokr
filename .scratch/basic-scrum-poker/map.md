@@ -18,6 +18,7 @@ A complete, clean refactoring plan and architecture specification in `.scratch/b
 <!-- the index: one line per closed ticket, enough to judge relevance, then zoom the link for the detail the ticket holds -->
 
 - [Shared Domain Model & Reducer Slimming](decisions/01-shared-domain-slimming.md): Excised AI/tracker types, 4-phase estimation lifecycle, first-class `DeckConfig` presets, 16 canonical reducer actions, and server-side Reveal Gate masking.
+- [Server Decoupling & Pure In-Memory Room Registry](decisions/02-server-decoupling-inmemory-architecture.md): Zero database/AI dependencies, in-memory RoomActor with participant presence and failover, and 4-hour TTL sweeper eviction.
 
 ## Not yet specified
 

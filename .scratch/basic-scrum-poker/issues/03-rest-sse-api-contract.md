@@ -1,6 +1,6 @@
 # Minimal REST & SSE API Contract
 
-Status: open
+Status: claimed
 Type: research
 Blocked by: 01
 
