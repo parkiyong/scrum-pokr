@@ -7,11 +7,10 @@ interface BacklogDrawerProps {
   backlog: Story[];
   activeStoryId?: string;
   isFacilitator: boolean;
-  activeTrackerProvider?: string;
   onSelectStory: (storyId: string) => void;
+  onAddStory?: (title: string, description: string) => Promise<void>;
   onReorder: (storyIds: string[]) => void;
   onRemove: (storyId: string) => void;
-  onOpenConnectModal: () => void;
 }
 
 function sanitizeCsvCell(cell: string): string {
@@ -29,13 +28,16 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
   backlog,
   activeStoryId,
   isFacilitator,
-  activeTrackerProvider,
   onSelectStory,
+  onAddStory,
   onReorder,
   onRemove,
-  onOpenConnectModal,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -57,17 +59,30 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
     onReorder(ids);
   };
 
+  const handleCreateStory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !onAddStory) return;
+    setIsSubmitting(true);
+    try {
+      await onAddStory(newTitle.trim(), newDescription.trim());
+      setNewTitle('');
+      setNewDescription('');
+      setShowAddForm(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const copyMarkdownSummary = () => {
     let md = '# Sprint Estimation Summary\n\n';
-    md += '| Key | Title | Points | Status | Tracker |\n';
-    md += '| --- | --- | --- | --- | --- |\n';
+    md += '| Title | Description | Points |\n';
+    md += '| --- | --- | --- |\n';
 
     for (const story of backlog) {
-      const key = story.key || '-';
       const pts = story.points || '-';
-      const status = story.status || 'Ready';
-      const link = story.url ? `[Link](${story.url})` : '-';
-      md += `| ${key} | ${story.title.replace(/\|/g, '\\|')} | ${pts} | ${status} | ${link} |\n`;
+      const title = story.title.replace(/\|/g, '\\|');
+      const desc = (story.description || '-').replace(/\|/g, '\\|');
+      md += `| ${title} | ${desc} | ${pts} |\n`;
     }
 
     navigator.clipboard.writeText(md).then(() => {
@@ -77,15 +92,14 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
   };
 
   const downloadCsv = () => {
-    let csv = 'Key,Title,Points,Status,URL\n';
+    let csv = 'Title,Description,Points\n';
     for (const story of backlog) {
-      const key = sanitizeCsvCell(story.key || '');
       const pts = sanitizeCsvCell(story.points || '');
-      const status = sanitizeCsvCell(story.status || '');
-      const url = sanitizeCsvCell(story.url || '');
       const titleClean = sanitizeCsvCell(story.title);
       const titleEscaped = titleClean.replace(/"/g, '""');
-      csv += `${key},"${titleEscaped}",${pts},${status},${url}\n`;
+      const descClean = sanitizeCsvCell(story.description || '');
+      const descEscaped = descClean.replace(/"/g, '""');
+      csv += `"${titleEscaped}","${descEscaped}",${pts}\n`;
     }
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -109,11 +123,6 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
               <h2 className="text-base font-bold text-slate-900">
                 Backlog Queue ({backlog.length})
               </h2>
-              {activeTrackerProvider && (
-                <span className="text-[10px] text-emerald-700 font-semibold">
-                  Linked to {activeTrackerProvider}
-                </span>
-              )}
             </div>
           </div>
           <button
@@ -128,10 +137,10 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
         <div className="p-3 bg-slate-50 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
           {isFacilitator && (
             <button
-              onClick={onOpenConnectModal}
+              onClick={() => setShowAddForm(!showAddForm)}
               className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5"
             >
-              ➕ Import Backlog
+              {showAddForm ? '✕ Cancel' : '➕ Add Story'}
             </button>
           )}
 
@@ -155,6 +164,44 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
           </div>
         </div>
 
+        {/* Add Story Inline Form */}
+        {showAddForm && (
+          <form onSubmit={handleCreateStory} className="p-3.5 bg-blue-50/50 border-b border-blue-100 space-y-2.5">
+            <div className="text-xs font-bold text-slate-800">Add Story to Backlog</div>
+            <input
+              type="text"
+              placeholder="Story Title (e.g. As a user, I want...)"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              required
+              className="w-full bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl px-3 py-1.5 text-xs text-slate-900 outline-none"
+            />
+            <textarea
+              placeholder="Description & Acceptance Criteria (optional)"
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+              rows={2}
+              className="w-full bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl px-3 py-1.5 text-xs text-slate-900 outline-none resize-none"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                className="px-3 py-1 text-xs text-slate-600 hover:bg-slate-200/60 rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || !newTitle.trim()}
+                className="px-3.5 py-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold shadow-xs transition"
+              >
+                {isSubmitting ? 'Adding...' : 'Save Story'}
+              </button>
+            </div>
+          </form>
+        )}
+
         {/* Backlog List */}
         <div className="p-3 space-y-2.5 overflow-y-auto flex-1">
           {backlog.length === 0 ? (
@@ -163,10 +210,10 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
               <p className="text-xs font-semibold text-slate-600">No stories in the backlog queue yet.</p>
               {isFacilitator && (
                 <button
-                  onClick={onOpenConnectModal}
+                  onClick={() => setShowAddForm(true)}
                   className="mt-2 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold border border-blue-200 transition"
                 >
-                  Connect Tracker or Paste Markdown
+                  Add a story to get started
                 </button>
               )}
             </div>
@@ -185,26 +232,10 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        {story.key && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-mono">
-                            {story.key}
-                          </span>
-                        )}
                         {story.points && (
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
                             {story.points} pts
                           </span>
-                        )}
-                        {story.url && (
-                          <a
-                            href={story.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[11px] text-blue-600 hover:underline transition"
-                            title="Open in external issue tracker"
-                          >
-                            ↗
-                          </a>
                         )}
                       </div>
                       <h3 className="text-xs font-bold text-slate-900 line-clamp-2">
