@@ -2,7 +2,7 @@
 
 > A real-time, zero-auth Planning Poker estimation platform featuring a high-performance **Full-Stack TypeScript** architecture powered by **Hono (`@hono/node-server`)**, **Server-Sent Events (SSE) + REST**, **React 18 + Tailwind CSS** frontend, and a **server-enforced reveal gate** that eliminates cognitive anchoring bias.
 
-📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 📋 [Product Spec](.scratch/basic-scrum-poker/spec.md)
+📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🛡️ [Security](SECURITY.md)
 
 ---
 
@@ -124,8 +124,6 @@ npm run test:client
 * 📖 **[User Guide](USER_GUIDE.md)** — Step-by-step facilitator and estimator workflows, room code routing, backlog drawer, and multi-user testing.
 * 🛠️ **[Developer Guide](DEVELOPER_GUIDE.md)** — Deep dive into system architecture, environment configuration, testing, and security invariants.
 * 🤝 **[Contributing Guidelines](CONTRIBUTING.md)** — Branching, commit conventions, TDD practices, and the Two-Axis review checklist.
-* 📋 **[Product Spec](.scratch/basic-scrum-poker/spec.md)** — Technical product specification and roadmap.
-* 🗺️ **[Basic Scrum Poker Map](.scratch/basic-scrum-poker/map.md)** — Architectural decisions for the streamlined in-memory architecture.
 * 🛡️ **[Security Policy](SECURITY.md)** — Vulnerability disclosure process and Server Reveal Gate security invariants.
 * 📜 **[Changelog](CHANGELOG.md)** — Release notes and milestone progress.
 * 👥 **[Code of Conduct](CODE_OF_CONDUCT.md)** — Community standards and enforcement guidelines.

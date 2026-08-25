@@ -16,15 +16,15 @@ status: stable
 
 ### Issue tracker
 
-Local markdown files in `.scratch/`. See `docs/agents/issue-tracker.md`.
+GitHub Issues and pull requests.
 
 ### Triage labels
 
-Default triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+Default triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`).
 
 ### Domain docs
 
-Single-context (`CONTEXT.md` at root and ADRs in `docs/adr/`). See `docs/agents/domain.md`.
+Single-context (`CONTEXT.md` at root and ADRs in `docs/adr/`).
 
 ---
 
@@ -41,11 +41,9 @@ Documentation is separated across the 4 Diátaxis quadrants:
 * **How-To Guides (Task/Operation-Oriented)**:
   * [`USER_GUIDE.md`](USER_GUIDE.md): End-user and Facilitator room creation, voting, and multi-browser testing recipes.
   * [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md): Developer operational workflows (Docker provisioning, Hono / Vite servers, test execution, linting).
-* **Reference (Information/Contract-Oriented)**:
-  * [`docs/JAVA_MIGRATION_RECOMMENDATION.md`](docs/JAVA_MIGRATION_RECOMMENDATION.md): Reference evaluation for SSE + REST message schemas, endpoints, and architecture.
 * **Explanation (Understanding/Rationale-Oriented)**:
   * [`CONTEXT.md`](CONTEXT.md): Authoritative domain glossary and terminology boundaries.
-  * [`.scratch/basic-scrum-poker/decisions/`](.scratch/basic-scrum-poker/decisions/): Architectural Decision Records (ADRs).
+  * [`docs/adr/`](docs/adr/): Architectural Decision Records (ADRs).
 
 ---
 

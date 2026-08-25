@@ -2,7 +2,7 @@
 
 > Development workflows, coding standards, issue tracker conventions, and pull request procedures for **Scrum Pokr AI**.
 
-📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 📋 [Product Spec](.scratch/basic-scrum-poker/spec.md)
+📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🛡️ [Security](SECURITY.md)
 
 ---
 
@@ -39,9 +39,8 @@
    - Read [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) for architecture, environment setup, and testing.
    - Read [USER_GUIDE.md](USER_GUIDE.md) to understand end-user interaction models.
    - Read [CONTEXT.md](CONTEXT.md) for domain terminology.
-2. **Check the Local Issue Tracker**:
-   - Active development issues and dependencies are tracked locally in `.scratch/basic-scrum-poker/issues/`.
-   - Tickets declare explicit blockers (`Blocked by:`). Pick up unblocked tickets labeled `ready-for-agent` or `ready-for-human`.
+2. **Check the Issue Tracker**:
+   - Check open issues and discussions on GitHub. Pick up unblocked issues labeled `ready-for-agent` or `ready-for-human`.
 
 ---
 
@@ -105,7 +104,7 @@ All PRs are reviewed against two independent axes before merging:
 ### Axis 2: Spec & Invariant Adherence
 - [ ] Reveal Gate invariant: No unmasked card values leaked in `Voting` state across REST/SSE state broadcasts.
 - [ ] Domain terminology adheres strictly to [CONTEXT.md](CONTEXT.md).
-- [ ] Acceptance criteria in the corresponding `.scratch/` ticket are fully satisfied.
+- [ ] Acceptance criteria in the corresponding issue/ticket are fully satisfied.
 - [ ] Automated tests accompany every new behavior.
 
 ---
@@ -113,9 +112,9 @@ All PRs are reviewed against two independent axes before merging:
 ## 6. Architectural Decisions (ADRs)
 
 If a change introduces a significant architectural shift, new dependency, or protocol alteration:
-1. Propose and document the decision in `.scratch/basic-scrum-poker/decisions/` or `docs/adr/`.
+1. Propose and document the decision in `docs/adr/`.
 2. Follow the established ADR format (Context, Decision, Consequences, Invariants).
-3. Update [spec.md](.scratch/basic-scrum-poker/spec.md) and [CONTEXT.md](CONTEXT.md) accordingly.
+3. Update [CONTEXT.md](CONTEXT.md) and related guides accordingly.
 
 ---
 
