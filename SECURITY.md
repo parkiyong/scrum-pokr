@@ -25,14 +25,14 @@ We take the security and privacy of Scrum Pokr AI seriously. If you discover a s
 
 ### 1. Server-Enforced Reveal Gate (Anti-Anchoring Protection)
 The primary security and fairness invariant of Scrum Pokr AI is the **Server Reveal Gate**:
-* While a room is in the `Voting` phase, submitted votes and AI baseline predictions must **never** traverse the network.
-* The server projects state through `RoomStatePublicVoting` and serializes peer estimates solely as `has_voted: bool`.
-* Any flaw that exposes unmasked votes or AI predictions prior to the `Revealed` state is treated as a **High Priority Security Defect**.
+* While a room is in the `Voting` phase, submitted votes must **never** traverse the network to peers.
+* The server projects state through `maskRoomStateForParticipant` from `@scrumpokr/shared` and serializes peer estimates solely as `has_voted: bool`.
+* Any flaw that exposes unmasked votes prior to the `Revealed` state is treated as a **High Priority Security Defect**.
 
 ### 2. Zero-Auth Session Model
 * Room participants are identified by ephemeral UUIDv4 tokens stored in browser `localStorage`.
 * Reconnection tokens are scoped to the room slug and origin.
-* Room codes (`AAA-99`) use a collision-resistant entropy pool to prevent accidental or unauthorized room access.
+* Room codes (`AAA-99`) use a collision-resistant entropy pool to prevent accidental room collisions.
 
-### 3. WebSocket Rate Limiting & Input Validation
-* Tagged JSON RPC frames are strictly validated with `serde_json`. Malformed payloads, unauthorized facilitator commands, or excessive payload sizes are rejected immediately at the socket handler.
+### 3. REST & SSE Input Validation
+* Inbound REST requests and action commands are strictly validated using Zod schemas with `@hono/zod-validator`. Malformed payloads, invalid role assignments, or unauthorized facilitator operations are rejected with standard HTTP error codes before state mutation.
