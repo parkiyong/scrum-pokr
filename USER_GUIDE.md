@@ -1,4 +1,4 @@
-# Scrum Pokr AI — User Guide
+# Scrum Pokr — User Guide
 
 > A real-time, zero-auth Planning Poker estimation platform designed for agile teams, featuring a high-performance **Full-Stack TypeScript** architecture powered by **Hono (`@hono/node-server`)**, **Server-Sent Events (SSE) + REST**, **React 18 + Tailwind CSS** frontend, and a **server-enforced reveal gate** that eliminates anchoring bias.
 

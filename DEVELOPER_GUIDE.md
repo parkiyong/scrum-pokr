@@ -1,6 +1,6 @@
-# Scrum Pokr AI — Developer Guide
+# Scrum Pokr — Developer Guide
 
-> Operational guide for setting up, running, testing, and developing **Scrum Pokr AI** with a unified Full-Stack TypeScript architecture.
+> Operational guide for setting up, running, testing, and developing **Scrum Pokr** with a unified Full-Stack TypeScript architecture.
 
 📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🛡️ [Security](SECURITY.md)
 
