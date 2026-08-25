@@ -155,40 +155,64 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
   useEffect(() => {
     if (!slug) return;
 
-    const pid = participantIdRef.current;
-    const sseUrl = `/api/rooms/${encodeURIComponent(slug)}/events?participantId=${encodeURIComponent(pid)}`;
+    let isAborted = false;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
 
-    const es = new EventSource(sseUrl);
-    eventSourceRef.current = es;
+    const connectSSE = () => {
+      if (isAborted) return;
+      const pid = participantIdRef.current;
+      const sseUrl = `/api/rooms/${encodeURIComponent(slug)}/events?participantId=${encodeURIComponent(pid)}`;
 
-    es.onopen = () => {
-      setStatus('connected');
-      const stored = getStoredProfile(slug);
-      if (stored) {
-        joinRoom(stored.nickname, stored.avatar || '', stored.role);
-      }
+      const es = new EventSource(sseUrl);
+      eventSourceRef.current = es;
+
+      es.onopen = () => {
+        if (isAborted) return;
+        setStatus('connected');
+        const stored = getStoredProfile(slug);
+        if (stored) {
+          joinRoom(stored.nickname, stored.avatar || '', stored.role);
+        }
+      };
+
+      es.addEventListener('room_state', (event) => {
+        if (isAborted) return;
+        try {
+          const state: RoomState = JSON.parse(event.data);
+          setRoomState(state);
+        } catch (err) {
+          console.error('[SSE] Failed to parse room_state event:', err);
+        }
+      });
+
+      es.addEventListener('ping', () => {
+        // Keep-alive heartbeat acknowledgement
+      });
+
+      es.onerror = () => {
+        if (isAborted) return;
+        setStatus('error');
+        es.close();
+        if (!reconnectTimeout) {
+          reconnectTimeout = setTimeout(() => {
+            reconnectTimeout = null;
+            connectSSE();
+          }, 3000);
+        }
+      };
     };
 
-    es.addEventListener('room_state', (event) => {
-      try {
-        const state: RoomState = JSON.parse(event.data);
-        setRoomState(state);
-      } catch (err) {
-        console.error('[SSE] Failed to parse room_state event:', err);
-      }
-    });
-
-    es.addEventListener('ping', () => {
-      // Keep-alive heartbeat acknowledgement
-    });
-
-    es.onerror = () => {
-      setStatus('error');
-    };
+    connectSSE();
 
     return () => {
-      es.close();
-      eventSourceRef.current = null;
+      isAborted = true;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
     };
   }, [slug, joinRoom]);
 
@@ -198,7 +222,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
-      if (!res.ok) throw new Error(`Failed to start voting (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to start voting (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error starting voting:', err);
     }
@@ -210,7 +239,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, vote: value },
       });
-      if (!res.ok) throw new Error(`Failed to cast vote (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to cast vote (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error casting vote:', err);
     }
@@ -222,7 +256,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, vote: null },
       });
-      if (!res.ok) throw new Error(`Failed to retract vote (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to retract vote (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error retracting vote:', err);
     }
@@ -234,7 +273,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
-      if (!res.ok) throw new Error(`Failed to reveal cards (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to reveal cards (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error revealing cards:', err);
     }
@@ -246,7 +290,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
-      if (!res.ok) throw new Error(`Failed to reset round (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to reset round (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error triggering revote:', err);
     }
@@ -258,7 +307,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, estimate: points },
       });
-      if (!res.ok) throw new Error(`Failed to finalize story (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to finalize story (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error finalizing story:', err);
     }
@@ -270,7 +324,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current },
       });
-      if (!res.ok) throw new Error(`Failed to advance next story (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to advance next story (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error advancing next story:', err);
     }
@@ -282,7 +341,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, deck },
       });
-      if (!res.ok) throw new Error(`Failed to configure deck (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to configure deck (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error configuring deck:', err);
     }
@@ -294,7 +358,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, story },
       });
-      if (!res.ok) throw new Error(`Failed to select story (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to select story (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error selecting story:', err);
     }
@@ -320,7 +389,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           },
         },
       });
-      if (!res.ok) throw new Error(`Failed to add story (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to add story (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error adding story:', err);
     }
@@ -335,7 +409,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           ...updates,
         },
       });
-      if (!res.ok) throw new Error(`Failed to update story (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to update story (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error updating story:', err);
     }
@@ -347,7 +426,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug, storyId },
         query: { participantId: participantIdRef.current },
       });
-      if (!res.ok) throw new Error(`Failed to remove story (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to remove story (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error removing story:', err);
     }
@@ -359,7 +443,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, story_ids: storyIds },
       });
-      if (!res.ok) throw new Error(`Failed to reorder backlog (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to reorder backlog (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error reordering backlog:', err);
     }
@@ -371,7 +460,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, target_id: targetId, new_role: newRole },
       });
-      if (!res.ok) throw new Error(`Failed to update role (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to update role (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error updating role:', err);
     }
@@ -383,7 +477,12 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         param: { code: slug },
         json: { participant_id: participantIdRef.current, target_id: targetId },
       });
-      if (!res.ok) throw new Error(`Failed to transfer facilitator (status ${res.status})`);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.state) setRoomState(data.state as RoomState);
+      } else {
+        throw new Error(`Failed to transfer facilitator (status ${res.status})`);
+      }
     } catch (err) {
       console.error('[RPC] Error transferring facilitator:', err);
     }

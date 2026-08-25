@@ -2,12 +2,24 @@ import { describe, it, expect } from 'vitest';
 import app from '../index';
 
 describe('Server-Sent Events (SSE) Stream Endpoint', () => {
-  it('returns 404 for non-existent room SSE stream', async () => {
-    const res = await app.request('/api/rooms/NON_EXISTENT_ROOM/events?participantId=p-1');
-    expect(res.status).toBe(404);
+  it('connects to SSE stream directly and streams initial masked state', async () => {
+    const sseRes = await app.request('/api/rooms/NEW_ROOM/events?participantId=p-1');
+    expect(sseRes.status).toBe(200);
+    expect(sseRes.headers.get('content-type')).toContain('text/event-stream');
+    expect(sseRes.headers.get('x-accel-buffering')).toBe('no');
+
+    const reader = sseRes.body?.getReader();
+    if (reader) {
+      const { value } = await reader.read();
+      const text = new TextDecoder().decode(value);
+      expect(text).toContain('event: room_state');
+      expect(text).toContain('data:');
+      expect(text).toContain('NEW_ROOM');
+      await reader.cancel();
+    }
   });
 
-  it('connects to SSE stream and streams initial masked state', async () => {
+  it('connects to SSE stream and receives updates when room is joined', async () => {
     const createRes = await app.request('/api/rooms', { method: 'POST' });
     const { slug } = await createRes.json();
 

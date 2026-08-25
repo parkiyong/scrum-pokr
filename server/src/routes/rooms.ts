@@ -84,7 +84,7 @@ export const roomRoutes = new Hono()
     }
 
     room.dispatch({ type: 'START_VOTING' });
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 5. Cast or Retract Vote
@@ -106,7 +106,7 @@ export const roomRoutes = new Hono()
       payload: { participantId, vote: body.vote || null },
     });
 
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 6. Reveal Cards (Facilitator only)
@@ -123,7 +123,7 @@ export const roomRoutes = new Hono()
     }
 
     room.dispatch({ type: 'REVEAL_CARDS' });
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 7. Reset Round (Facilitator only)
@@ -140,7 +140,7 @@ export const roomRoutes = new Hono()
     }
 
     room.dispatch({ type: 'RESET_ROUND' });
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 8. Finalize Story (Facilitator only)
@@ -160,7 +160,7 @@ export const roomRoutes = new Hono()
       type: 'FINALIZE_STORY',
       payload: { estimate: body.estimate || body.points || null },
     });
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 9. Set Deck Configuration (Facilitator only)
@@ -180,7 +180,7 @@ export const roomRoutes = new Hono()
       type: 'SET_DECK',
       payload: { deck: body.deck },
     });
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 10. Set Current Story (Facilitator only)
@@ -200,13 +200,14 @@ export const roomRoutes = new Hono()
       type: 'SET_STORY',
       payload: { story: body.story as Story | null },
     });
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 11. Add Story to Backlog
   .post('/api/rooms/:code/stories', zValidator('json', addStorySchema), async (c) => {
     const code = c.req.param('code');
     const body = c.req.valid('json');
+    const participantId = body.participant_id || body.participantId;
     const room = roomRegistry.get(code);
     if (!room) return c.json({ error: 'Room not found' }, 404);
 
@@ -223,7 +224,7 @@ export const roomRoutes = new Hono()
       payload: { story: newStory },
     });
 
-    return c.json({ success: true, story: newStory }, 201);
+    return c.json({ success: true, story: newStory, state: room.getMaskedState(participantId || '') }, 201);
   })
 
   // 12. Update Story in Backlog or Current Story
@@ -251,7 +252,7 @@ export const roomRoutes = new Hono()
       payload: { storyId, updates },
     });
 
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 13. Remove Story from Backlog (Facilitator only)
@@ -273,7 +274,7 @@ export const roomRoutes = new Hono()
       payload: { storyId },
     });
 
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 14. Reorder Backlog (Facilitator only)
@@ -295,7 +296,7 @@ export const roomRoutes = new Hono()
       payload: { storyIds },
     });
 
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 15. Advance to Next Story in Backlog (Facilitator only)
@@ -312,7 +313,7 @@ export const roomRoutes = new Hono()
     }
 
     room.dispatch({ type: 'NEXT_STORY' });
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 16. Update Participant Role
@@ -321,6 +322,7 @@ export const roomRoutes = new Hono()
     const body = c.req.valid('json');
     const targetId = body.target_id || body.targetId || '';
     const newRole = body.role || body.new_role || body.newRole || 'Estimator';
+    const participantId = body.participant_id || body.participantId;
 
     const room = roomRegistry.get(code);
     if (!room) return c.json({ error: 'Room not found' }, 404);
@@ -330,7 +332,7 @@ export const roomRoutes = new Hono()
       payload: { targetId, newRole },
     });
 
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   })
 
   // 17. Transfer Facilitator Authority (Facilitator only)
@@ -352,5 +354,5 @@ export const roomRoutes = new Hono()
       payload: { targetId },
     });
 
-    return c.json({ success: true }, 200);
+    return c.json({ success: true, state: room.getMaskedState(participantId || '') }, 200);
   });
