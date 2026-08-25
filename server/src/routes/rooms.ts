@@ -255,10 +255,11 @@ export const roomRoutes = new Hono()
   })
 
   // 13. Remove Story from Backlog (Facilitator only)
-  .delete('/api/rooms/:code/stories/:storyId', async (c) => {
+  .delete('/api/rooms/:code/stories/:storyId', zValidator('query', participantActionSchema), async (c) => {
     const code = c.req.param('code');
     const storyId = c.req.param('storyId');
-    const participantId = c.req.query('participantId') || c.req.query('participant_id');
+    const query = c.req.valid('query');
+    const participantId = query.participant_id || query.participantId || c.req.query('participantId') || c.req.query('participant_id');
 
     const room = roomRegistry.get(code);
     if (!room) return c.json({ error: 'Room not found' }, 404);
