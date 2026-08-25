@@ -40,7 +40,19 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
   const [isBacklogOpen, setIsBacklogOpen] = useState(false);
   const [isDeckConfigOpen, setIsDeckConfigOpen] = useState(false);
 
-  const myParticipant = roomState?.participants.find((p) => p.id === currentParticipantId);
+  const myParticipant =
+    roomState?.participants.find((p) => p.id === currentParticipantId) ||
+    (myProfile
+      ? {
+          id: currentParticipantId,
+          name: myProfile.nickname,
+          avatar: myProfile.avatar || '',
+          role: myProfile.role || 'Estimator',
+          connected: true,
+          has_voted: false,
+          vote: null,
+        }
+      : undefined);
   const myVote = myParticipant?.vote;
 
   const handleCardClick = (val: string) => {

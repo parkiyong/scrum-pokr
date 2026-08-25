@@ -125,7 +125,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     setMyProfile(profile);
 
     try {
-      await api.api.rooms[':code'].join.$post({
+      const res = await api.api.rooms[':code'].join.$post({
         param: { code: slug },
         json: {
           participant_id: profile.participant_id,
@@ -134,6 +134,19 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           role: role || 'Estimator',
         },
       });
+
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data.participant_id || data.participantId) {
+          const assignedPid = data.participant_id || data.participantId;
+          participantIdRef.current = assignedPid;
+          profile.participant_id = assignedPid;
+          saveStoredProfile(slug, profile);
+        }
+        if (data.state) {
+          setRoomState(data.state as RoomState);
+        }
+      }
     } catch (err) {
       console.error(`[RPC] Error joining room ${slug}:`, err);
     }
@@ -376,7 +389,11 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
     }
   }, [slug]);
 
-  const isFacilitator = roomState?.facilitator_id === participantIdRef.current;
+  const isFacilitator =
+    roomState?.facilitator_id === participantIdRef.current ||
+    (roomState !== null &&
+      roomState.participants.length === 1 &&
+      roomState.participants[0].id === participantIdRef.current);
 
   return {
     roomState,

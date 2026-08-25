@@ -264,4 +264,48 @@ describe('useRoomSocket Hook & Hono RPC Adapter', () => {
     expect(consensus3?.category).toBe('HighOutlier');
     expect(consensus3?.consensus_pct).toBe(67);
   });
+
+  it('eagerly updates roomState and grants isFacilitator when first user joins as Observer', async () => {
+    const { result } = renderHook(() => useRoomSocket('TEST-OBS'));
+    const pid = result.current.currentParticipantId;
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        participant_id: pid,
+        state: {
+          slug: 'TEST-OBS',
+          short_code: 'TOBS',
+          phase: 'Idle',
+          deck: { type: 'fibonacci', cards: ['1', '2', '3', '5', '8'] },
+          facilitator_id: pid,
+          participants: [
+            {
+              id: pid,
+              name: 'ScrumMaster',
+              avatar: 'indigo',
+              role: 'Observer',
+              connected: true,
+              has_voted: false,
+              vote: null,
+            },
+          ],
+          current_story: null,
+          backlog: [],
+          consensus: null,
+        },
+      }),
+      text: async () => JSON.stringify({ success: true }),
+    } as any);
+
+    await act(async () => {
+      result.current.joinRoom('ScrumMaster', 'indigo', 'Observer');
+    });
+
+    expect(result.current.isFacilitator).toBe(true);
+    expect(result.current.myProfile?.role).toBe('Observer');
+    expect(result.current.roomState?.facilitator_id).toBe(pid);
+    expect(result.current.roomState?.participants[0].role).toBe('Observer');
+  });
 });
