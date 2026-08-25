@@ -47,29 +47,8 @@ Documentation is separated across the 4 Diátaxis quadrants:
 
 ---
 
-### 4. Contributing & Repository Health Standards
+### 2. Contributing & Repository Health Standards
 
 * [`CONTRIBUTING.md`](CONTRIBUTING.md): Outlines the TDD (Red-Green-Refactor) workflow, conventional commit formatting, and the **Two-Axis PR Review Checklist** (Axis 1: Code Quality & Lints; Axis 2: Spec & Reveal Gate Invariant Adherence).
 * **Branch Policy**: The `main` branch is strictly **read-only**. Always pull the latest `origin/main` before branching out or creating a worktree, and never commit directly to `main`.
 * All agents and contributors must strictly enforce domain terms from [`CONTEXT.md`](CONTEXT.md) (*Facilitator*, *Estimator*, *Observer*, *Story*, *Deck*, *Reveal Gate*).
-
----
-
-## Terminal & Agent Orchestration (Herdr Workflow)
-
-This project uses **Herdr** as the terminal multiplexer for managing concurrent agent sessions and long-running tasks.
-
-### 1. Parallel Task Decomposition
-* **Avoid Silent Background Subagents for Major Tasks**: For complex sub-tasks, parallel investigations, or independent feature tracks, do not spawn silent internal subagents. Instead, break the work down into modular, self-contained tasks.
-* **Format for Pane Handoff**: When a sub-task is suitable for parallel execution, provide:
-  1. A clear command or prompt ready to copy-paste into a new `agy` session in a new Herdr pane.
-  2. The target working branch or Git worktree directory to operate in.
-  3. The expected output or contract needed by the primary session.
-
-### 2. Long-Running Processes & Watchers
-* **Externalize Servers and Watchers**: Do not run blocking servers (e.g. dev servers, file watchers, continuous test runners) as background CLI tasks in the primary session.
-* **Pane Recommendations**: Prompt the user to start long-running services in a separate Herdr pane (e.g., `npm run dev`, `npm test`, or `docker compose logs -f`) so Herdr can monitor process health and idle/active states directly.
-
-### 3. Worktree & File Safety
-* Whenever advising parallel agent sessions in separate Herdr panes, always specify separate Git worktrees (e.g., `.worktrees/<feature-name>`) to prevent concurrent file editing conflicts.
-
