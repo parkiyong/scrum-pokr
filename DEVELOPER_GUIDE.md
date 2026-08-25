@@ -2,7 +2,7 @@
 
 > Operational guide for setting up, running, testing, and developing **Scrum Pokr AI** with a unified Full-Stack TypeScript architecture.
 
-📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 📋 [Product Spec](.scratch/basic-scrum-poker/spec.md)
+📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🛡️ [Security](SECURITY.md)
 
 ---
 
@@ -160,8 +160,8 @@ scrum-pokr/
 Key architectural principles, domain definitions, and API specifications are maintained across:
 
 * 🏛️ **Architecture & Backend Specification**:
-  * [Basic Scrum Poker Specification](.scratch/basic-scrum-poker/spec.md)
-  * [Basic Scrum Poker Map & Decisions](.scratch/basic-scrum-poker/map.md)
+  * [Developer Guide](DEVELOPER_GUIDE.md) (Architecture overview and directory structure)
+  * [User Guide](USER_GUIDE.md) (User workflows and estimation lifecycles)
 * 📖 **Domain Glossary & Invariants**:
   * [Domain Vocabulary & Rules](CONTEXT.md)
 * 🛡️ **Security Invariants**:

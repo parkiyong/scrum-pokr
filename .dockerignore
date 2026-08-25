@@ -7,7 +7,6 @@ client/dist/
 server/dist/
 shared/dist/
 .git/
-.scratch/
 .worktrees/
 *.log
 .DS_Store

@@ -2,7 +2,7 @@
 
 > A real-time, zero-auth Planning Poker estimation platform designed for agile teams, featuring a high-performance **Full-Stack TypeScript** architecture powered by **Hono (`@hono/node-server`)**, **Server-Sent Events (SSE) + REST**, **React 18 + Tailwind CSS** frontend, and a **server-enforced reveal gate** that eliminates anchoring bias.
 
-📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 📋 [Product Spec](.scratch/basic-scrum-poker/spec.md)
+📖 [User Guide](USER_GUIDE.md) · 🛠️ [Developer Guide](DEVELOPER_GUIDE.md) · 🤝 [Contributing](CONTRIBUTING.md) · 🛡️ [Security](SECURITY.md)
 
 ---
 
