@@ -106,6 +106,15 @@ export function computeConsensusFromParticipants(
   };
 }
 
+export function shouldApplyRoomState(
+  current: RoomState | null,
+  incoming: RoomState,
+  force = false,
+): boolean {
+  if (force || !current) return true;
+  return (incoming.revision ?? 0) >= (current.revision ?? 0);
+}
+
 export function useRoomSocket(slug: string): UseRoomSocketReturn {
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
@@ -113,6 +122,10 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
   const participantIdRef = useRef<string>(myProfile?.participant_id || getOrCreateParticipantId());
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  const applyRoomState = useCallback((incoming: RoomState, force = false) => {
+    setRoomState((current) => (shouldApplyRoomState(current, incoming, force) ? incoming : current));
+  }, []);
 
   const joinRoom = useCallback(async (nickname: string, avatar: string, role?: Role) => {
     const profile: LocalSessionProfile = {
@@ -144,19 +157,44 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
           saveStoredProfile(slug, profile);
         }
         if (data.state) {
-          setRoomState(data.state as RoomState);
+          applyRoomState(data.state as RoomState, true);
         }
       }
     } catch (err) {
       console.error(`[RPC] Error joining room ${slug}:`, err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
+
+  useEffect(() => {
+    if (!slug || !myProfile) return;
+
+    const pollRoomState = async () => {
+      const es = eventSourceRef.current;
+      if (es && es.readyState === EventSource.OPEN) return;
+
+      try {
+        const res = await fetch(
+          `/api/rooms/${encodeURIComponent(slug)}?participantId=${encodeURIComponent(participantIdRef.current)}`,
+        );
+        if (res.ok) {
+          const state = (await res.json()) as RoomState;
+          applyRoomState(state, false);
+        }
+      } catch {
+        // Ignore transient polling failures when SSE is unavailable.
+      }
+    };
+
+    const interval = setInterval(pollRoomState, 4000);
+    return () => clearInterval(interval);
+  }, [slug, myProfile, applyRoomState]);
 
   useEffect(() => {
     if (!slug) return;
 
     let isAborted = false;
     let reconnectTimeout: NodeJS.Timeout | null = null;
+    let connectTimeout: NodeJS.Timeout | null = null;
 
     const connectSSE = () => {
       if (isAborted) return;
@@ -166,8 +204,17 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       const es = new EventSource(sseUrl);
       eventSourceRef.current = es;
 
+      connectTimeout = setTimeout(() => {
+        if (isAborted) return;
+        setStatus((current) => (current === 'connecting' ? 'connected' : current));
+      }, 8000);
+
       es.onopen = () => {
         if (isAborted) return;
+        if (connectTimeout) {
+          clearTimeout(connectTimeout);
+          connectTimeout = null;
+        }
         setStatus('connected');
         const stored = getStoredProfile(slug);
         if (stored) {
@@ -179,7 +226,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         if (isAborted) return;
         try {
           const state: RoomState = JSON.parse(event.data);
-          setRoomState(state);
+          applyRoomState(state, false);
         } catch (err) {
           console.error('[SSE] Failed to parse room_state event:', err);
         }
@@ -191,6 +238,10 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
       es.onerror = () => {
         if (isAborted) return;
+        if (connectTimeout) {
+          clearTimeout(connectTimeout);
+          connectTimeout = null;
+        }
         setStatus('error');
         es.close();
         if (!reconnectTimeout) {
@@ -206,6 +257,9 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
     return () => {
       isAborted = true;
+      if (connectTimeout) {
+        clearTimeout(connectTimeout);
+      }
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
       }
@@ -214,7 +268,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
         eventSourceRef.current = null;
       }
     };
-  }, [slug, joinRoom]);
+  }, [slug, joinRoom, applyRoomState]);
 
   const startVoting = useCallback(async () => {
     try {
@@ -224,14 +278,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to start voting (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error starting voting:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const castVote = useCallback(async (value: string) => {
     try {
@@ -241,14 +295,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to cast vote (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error casting vote:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const retractVote = useCallback(async () => {
     try {
@@ -258,14 +312,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to retract vote (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error retracting vote:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const revealCards = useCallback(async () => {
     try {
@@ -275,14 +329,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to reveal cards (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error revealing cards:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const triggerReVote = useCallback(async () => {
     try {
@@ -292,14 +346,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to reset round (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error triggering revote:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const finalizeStory = useCallback(async (points?: string) => {
     try {
@@ -309,14 +363,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to finalize story (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error finalizing story:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const nextStory = useCallback(async () => {
     try {
@@ -326,14 +380,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to advance next story (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error advancing next story:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const setDeck = useCallback(async (deck: DeckConfig) => {
     try {
@@ -343,14 +397,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to configure deck (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error configuring deck:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const selectStory = useCallback(async (story: Story | null) => {
     try {
@@ -360,14 +414,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to select story (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error selecting story:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const selectStoryById = useCallback((storyId: string) => {
     const found = roomState?.backlog.find((s) => s.id === storyId);
@@ -391,14 +445,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to add story (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error adding story:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const updateStory = useCallback(async (storyId: string, updates: Partial<Omit<Story, 'id'>>) => {
     try {
@@ -411,14 +465,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to update story (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error updating story:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const removeStory = useCallback(async (storyId: string) => {
     try {
@@ -428,14 +482,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to remove story (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error removing story:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const reorderBacklog = useCallback(async (storyIds: string[]) => {
     try {
@@ -445,14 +499,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to reorder backlog (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error reordering backlog:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const updateRole = useCallback(async (targetId: string, newRole: Role) => {
     try {
@@ -462,14 +516,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to update role (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error updating role:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const transferFacilitator = useCallback(async (targetId: string) => {
     try {
@@ -479,14 +533,14 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       });
       if (res.ok) {
         const data = (await res.json()) as any;
-        if (data.state) setRoomState(data.state as RoomState);
+        if (data.state) applyRoomState(data.state as RoomState, true);
       } else {
         throw new Error(`Failed to transfer facilitator (status ${res.status})`);
       }
     } catch (err) {
       console.error('[RPC] Error transferring facilitator:', err);
     }
-  }, [slug]);
+  }, [slug, applyRoomState]);
 
   const isFacilitator =
     roomState?.facilitator_id === participantIdRef.current ||

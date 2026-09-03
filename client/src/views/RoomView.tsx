@@ -68,13 +68,15 @@ export const RoomView: React.FC<RoomViewProps> = ({ slug, onLeave }) => {
     setIsJoinModalOpen(false);
   };
 
-  if (!roomState && status === 'connecting') {
+  // Only block returning users with a stored profile while SSE reconnects.
+  // New users should see the join modal immediately instead of waiting on SSE.
+  if (!roomState && status === 'connecting' && myProfile) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-slate-800">
         <div className="w-12 h-12 rounded-2xl bg-blue-100 border border-blue-200 flex items-center justify-center text-2xl font-bold text-blue-600 animate-pulse shadow-sm">
           🃏
         </div>
-        <p className="text-sm font-semibold text-slate-600">Connecting to room {slug}...</p>
+        <p className="text-sm font-semibold text-slate-600">Reconnecting to room {slug}...</p>
       </div>
     );
   }

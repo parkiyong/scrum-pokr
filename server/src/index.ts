@@ -25,10 +25,22 @@ export const routes = app
 // Export AppType for typed Hono RPC client (hc<AppType>)
 export type AppType = typeof routes;
 
-// Serve production frontend assets if available
+// Serve production frontend assets if available (never intercept /api or /health)
 if (process.env.NODE_ENV === 'production') {
-  app.use('/*', serveStatic({ root: './client/dist' }));
-  app.get('*', serveStatic({ path: './client/dist/index.html' }));
+  app.use('*', async (c, next) => {
+    const path = c.req.path;
+    if (path.startsWith('/api/') || path === '/health') {
+      return next();
+    }
+    return serveStatic({ root: './client/dist' })(c, next);
+  });
+  app.get('*', async (c, next) => {
+    const path = c.req.path;
+    if (path.startsWith('/api/') || path === '/health') {
+      return next();
+    }
+    return serveStatic({ path: './client/dist/index.html' })(c, next);
+  });
 }
 
 const port = Number(process.env.PORT) || 3000;

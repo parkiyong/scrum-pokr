@@ -8,21 +8,16 @@ export const eventRoutes = new Hono().get('/api/rooms/:code/events', async (c) =
 
   const room = roomRegistry.getOrCreate(code);
 
+  c.header('Content-Type', 'text/event-stream');
+  c.header('Connection', 'keep-alive');
   c.header('X-Accel-Buffering', 'no');
   c.header('Cache-Control', 'no-cache, no-transform');
 
   return streamSSE(c, async (stream) => {
-    // 1. Send Initial State Immediately (Masked for this participant)
-    if (participantId) {
-      const initialState = room.getMaskedState(participantId);
-      await stream.writeSSE({
-        event: 'room_state',
-        data: JSON.stringify(initialState),
-      });
-    }
+    // Flush headers immediately so reverse proxies (e.g. Render) don't buffer indefinitely
+    await stream.writeSSE({ event: 'ping', data: 'connected' });
 
-    // 2. Subscribe to state broadcasts
-    const unsubscribe = room.subscribe(participantId, async (maskedState) => {
+    const pushState = async (maskedState: Awaited<ReturnType<typeof room.getMaskedState>>) => {
       try {
         await stream.writeSSE({
           event: 'room_state',
@@ -31,7 +26,15 @@ export const eventRoutes = new Hono().get('/api/rooms/:code/events', async (c) =
       } catch {
         // Ignored, client stream will abort
       }
-    });
+    };
+
+    // Subscribe before the initial snapshot so broadcasts are not missed mid-connect.
+    const unsubscribe = room.subscribe(participantId, pushState);
+
+    // Send the latest state after subscribing so a delayed snapshot cannot be stale.
+    if (participantId) {
+      await pushState(room.getMaskedState(participantId));
+    }
 
     // 3. Handle stream abort (disconnect / tab close)
     stream.onAbort(() => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useRoomSocket, computeConsensusFromParticipants } from '../hooks/useRoomSocket';
+import { useRoomSocket, computeConsensusFromParticipants, shouldApplyRoomState } from '../hooks/useRoomSocket';
 import { saveStoredProfile } from '../utils/session';
 
 // Mock EventSource
@@ -307,5 +307,25 @@ describe('useRoomSocket Hook & Hono RPC Adapter', () => {
     expect(result.current.myProfile?.role).toBe('Observer');
     expect(result.current.roomState?.facilitator_id).toBe(pid);
     expect(result.current.roomState?.participants[0].role).toBe('Observer');
+  });
+
+  it('ignores stale SSE room_state snapshots with older revisions', () => {
+    const current = {
+      slug: 'TEST-42',
+      short_code: 'TST-42',
+      revision: 3,
+      phase: 'Voting' as const,
+      deck: { type: 'fibonacci' as const, cards: ['1', '2', '3'] },
+      facilitator_id: 'p-1',
+      participants: [],
+      current_story: null,
+      backlog: [],
+      consensus: null,
+    };
+    const stale = { ...current, revision: 1, phase: 'Idle' as const };
+
+    expect(shouldApplyRoomState(current, stale, false)).toBe(false);
+    expect(shouldApplyRoomState(current, { ...current, revision: 4 }, false)).toBe(true);
+    expect(shouldApplyRoomState(current, stale, true)).toBe(true);
   });
 });

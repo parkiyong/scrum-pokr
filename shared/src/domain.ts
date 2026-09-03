@@ -55,6 +55,7 @@ export interface ConsensusSummary {
 export interface RoomState {
   slug: string;
   short_code: string;
+  revision?: number;
   phase: EstimationPhase;
   deck: DeckConfig;
   facilitator_id: string;
