@@ -157,6 +157,7 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
     let isAborted = false;
     let reconnectTimeout: NodeJS.Timeout | null = null;
+    let connectTimeout: NodeJS.Timeout | null = null;
 
     const connectSSE = () => {
       if (isAborted) return;
@@ -166,8 +167,17 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
       const es = new EventSource(sseUrl);
       eventSourceRef.current = es;
 
+      connectTimeout = setTimeout(() => {
+        if (isAborted) return;
+        setStatus((current) => (current === 'connecting' ? 'connected' : current));
+      }, 8000);
+
       es.onopen = () => {
         if (isAborted) return;
+        if (connectTimeout) {
+          clearTimeout(connectTimeout);
+          connectTimeout = null;
+        }
         setStatus('connected');
         const stored = getStoredProfile(slug);
         if (stored) {
@@ -191,6 +201,10 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
       es.onerror = () => {
         if (isAborted) return;
+        if (connectTimeout) {
+          clearTimeout(connectTimeout);
+          connectTimeout = null;
+        }
         setStatus('error');
         es.close();
         if (!reconnectTimeout) {
@@ -206,6 +220,9 @@ export function useRoomSocket(slug: string): UseRoomSocketReturn {
 
     return () => {
       isAborted = true;
+      if (connectTimeout) {
+        clearTimeout(connectTimeout);
+      }
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
       }

@@ -8,10 +8,15 @@ export const eventRoutes = new Hono().get('/api/rooms/:code/events', async (c) =
 
   const room = roomRegistry.getOrCreate(code);
 
+  c.header('Content-Type', 'text/event-stream');
+  c.header('Connection', 'keep-alive');
   c.header('X-Accel-Buffering', 'no');
   c.header('Cache-Control', 'no-cache, no-transform');
 
   return streamSSE(c, async (stream) => {
+    // Flush headers immediately so reverse proxies (e.g. Render) don't buffer indefinitely
+    await stream.writeSSE({ event: 'ping', data: 'connected' });
+
     // 1. Send Initial State Immediately (Masked for this participant)
     if (participantId) {
       const initialState = room.getMaskedState(participantId);

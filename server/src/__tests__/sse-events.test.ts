@@ -10,8 +10,12 @@ describe('Server-Sent Events (SSE) Stream Endpoint', () => {
 
     const reader = sseRes.body?.getReader();
     if (reader) {
-      const { value } = await reader.read();
-      const text = new TextDecoder().decode(value);
+      let text = '';
+      while (!text.includes('event: room_state')) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        text += new TextDecoder().decode(value);
+      }
       expect(text).toContain('event: room_state');
       expect(text).toContain('data:');
       expect(text).toContain('NEW_ROOM');
@@ -37,8 +41,12 @@ describe('Server-Sent Events (SSE) Stream Endpoint', () => {
 
     const reader = sseRes.body?.getReader();
     if (reader) {
-      const { value } = await reader.read();
-      const text = new TextDecoder().decode(value);
+      let text = '';
+      while (!text.includes('event: room_state')) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        text += new TextDecoder().decode(value);
+      }
       expect(text).toContain('event: room_state');
       expect(text).toContain('data:');
       expect(text).toContain(slug);
