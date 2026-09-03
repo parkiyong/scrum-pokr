@@ -29,6 +29,7 @@ export class RoomActor {
     this.state = {
       slug,
       short_code: shortCode,
+      revision: 0,
       phase: 'Idle',
       deck: deckConfig || { type: 'fibonacci', cards: [...DEFAULT_DECKS.fibonacci] },
       facilitator_id: '',
@@ -57,7 +58,11 @@ export class RoomActor {
 
   public dispatch(action: RoomAction): void {
     this.lastActiveAt = Date.now();
-    this.state = roomReducer(this.state, action);
+    const nextState = roomReducer(this.state, action);
+    this.state = {
+      ...nextState,
+      revision: (this.state.revision ?? 0) + 1,
+    };
     this.broadcast();
   }
 
